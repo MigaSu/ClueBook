@@ -57,149 +57,110 @@
       {{#if isShared}}{{localize "CLUEBOOK.Settings.SharedHint"}}{{else}}{{localize "CLUEBOOK.Settings.PersonalHint"}}{{/if}}
     </p>
 
-    <div class="settings-section">
-      <h3><i class="fas fa-paint-brush"></i> {{localize "CLUEBOOK.Settings.Appearance"}}</h3>
-      <div class="setting-row">
-        <label>{{localize "CLUEBOOK.Settings.AccentColor"}}</label>
-        <select class="setting-input cluebook-input" data-key="theme.accent">
-          <option value="#7b61ff" {{#if (eq settings.theme.accent "#7b61ff")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Purple"}}</option>
-          <option value="#ff5252" {{#if (eq settings.theme.accent "#ff5252")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Red"}}</option>
-          <option value="#4caf50" {{#if (eq settings.theme.accent "#4caf50")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Green"}}</option>
-          <option value="#2196f3" {{#if (eq settings.theme.accent "#2196f3")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Blue"}}</option>
-          <option value="#ff9800" {{#if (eq settings.theme.accent "#ff9800")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Orange"}}</option>
-        </select>
-      </div>
-      <div class="setting-row">
-        <label>{{localize "CLUEBOOK.Settings.Opacity"}}</label>
-        <input type="range" class="setting-input" data-key="theme.opacity" min="40" max="100" value="{{settings.theme.opacity}}">
-      </div>
-      <div class="setting-row">
-        <label>{{localize "CLUEBOOK.Settings.LinkColor"}}</label>
-        <input type="color" class="setting-input" data-key="theme.linkColor" value="{{settings.theme.linkColor}}" style="height: 30px; cursor: pointer;">
-      </div>
-      <div class="setting-row">
-        <label>{{localize "CLUEBOOK.Settings.LinkStyle"}}</label>
-        <select class="setting-input cluebook-input" data-key="theme.linkStyle">
-          <option value="solid" {{#if (eq settings.theme.linkStyle "solid")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.LinkStyleSolid"}}</option>
-          <option value="6,4" {{#if (eq settings.theme.linkStyle "6,4")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.LinkStyleDashed"}}</option>
-          <option value="2,4" {{#if (eq settings.theme.linkStyle "2,4")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.LinkStyleDotted"}}</option>
-        </select>
-      </div>
-      <div class="setting-row flex-checkbox">
-        <label>{{localize "CLUEBOOK.Settings.ShowHotkeys"}}</label>
-        <input type="checkbox" class="setting-input" data-key="theme.showHotkeys" {{#if settings.theme.showHotkeys}}checked{{/if}}>
-      </div>
-      <div class="setting-row flex-checkbox">
-        <label>{{localize "CLUEBOOK.Settings.SnapToGrid"}}</label>
-        <input type="checkbox" class="setting-input" data-key="theme.snapToGrid" {{#if settings.theme.snapToGrid}}checked{{/if}}>
-      </div>
-      <div class="setting-row">
-        <label>{{localize "CLUEBOOK.Settings.HighlightDuration"}}</label>
-        <input type="number" class="setting-input" data-key="theme.highlightDuration" value="{{settings.theme.highlightDuration}}" min="1" max="10" step="1">
-      </div>
-      <div class="setting-row flex-checkbox">
-        <input type="checkbox" id="cb-hover-highlight" class="setting-input" data-key="theme.hoverHighlight" {{#if settings.theme.hoverHighlight}}checked{{/if}}>
-        <label for="cb-hover-highlight">{{localize "CLUEBOOK.Settings.HoverHighlight"}}</label>
-      </div>
-      <div class="setting-row" style="margin-top: -5px; margin-bottom: 15px;">
-        <label style="font-size: 12px; color: var(--cb-text-muted);">{{localize "CLUEBOOK.Settings.HoverDelay"}}</label>
-        <input type="number" class="setting-input" data-key="theme.hoverDelay" value="{{settings.theme.hoverDelay}}" min="100" max="3000" step="100" style="width: 80px;">
-      </div>
-    </div>
-
-
-    <div class="settings-section">
-      <h3><i class="fas fa-palette"></i> {{localize "CLUEBOOK.Settings.DefaultColors"}}</h3>
-      <div class="setting-row">
-        <label>{{localize "CLUEBOOK.Settings.Notes"}}</label>
-        <select class="setting-input cluebook-input" data-key="defaultColors.notes">
-          <option value="yellow" {{#if (eq settings.defaultColors.notes "yellow")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Yellow"}}</option>
-          <option value="green" {{#if (eq settings.defaultColors.notes "green")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Green"}}</option>
-          <option value="blue" {{#if (eq settings.defaultColors.notes "blue")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Blue"}}</option>
-          <option value="red" {{#if (eq settings.defaultColors.notes "red")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Red"}}</option>
-          <option value="purple" {{#if (eq settings.defaultColors.notes "purple")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Purple"}}</option>
-          <option value="orange" {{#if (eq settings.defaultColors.notes "orange")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Orange"}}</option>
-          <option value="teal" {{#if (eq settings.defaultColors.notes "teal")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Teal"}}</option>
-          <option value="pink" {{#if (eq settings.defaultColors.notes "pink")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Pink"}}</option>
-          <option value="brown" {{#if (eq settings.defaultColors.notes "brown")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Brown"}}</option>
-        </select>
-      </div>
-      <div class="setting-row">
-        <label>{{localize "CLUEBOOK.Settings.Characters"}}</label>
-        <select class="setting-input cluebook-input" data-key="defaultColors.npc">
-          <option value="yellow" {{#if (eq settings.defaultColors.npc "yellow")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Yellow"}}</option>
-          <option value="green" {{#if (eq settings.defaultColors.npc "green")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Green"}}</option>
-          <option value="blue" {{#if (eq settings.defaultColors.npc "blue")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Blue"}}</option>
-          <option value="red" {{#if (eq settings.defaultColors.npc "red")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Red"}}</option>
-          <option value="purple" {{#if (eq settings.defaultColors.npc "purple")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Purple"}}</option>
-          <option value="orange" {{#if (eq settings.defaultColors.npc "orange")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Orange"}}</option>
-          <option value="teal" {{#if (eq settings.defaultColors.npc "teal")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Teal"}}</option>
-          <option value="pink" {{#if (eq settings.defaultColors.npc "pink")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Pink"}}</option>
-          <option value="brown" {{#if (eq settings.defaultColors.npc "brown")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Brown"}}</option>
-        </select>
+    <div class="settings-grid">
+      <div class="settings-card">
+        <h3><i class="fas fa-paint-brush"></i> {{localize "CLUEBOOK.Settings.CategoryWindow"}}</h3>
+        <div class="setting-row">
+          <label>{{localize "CLUEBOOK.Settings.AccentColor"}}</label>
+          <select class="setting-input cluebook-input" data-key="theme.accent">
+            <option value="#7b61ff" {{#if (eq settings.theme.accent "#7b61ff")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Purple"}}</option>
+            <option value="#ff5252" {{#if (eq settings.theme.accent "#ff5252")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Red"}}</option>
+            <option value="#4caf50" {{#if (eq settings.theme.accent "#4caf50")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Green"}}</option>
+            <option value="#2196f3" {{#if (eq settings.theme.accent "#2196f3")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Blue"}}</option>
+            <option value="#ff9800" {{#if (eq settings.theme.accent "#ff9800")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Orange"}}</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>{{localize "CLUEBOOK.Settings.Opacity"}}</label>
+          <input type="range" class="setting-input" data-key="theme.opacity" min="40" max="100" value="{{settings.theme.opacity}}">
+        </div>
       </div>
 
-      <div class="setting-row">
-        <label>{{localize "CLUEBOOK.Settings.Quests"}}</label>
-        <select class="setting-input cluebook-input" data-key="defaultColors.quests">
-          <option value="yellow" {{#if (eq settings.defaultColors.quests "yellow")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Yellow"}}</option>
-          <option value="green" {{#if (eq settings.defaultColors.quests "green")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Green"}}</option>
-          <option value="blue" {{#if (eq settings.defaultColors.quests "blue")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Blue"}}</option>
-          <option value="red" {{#if (eq settings.defaultColors.quests "red")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Red"}}</option>
-          <option value="purple" {{#if (eq settings.defaultColors.quests "purple")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Purple"}}</option>
-          <option value="orange" {{#if (eq settings.defaultColors.quests "orange")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Orange"}}</option>
-          <option value="teal" {{#if (eq settings.defaultColors.quests "teal")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Teal"}}</option>
-          <option value="pink" {{#if (eq settings.defaultColors.quests "pink")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Pink"}}</option>
-          <option value="brown" {{#if (eq settings.defaultColors.quests "brown")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Brown"}}</option>
-        </select>
+      <div class="settings-card">
+        <h3><i class="fas fa-bolt"></i> {{localize "CLUEBOOK.Settings.CategoryWidgets"}}</h3>
+        <div class="setting-row">
+          <label>{{localize "CLUEBOOK.Settings.Direction"}}</label>
+          <select class="setting-input cluebook-input" data-key="widget.direction">
+            <option value="up-right" {{#if (eq settings.widget.direction "up-right")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.UpRight"}}</option>
+            <option value="up-left" {{#if (eq settings.widget.direction "up-left")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.UpLeft"}}</option>
+            <option value="down-right" {{#if (eq settings.widget.direction "down-right")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.DownRight"}}</option>
+            <option value="down-left" {{#if (eq settings.widget.direction "down-left")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.DownLeft"}}</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <label>{{localize "CLUEBOOK.Settings.WidgetColor"}}</label>
+          <input type="color" class="setting-input" data-key="theme.widgetColor" value="{{settings.theme.widgetColor}}">
+        </div>
+        <div class="setting-row">
+          <label>{{localize "CLUEBOOK.Settings.WidgetColor2"}}</label>
+          <input type="color" class="setting-input" data-key="theme.widgetColor2" value="{{settings.theme.widgetColor2}}">
+        </div>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.ShowQuickWidget"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-quick" data-key="theme.showQuickWidget" {{#if (ne settings.theme.showQuickWidget false)}}checked{{/if}}>
+            <label for="cb-sw-quick"></label>
+          </div>
+        </div>
+        <div class="setting-row flex-checkbox" style="align-items: center;">
+          <div style="flex: 1; display: flex; flex-direction: column;">
+            <label style="flex: none;">{{localize "CLUEBOOK.Settings.ShowCalendarWidget"}}</label>
+            {{#unless globalTimeWidget}}
+            <span class="setting-disabled" style="opacity: 0.6; font-style: italic; font-size: 11px; margin-top: 2px;">{{localize "CLUEBOOK.Settings.DisabledByGM"}}</span>
+            {{/unless}}
+          </div>
+          <div class="cb-toggle" {{#unless globalTimeWidget}}style="opacity: 0.5; pointer-events: none;"{{/unless}}>
+            <input type="checkbox" class="setting-input" id="cb-sw-calendar" data-key="theme.showCalendarWidget" {{#if (ne settings.theme.showCalendarWidget false)}}checked{{/if}} {{#unless globalTimeWidget}}disabled{{/unless}}>
+            <label for="cb-sw-calendar"></label>
+          </div>
+        </div>
       </div>
-      <div class="setting-row">
-        <label>{{localize "CLUEBOOK.Settings.Timeline"}}</label>
-        <select class="setting-input cluebook-input" data-key="defaultColors.timeline">
-          <option value="yellow" {{#if (eq settings.defaultColors.timeline "yellow")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Yellow"}}</option>
-          <option value="green" {{#if (eq settings.defaultColors.timeline "green")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Green"}}</option>
-          <option value="blue" {{#if (eq settings.defaultColors.timeline "blue")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Blue"}}</option>
-          <option value="red" {{#if (eq settings.defaultColors.timeline "red")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Red"}}</option>
-          <option value="purple" {{#if (eq settings.defaultColors.timeline "purple")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Purple"}}</option>
-          <option value="orange" {{#if (eq settings.defaultColors.timeline "orange")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Orange"}}</option>
-          <option value="teal" {{#if (eq settings.defaultColors.timeline "teal")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Teal"}}</option>
-          <option value="pink" {{#if (eq settings.defaultColors.timeline "pink")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Pink"}}</option>
-          <option value="brown" {{#if (eq settings.defaultColors.timeline "brown")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Brown"}}</option>
-        </select>
-      </div>
-    </div>
 
-    <div class="settings-section">
-      <h3><i class="fas fa-bolt"></i> {{localize "CLUEBOOK.Settings.WidgetSettings"}}</h3>
-      <div class="setting-row">
-        <label>{{localize "CLUEBOOK.Settings.Direction"}}</label>
-        <select class="setting-input cluebook-input" data-key="widget.direction">
-          <option value="up-right" {{#if (eq settings.widget.direction "up-right")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.UpRight"}}</option>
-          <option value="up-left" {{#if (eq settings.widget.direction "up-left")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.UpLeft"}}</option>
-          <option value="down-right" {{#if (eq settings.widget.direction "down-right")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.DownRight"}}</option>
-          <option value="down-left" {{#if (eq settings.widget.direction "down-left")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.DownLeft"}}</option>
-        </select>
+      <div class="settings-card">
+        <h3><i class="fas fa-plug"></i> {{localize "CLUEBOOK.Settings.CategoryIntegrations"}}</h3>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.CardsExplicitLinks"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-cards-links" data-key="features.cardsShowExplicitLinks" {{#if (ne settings.features.cardsShowExplicitLinks false)}}checked{{/if}}>
+            <label for="cb-sw-cards-links"></label>
+          </div>
+        </div>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.HideTags"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-hide-tags" data-key="features.hideTags" {{#if settings.features.hideTags}}checked{{/if}}>
+            <label for="cb-sw-hide-tags"></label>
+          </div>
+        </div>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.HideEditBtn"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-hide-edit" data-key="features.hideEditBtn" {{#if settings.features.hideEditBtn}}checked{{/if}}>
+            <label for="cb-sw-hide-edit"></label>
+          </div>
+        </div>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.BoardExplicitLinks"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-board-links" data-key="features.boardShowExplicitLinks" {{#if (ne settings.features.boardShowExplicitLinks false)}}checked{{/if}}>
+            <label for="cb-sw-board-links"></label>
+          </div>
+        </div>
       </div>
-    </div>
-
-    <div class="settings-section">
-      <h3><i class="fas fa-plug"></i> {{localize "CLUEBOOK.Settings.Integrations"}}</h3>
-      <div class="setting-row flex-checkbox">
-        <label>{{localize "CLUEBOOK.Settings.CardsExplicitLinks"}}</label>
-        <input type="checkbox" class="setting-input" data-key="features.cardsShowExplicitLinks" {{#if (ne settings.features.cardsShowExplicitLinks false)}}checked{{/if}}>
+      
+      {{#if isGM}}
+      <div class="settings-card">
+        <h3><i class="fas fa-globe"></i> {{localize "CLUEBOOK.Settings.CategoryGlobal"}}</h3>
+        <p class="settings-hint" style="margin-top: -10px; margin-bottom: 15px; font-size: 11px;">{{localize "CLUEBOOK.Settings.GlobalHint"}}</p>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.EnableTimeWidget"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-global-calendar" data-key="global.enableTimeWidget" {{#if globalTimeWidget}}checked{{/if}}>
+            <label for="cb-sw-global-calendar"></label>
+          </div>
+        </div>
       </div>
-      <div class="setting-row flex-checkbox">
-        <label>{{localize "CLUEBOOK.Settings.BoardExplicitLinks"}}</label>
-        <input type="checkbox" class="setting-input" data-key="features.boardShowExplicitLinks" {{#if (ne settings.features.boardShowExplicitLinks false)}}checked{{/if}}>
-      </div>
-      <div class="setting-row flex-checkbox">
-        <label>{{localize "CLUEBOOK.Settings.ShowQuickWidget"}}</label>
-        <input type="checkbox" class="setting-input" data-key="theme.showQuickWidget" {{#if (ne settings.theme.showQuickWidget false)}}checked{{/if}}>
-      </div>
-      <div class="setting-row flex-checkbox">
-        <label>{{localize "CLUEBOOK.Settings.ShowCalendarWidget"}}</label>
-        <input type="checkbox" class="setting-input" data-key="theme.showCalendarWidget" {{#if (ne settings.theme.showCalendarWidget false)}}checked{{/if}}>
-      </div>
+      {{/if}}
     </div>
 
   </div>
@@ -209,8 +170,24 @@
 
   {{#if (eq activeTab "search")}}
   <div class="search-container" style="padding: 10px; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.1);">
-    <i class="fas fa-search search-icon"></i>
-    <input type="text" id="cluebook-search" class="cluebook-search-input" placeholder="{{localize "CLUEBOOK.Settings.SearchPlaceholder"}}" value="{{searchQuery}}">
+    <div style="position: relative;">
+      <i class="fas fa-search search-icon"></i>
+      <input type="text" id="cluebook-search" class="cluebook-search-input" placeholder="{{localize "CLUEBOOK.Settings.SearchPlaceholder"}}" value="{{searchQuery}}">
+      {{#if (or searchQuery searchTags.length)}}
+      <i id="cluebook-search-clear" class="fas fa-times-circle" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: rgba(255,255,255,0.6); font-size: 14px; transition: color 0.2s;" title="Очистить поиск"></i>
+      {{/if}}
+    </div>
+    
+    {{#if availableSearchTags.length}}
+    <div class="cluebook-search-tags" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px;">
+      {{#each availableSearchTags}}
+      <span class="cb-tag cb-search-tag {{#if this.isActive}}active{{/if}}" data-tag-id="{{this.id}}" style="cursor: pointer; {{#if this.isActive}}background: {{this.color}}; border-color: #fff; box-shadow: 0 0 5px {{this.color}};{{else}}background: transparent; border-color: {{this.color}}; color: {{this.color}}; opacity: 0.7;{{/if}}" title="{{this.name}}{{#if this.isSecret}} (Секретно){{/if}}">
+        {{#if this.isSecret}}<i class="fas fa-eye-slash" style="opacity:0.6; font-size:10px;"></i>{{/if}}
+        {{this.name}}
+      </span>
+      {{/each}}
+    </div>
+    {{/if}}
   </div>
   {{/if}}
 
@@ -242,24 +219,41 @@
     {{/if}}
 
     {{#each entries}}
-      <div class="cluebook-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id ../highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-text-color="{{this.textColor}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" {{#unless ../isBoardView}}draggable="true"{{/unless}} style="{{#if ../isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10; {{#if (eq this.id ../highlightedEntryId)}}animation-duration: {{../settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#if this.isCustomColor}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}">
+      <div class="cluebook-entry {{#if (eq this.id ../editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id ../highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-text-color="{{this.textColor}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" tabindex="-1" {{#unless ../isBoardView}}draggable="true"{{/unless}} style="{{#if ../isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10; {{#if (eq this.id ../highlightedEntryId)}}animation-duration: {{../settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#if this.isCustomColor}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}">
         <div class="sticky-pin"></div>
         {{#unless ../isReadOnly}}
         <div class="entry-controls">
           {{#if ../isGM}}
-          <a data-action="toggleVisibility" class="btn-visibility" title="{{#if this.isHidden}}{{localize "CLUEBOOK.Entry.ShowToPlayers"}}{{else}}{{localize "CLUEBOOK.Entry.HideFromPlayers"}}{{/if}}"><i class="fas {{#if this.isHidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+          {{#if this.sceneUuid}}
+          <a data-action="activateScene" data-scene-id="{{this.sceneUuid}}" class="btn-scene" title="{{localize "CLUEBOOK.Location.ActivateScene"}} (Shift+Click: Активировать для игроков)"><i class="fas fa-play"></i></a>
           {{/if}}
+          {{#if this.actorUuid}}
+          <a data-action="openActor" data-actor-id="{{this.actorUuid}}" class="btn-actor" title="Открыть персонажа"><i class="fas fa-id-card"></i></a>
+          {{/if}}
+          {{#unless ../settings.hideGMVisibilityBtn}}
+          <a data-action="toggleVisibility" class="btn-visibility" title="{{#if this.isHidden}}{{localize "CLUEBOOK.Entry.ShowToPlayers"}}{{else}}{{localize "CLUEBOOK.Entry.HideFromPlayers"}}{{/if}}"><i class="fas {{#if this.isHidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+          {{/unless}}
+          {{#unless ../settings.hideGMOverlayBtn}}
+          <a data-action="shareOverlay" class="btn-share" title="Показать на экранах игроков (Оверлей)"><i class="fas fa-bullhorn"></i></a>
+          {{/unless}}
+          {{/if}}
+          
+          {{#unless ../settings.features.hideEditBtn}}
           <a data-action="toggleEdit" class="btn-edit" title="{{localize "CLUEBOOK.Entry.Edit"}}"><i class="fas fa-pencil-alt"></i></a>
+          {{/unless}}
 
           {{#if ../isBoardView}}
           <a class="btn-link" title="{{localize "CLUEBOOK.Entry.LinkWithThread"}}"><i class="fas fa-link"></i></a>
+          <a data-action="jumpToTab" class="btn-jump" title="{{localize "CLUEBOOK.Entry.FindInList"}}"><i class="fas fa-layer-group"></i></a>
           <a data-action="togglePin" class="btn-pin {{#if this.pinned}}active{{/if}}" title="{{#if this.pinned}}{{localize "CLUEBOOK.Entry.Unpin"}}{{else}}{{localize "CLUEBOOK.Entry.Pin"}}{{/if}}"><i class="fas {{#if this.pinned}}fa-lock{{else}}fa-lock-open{{/if}}"></i></a>
           <a data-action="removeFromBoard" class="btn-remove-board" title="{{localize "CLUEBOOK.Entry.RemoveFromBoard"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-times"></i></a>
           {{else}}
           {{#if this.onBoard}}
           <a data-action="jumpToBoard" class="btn-jump" title="{{localize "CLUEBOOK.Entry.FindOnBoard"}}"><i class="fas fa-map-marker-alt"></i></a>
           {{/if}}
+          {{#unless ../settings.hideSendToBoardBtn}}
           <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="{{localize "CLUEBOOK.Entry.SendToBoard"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-project-diagram"></i></a>
+          {{/unless}}
           <a data-action="deleteEntry" class="btn-delete" title="{{localize "CLUEBOOK.Entry.Delete"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-trash"></i></a>
           {{/if}}
         </div>
@@ -292,12 +286,24 @@
                 <span>{{this.name}}</span>
               </div>
               <div style="display: flex; gap: 5px; flex-wrap: wrap; margin: 4px 0; position: relative; z-index: 2;">
-                {{#if this.location}}<div class="cb-smart-badge"><i class="fas fa-map-marker-alt"></i> {{this.location}}</div>{{/if}}
+                {{#if this.location}}<div class="cb-smart-badge"><i class="fas fa-map-marker-alt"></i> {{{this.enriched.location}}}</div>{{/if}}
                 {{#if this.attitude}}<div class="cb-smart-badge"><i class="fas fa-smile"></i> {{this.attitude}}</div>{{/if}}
               </div>
               <div class="display-text" style="position: relative; z-index: 2;">{{{this.enriched.note}}}</div>
             {{/if}}
-
+            {{#if (eq this.sourceTab "locations")}}
+              <div class="display-title" style="display: flex; align-items: center; justify-content: center;">
+                {{#if this.pinned}}
+                  <i class="fas fa-lock" style="font-size: 11px; margin-right: 6px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>
+                {{/if}}
+                <span>{{this.name}}</span>
+              </div>
+              <div style="display: flex; gap: 5px; flex-wrap: wrap; margin: 4px 0; position: relative; z-index: 2;">
+                {{#if this.subtitle}}<div class="cb-smart-badge"><i class="fas fa-map"></i> {{{this.enriched.subtitle}}}</div>{{/if}}
+                {{#if this.owner}}<div class="cb-smart-badge"><i class="fas fa-crown"></i> {{{this.enriched.owner}}}</div>{{/if}}
+              </div>
+              <div class="display-text" style="position: relative; z-index: 2;">{{{this.enriched.note}}}</div>
+            {{/if}}
 
             {{#if (eq this.sourceTab "quests")}}
               <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 5px; gap: 5px; width: 100%;">
@@ -379,6 +385,17 @@
                   <div class="cb-gm-callout-body">{{{this.enriched.gmNotes}}}</div>
                 </div>
               {{/if}}
+            {{/if}}
+
+            {{#if this.resolvedTags.length}}
+              <div class="cluebook-tags-container" style="margin-top: auto; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.05);">
+                {{#each this.resolvedTags}}
+                  <span class="cb-tag {{#if this.isSecret}}cb-tag-secret{{/if}}" data-tag-id="{{this.id}}" style="cursor: pointer; background: {{this.color}};" title="{{this.name}}{{#if this.isSecret}} (Секретно){{/if}}">
+                    {{#if this.isSecret}}<i class="fas fa-eye-slash" style="opacity:0.6; font-size:10px;"></i>{{/if}}
+                    {{this.name}}
+                  </span>
+                {{/each}}
+              </div>
             {{/if}}
 
             {{#if this.explicitLinks.length}}

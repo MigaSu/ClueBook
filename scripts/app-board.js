@@ -265,7 +265,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         ev.stopPropagation();
         const entryId = entry.dataset.entryId;
         const sourceTab = entry.dataset.sourceTab;
-        const data = (this._getWorkspaceJournal() || game.user).getFlag("ClueBook", "data")?.[sourceTab]?.[entryId];
+        const data = this._getWorkspaceData()?.[sourceTab]?.[entryId];
         if (!data) return;
 
         new ClueBookEditDialog({
@@ -529,12 +529,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         this._groupDragCache = null;
         draggedEntry = null;
 
-        if (this.state.activeWorkspace !== 'personal') {
-          const j = game.journal.get(this.state.activeWorkspace) || game.journal.getName('ClueBook_Shared_DB');
-          if (j) await j.update(updates);
-        } else {
-          await game.user.update(updates);
-        }
+        await this._updateWorkspaceData(updates);
         return;
       }
 
@@ -615,13 +610,13 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     const menu = document.createElement('div');
     menu.className = 'cb-context-menu';
     menu.innerHTML = `
-      <div class="cb-menu-item" data-action="align-left"><i class="fas fa-align-left"></i> Выровнять по левому краю</div>
-      <div class="cb-menu-item" data-action="align-center"><i class="fas fa-align-center"></i> Выровнять по центру</div>
-      <div class="cb-menu-item" data-action="align-right"><i class="fas fa-align-right"></i> Выровнять по правому краю</div>
+      <div class="cb-menu-item" data-action="align-left"><i class="fas fa-align-left"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignLeft")}</div>
+      <div class="cb-menu-item" data-action="align-center"><i class="fas fa-align-center"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignCenter")}</div>
+      <div class="cb-menu-item" data-action="align-right"><i class="fas fa-align-right"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignRight")}</div>
       <div class="cb-menu-separator"></div>
-      <div class="cb-menu-item" data-action="distribute-vertical"><i class="fas fa-arrows-alt-v"></i> Распределить по вертикали</div>
+      <div class="cb-menu-item" data-action="distribute-vertical"><i class="fas fa-arrows-alt-v"></i> ${game.i18n.localize("CLUEBOOK.Board.DistributeVertical")}</div>
       <div class="cb-menu-separator"></div>
-      <div class="cb-menu-item danger" data-action="remove-board"><i class="fas fa-times"></i> Убрать с доски</div>
+      <div class="cb-menu-item danger" data-action="remove-board"><i class="fas fa-times"></i> ${game.i18n.localize("CLUEBOOK.Entry.RemoveFromBoard")}</div>
     `;
 
     document.body.appendChild(menu);
@@ -702,13 +697,13 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     } else if (action === 'remove-board') {
       const nonPinnedElements = elements.filter(el => el.dataset.pinned !== "true");
       if (nonPinnedElements.length === 0) {
-        ui.notifications.warn("Все выбранные карточки закреплены и не могут быть убраны с доски!");
+        ui.notifications.warn(game.i18n.localize("CLUEBOOK.Board.AllPinnedWarn"));
         return;
       }
 
       const proceed = await foundry.applications.api.DialogV2.confirm({
-        window: { title: "Убрать с доски" },
-        content: `<p>Вы уверены, что хотите убрать <b>${nonPinnedElements.length}</b> выделенных записей с доски?</p>`,
+        window: { title: game.i18n.localize("CLUEBOOK.Entry.RemoveFromBoard") },
+        content: game.i18n.format("CLUEBOOK.Board.RemoveGroupPrompt", { count: nonPinnedElements.length }),
         rejectClose: false
       });
       if (!proceed) return;
@@ -720,12 +715,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     }
 
     if (Object.keys(updates).length > 0) {
-      if (this.state.activeWorkspace !== 'personal') {
-        const j = game.journal.get(this.state.activeWorkspace) || game.journal.getName('ClueBook_Shared_DB');
-        if (j) await j.update(updates);
-      } else {
-        await game.user.update(updates);
-      }
+      await this._updateWorkspaceData(updates);
       this.render({ parts: ["content"] });
     }
   }
@@ -739,10 +729,11 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     const menu = document.createElement('div');
     menu.className = 'cb-context-menu';
     menu.innerHTML = `
-      <div class="cb-menu-item" data-tab="notes"><i class="fas fa-sticky-note"></i> Создать заметку</div>
-      <div class="cb-menu-item" data-tab="npc"><i class="fas fa-user"></i> Создать персонажа</div>
-      <div class="cb-menu-item" data-tab="quests"><i class="fas fa-tasks"></i> Создать квест</div>
-      <div class="cb-menu-item" data-tab="timeline"><i class="fas fa-history"></i> Создать событие</div>
+      <div class="cb-menu-item" data-tab="notes"><i class="fas fa-sticky-note"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateNote")}</div>
+      <div class="cb-menu-item" data-tab="npc"><i class="fas fa-user"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateNPC")}</div>
+      <div class="cb-menu-item" data-tab="locations"><i class="fas fa-map-marker-alt"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateLocation")}</div>
+      <div class="cb-menu-item" data-tab="quests"><i class="fas fa-tasks"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateQuest")}</div>
+      <div class="cb-menu-item" data-tab="timeline"><i class="fas fa-history"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateTimeline")}</div>
     `;
 
     document.body.appendChild(menu);
@@ -788,7 +779,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       await this._updateWorkspaceData(updateData);
       this.render({ parts: ["content"] });
       
-      const data = (this._getWorkspaceJournal() || game.user).getFlag("ClueBook", "data")?.[targetTab]?.[id] || newEntry;
+      const data = this._getWorkspaceData()?.[targetTab]?.[id] || newEntry;
       
       new ClueBookEditDialog({
         entry: data,
@@ -821,8 +812,8 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
 
   async _deleteLink(s, t) {
     const proceed = await foundry.applications.api.DialogV2.confirm({
-      window: { title: "Удаление связи" },
-      content: "<p>Вы уверены, что хотите удалить эту нить?</p>",
+      window: { title: "РЈРґР°Р»РµРЅРёРµ СЃРІСЏР·Рё" },
+      content: "<p>Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ СѓРґР°Р»РёС‚СЊ СЌС‚Сѓ РЅРёС‚СЊ?</p>",
       rejectClose: false
     });
 
@@ -858,41 +849,41 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         .cb-color-preset:hover { transform: scale(1.15); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
       </style>
       <div class="cb-link-setting">
-        <label>Текст связи:</label>
-        <input type="text" name="label" value="${currentLabel}" placeholder="Например: Враги, Друзья...">
+        <label>${game.i18n.localize("CLUEBOOK.Board.LinkLabel")}</label>
+        <input type="text" name="label" value="${currentLabel}">
       </div>
       <div class="cb-link-setting">
-        <label>Стиль линии:</label>
+        <label>${game.i18n.localize("CLUEBOOK.Board.LinkStyleLabel")}</label>
         <select name="style">
-          <option value="solid" ${currentStyle === 'solid' ? 'selected' : ''}>Сплошная</option>
-          <option value="dashed" ${currentStyle === 'dashed' ? 'selected' : ''}>Пунктир</option>
-          <option value="dotted" ${currentStyle === 'dotted' ? 'selected' : ''}>Точки</option>
+          <option value="solid" ${currentStyle === 'solid' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Board.LinkStyleSolid")}</option>
+          <option value="dashed" ${currentStyle === 'dashed' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Board.LinkStyleDashed")}</option>
+          <option value="dotted" ${currentStyle === 'dotted' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Board.LinkStyleDotted")}</option>
         </select>
       </div>
       <div class="cb-link-setting">
-        <label>Цвет линии:</label>
+        <label>${game.i18n.localize("CLUEBOOK.Board.LinkColorLabel")}</label>
         <div class="cb-color-presets">
-           <div class="cb-color-preset" style="background: #ffffff;" data-c="#ffffff" title="По умолчанию" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
-           <div class="cb-color-preset" style="background: #f44336;" data-c="#f44336" title="Вражда / Опасность" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
-           <div class="cb-color-preset" style="background: #4caf50;" data-c="#4caf50" title="Союз / Безопасность" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
-           <div class="cb-color-preset" style="background: #2196f3;" data-c="#2196f3" title="Семья / Нейтрально" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
-           <div class="cb-color-preset" style="background: #ff9800;" data-c="#ff9800" title="Важно / Квест" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
-           <div class="cb-color-preset" style="background: #9c27b0;" data-c="#9c27b0" title="Магия / Тайна" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
-           <div class="cb-color-preset" style="background: #9e9e9e;" data-c="#9e9e9e" title="Слух / Прошлое" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
+           <div class="cb-color-preset" style="background: #ffffff;" data-c="#ffffff" title="${game.i18n.localize("CLUEBOOK.Board.ColorPresetDefault")}" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
+           <div class="cb-color-preset" style="background: #f44336;" data-c="#f44336" title="${game.i18n.localize("CLUEBOOK.Board.ColorPresetHostile")}" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
+           <div class="cb-color-preset" style="background: #4caf50;" data-c="#4caf50" title="${game.i18n.localize("CLUEBOOK.Board.ColorPresetFriendly")}" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
+           <div class="cb-color-preset" style="background: #2196f3;" data-c="#2196f3" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
+           <div class="cb-color-preset" style="background: #ff9800;" data-c="#ff9800" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
+           <div class="cb-color-preset" style="background: #9c27b0;" data-c="#9c27b0" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
+           <div class="cb-color-preset" style="background: #9e9e9e;" data-c="#9e9e9e" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
         </div>
         <input type="color" name="color" value="${currentColor || '#ffffff'}">
-        <p style="font-size: 11px; color: #666; margin-top: 2px;">Нажмите на кружок для быстрого выбора или выберите свой цвет. Белый (#ffffff) = цвет по умолчанию.</p>
+        <p style="font-size: 11px; color: #666; margin-top: 2px;">${game.i18n.localize("CLUEBOOK.Board.ColorHint")}</p>
       </div>
     `;
 
     const result = await foundry.applications.api.DialogV2.wait({
-      window: { title: "Настройки связи" },
+      window: { title: game.i18n.localize("CLUEBOOK.Board.LinkSettingsTitle") },
       content: html,
       buttons: [
         {
           action: "save",
           icon: "fas fa-save",
-          label: "Сохранить",
+          label: game.i18n.localize("CLUEBOOK.AppActions.Save"),
           default: true,
           callback: (event, button, dialog) => {
             return {
@@ -906,7 +897,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         {
           action: "delete",
           icon: "fas fa-trash",
-          label: "Удалить связь",
+          label: game.i18n.localize("CLUEBOOK.Board.DeleteLink"),
           callback: () => ({ action: "delete" })
         }
       ],
@@ -928,3 +919,4 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     this.render({ parts: ["content"] });
   }
 };
+

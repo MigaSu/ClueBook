@@ -5,10 +5,15 @@
     </a>
   {{/each}}
   <div class="mode-toggle">
-    <a class="item {{#if (eq activeTab 'workspaces')}}active{{/if}}" data-tab="workspaces" title="Доски (Рабочие пространства)">
+    <a class="item {{#if (eq activeTab 'workspaces')}}active{{/if}}" data-tab="workspaces" title="{{localize 'CLUEBOOK.Settings.ManageBoards'}}">
       <i class="fas fa-layer-group"></i>
     </a>
-    <a class="item {{#if (eq activeTab 'settings')}}active{{/if}}" data-tab="settings" title="Настройки">
+    {{#if showTags}}
+    <a class="item" data-action="manageTags" title="{{localize 'CLUEBOOK.Tags.Manage'}}">
+      <i class="fas fa-tags"></i>
+    </a>
+    {{/if}}
+    <a class="item {{#if (eq activeTab 'settings')}}active{{/if}}" data-tab="settings" title="{{localize 'CLUEBOOK.Settings.Title'}}">
       <i class="fas fa-cog"></i>
     </a>
   </div>

@@ -1,7 +1,7 @@
 import { ClueBookApp } from "./app.js";
 import { CalendarWidget } from "./calendar.js";
 import { ClueBookSocket } from "./socket.js";
-
+import { ClueBookOverlay } from "./overlay.js";
 
 // Global reference to the app instance
 let clueBookApp = null;
@@ -9,8 +9,6 @@ let calendarWidgetApp = null;
 
 Hooks.once("init", () => {
   console.log("ClueBook V14 | Initializing...");
-  
-
 
   game.settings.register("ClueBook", "calendarData", {
     scope: "world",
@@ -20,6 +18,32 @@ Hooks.once("init", () => {
     onChange: () => {
       if (calendarWidgetApp && calendarWidgetApp.rendered) {
         calendarWidgetApp.render({ force: true });
+      }
+    }
+  });
+
+  game.settings.register("ClueBook", "enableTimeWidget", {
+    name: "CLUEBOOK.Settings.EnableTimeWidget",
+    hint: "CLUEBOOK.Settings.EnableTimeWidgetHint",
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: true,
+    onChange: (value) => {
+      const settings = game.user.getFlag("ClueBook", "settings") || {};
+      if (value && settings.theme?.showCalendarWidget !== false) {
+        if (!calendarWidgetApp) {
+          calendarWidgetApp = new CalendarWidget();
+          calendarWidgetApp.render({ force: true });
+        }
+      } else {
+        if (calendarWidgetApp) {
+          calendarWidgetApp.close();
+          calendarWidgetApp = null;
+        }
+      }
+      if (clueBookApp && clueBookApp.rendered) {
+        clueBookApp.render({ parts: ["content"] });
       }
     }
   });
@@ -37,14 +61,13 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", async () => {
   console.log("ClueBook | Ready hook fired! Registering socket.");
-  game.socket.on("module.ClueBook", (data) => {
-    console.log("ClueBook | RAW SOCKET RECEIVED:", data);
-  });
   ClueBookSocket.init();
+  ClueBookOverlay.init();
 
   const settings = game.user.getFlag("ClueBook", "settings") || {};
   
-  if (settings.theme?.showCalendarWidget !== false) {
+  const globalEnableTimeWidget = game.settings.get("ClueBook", "enableTimeWidget");
+  if (globalEnableTimeWidget && settings.theme?.showCalendarWidget !== false) {
     calendarWidgetApp = new CalendarWidget();
     calendarWidgetApp.render({ force: true });
   }
@@ -63,13 +86,11 @@ Hooks.once("ready", async () => {
 
   // Inject floating widget on ready
   const injectWidget = () => {
-    if ($("#cluebook-widget").length) return;
+    if (document.getElementById("cluebook-widget")) return;
 
     const pos = game.user.getFlag("ClueBook", "widgetPos") || { left: 20, bottom: 80 };
-    const direction = game.user.getFlag("ClueBook", "settings")?.widget?.direction || "up-right";
-    const settings = game.user.getFlag("ClueBook", "settings") || {};
     
-    // Ограничиваем координаты размерами текущего окна (чтобы виджет не улетел за экран)
+    // РћРіСЂР°РЅРёС‡РёРІР°РµРј РєРѕРѕСЂРґРёРЅР°С‚С‹ СЂР°Р·РјРµСЂР°РјРё С‚РµРєСѓС‰РµРіРѕ РѕРєРЅР° (С‡С‚РѕР±С‹ РІРёРґР¶РµС‚ РЅРµ СѓР»РµС‚РµР» Р·Р° СЌРєСЂР°РЅ)
     let left = pos.left !== undefined ? pos.left : 20;
     if (left > window.innerWidth - 60) left = window.innerWidth - 60;
     if (left < 0) left = 20;
@@ -88,60 +109,63 @@ Hooks.once("ready", async () => {
       styleStr += ` bottom: ${bottom}px; top: auto;`;
     }
 
-    const widget = $(`
-      <div id="cluebook-widget" class="cluebook-widget" style="${styleStr}">
-        <div class="cb-widget-main" title="${game.i18n.localize("CLUEBOOK.Main.WidgetTitle")}">
-          <i class="fas fa-book-open"></i>
-        </div>
-        <div class="cb-fab-menu"></div>
-      </div>
-    `);
+    const settings = game.user.getFlag("ClueBook", "settings") || {};
+    const widgetColor = settings.theme?.widgetColor || settings.theme?.accent || "#7b61ff";
+    const widgetColor2 = settings.theme?.widgetColor2 || "#4527a0";
 
+    const widget = document.createElement("div");
+    widget.id = "cluebook-widget";
+    widget.className = "cluebook-widget";
+    widget.style.cssText = styleStr + `; --cb-widget-color: ${widgetColor}; --cb-widget-color2: ${widgetColor2};`;
+    
+    // Р—Р°СЂР°РЅРµРµ РіРµРЅРµСЂРёСЂСѓРµРј HTML РґР»СЏ РјРµРЅСЋ (ADD-05: Р±РµР· РїРµСЂРµСЂРёСЃРѕРІРєРё РЅР° РєР°Р¶РґС‹Р№ hover)
+    widget.innerHTML = `
+      <div class="cb-widget-main" title="${game.i18n.localize("CLUEBOOK.Main.WidgetTitle")}">
+        <i class="fas fa-book-open"></i>
+      </div>
+      <div class="cb-fab-menu">
+        <a class="cb-fab-btn" data-type="notes" title="${game.i18n.localize("CLUEBOOK.Main.AddNote")}"><i class="fas fa-sticky-note"></i></a>
+        <a class="cb-fab-btn" data-type="npc" title="${game.i18n.localize("CLUEBOOK.Main.AddNPC")}"><i class="fas fa-user"></i></a>
+        <a class="cb-fab-btn" data-type="locations" title="${game.i18n.localize("CLUEBOOK.Main.AddLocation")}"><i class="fas fa-map-marked-alt"></i></a>
+        <a class="cb-fab-btn" data-type="quests" title="${game.i18n.localize("CLUEBOOK.Main.AddQuest")}"><i class="fas fa-scroll"></i></a>
+        <a class="cb-fab-btn" data-type="timeline" title="${game.i18n.localize("CLUEBOOK.Main.AddEvent")}"><i class="fas fa-clock"></i></a>
+      </div>
+    `;
+
+    const menu = widget.querySelector('.cb-fab-menu');
     let hoverTimeout;
-    widget.on("mouseenter", () => {
-      if (widget.hasClass("is-dragging")) return;
+
+    widget.addEventListener("mouseenter", () => {
+      if (widget.classList.contains("is-dragging")) return;
       clearTimeout(hoverTimeout);
       
       const currentSettings = game.user.getFlag("ClueBook", "settings") || {};
       if (currentSettings.theme?.showQuickWidget === false) return;
 
-      if (!widget.hasClass("cb-menu-active")) {
-        widget.addClass("cb-menu-active");
-        
-        const settings = game.user.getFlag("ClueBook", "settings") || {};
-        const direction = (settings.widget && settings.widget.direction) ? settings.widget.direction : "up-right";
-        
-        const html = 
-          '<a class="cb-fab-btn" data-type="notes" title="' + game.i18n.localize("CLUEBOOK.Main.AddNote") + '"><i class="fas fa-sticky-note"></i></a>' +
-          '<a class="cb-fab-btn" data-type="npc" title="' + game.i18n.localize("CLUEBOOK.Main.AddNPC") + '"><i class="fas fa-user"></i></a>' +
-          '<a class="cb-fab-btn" data-type="quests" title="' + game.i18n.localize("CLUEBOOK.Main.AddQuest") + '"><i class="fas fa-map"></i></a>' +
-          '<a class="cb-fab-btn" data-type="timeline" title="' + game.i18n.localize("CLUEBOOK.Main.AddEvent") + '"><i class="fas fa-clock"></i></a>';
-        
-        const menu = widget.find('.cb-fab-menu');
-        menu.attr('data-direction', direction);
-        menu.html(html);
+      if (!widget.classList.contains("cb-menu-active")) {
+        widget.classList.add("cb-menu-active");
+        const direction = currentSettings.widget?.direction || "up-right";
+        menu.setAttribute('data-direction', direction);
       }
     });
 
-    widget.on("mouseleave", () => {
+    widget.addEventListener("mouseleave", () => {
       hoverTimeout = setTimeout(() => {
-        widget.removeClass("cb-menu-active");
+        widget.classList.remove("cb-menu-active");
       }, 1500);
     });
 
-    widget.on("click", (ev) => {
-      if (widget.hasClass("is-dragging")) return;
+    widget.addEventListener("click", (ev) => {
+      if (widget.classList.contains("is-dragging")) return;
       
-      const btn = $(ev.target).closest('.cb-fab-btn');
-      if (btn.length) {
+      const btn = ev.target.closest('.cb-fab-btn');
+      if (btn) {
         ev.stopPropagation();
-        ClueBookApp.showQuickAddDialog(btn.data("type"));
+        ClueBookApp.showQuickAddDialog(btn.dataset.type);
         return;
       }
       
-      if (!clueBookApp) {
-        clueBookApp = new ClueBookApp();
-      }
+      if (!clueBookApp) clueBookApp = new ClueBookApp();
       
       if (clueBookApp.rendered) {
         clueBookApp.close();
@@ -150,9 +174,9 @@ Hooks.once("ready", async () => {
       }
     });
 
-    $("body").append(widget);
+    document.body.appendChild(widget);
 
-    // Make widget draggable manually without jQuery UI
+    // Make widget draggable manually
     let isDragging = false;
     let dragStartX = 0;
     let dragStartY = 0;
@@ -160,47 +184,44 @@ Hooks.once("ready", async () => {
     let startTop = 0;
     let hasMoved = false;
 
-    const el = widget[0];
-
-    el.addEventListener('pointerdown', (ev) => {
-      // Don't drag if clicking a popup button
-      if ($(ev.target).closest('.cb-fab-btn').length) return;
+    widget.addEventListener('pointerdown', (ev) => {
+      if (ev.target.closest('.cb-fab-btn')) return;
       if (ev.button !== 0) return; // only left click
       
       isDragging = true;
       hasMoved = false;
       dragStartX = ev.clientX;
       dragStartY = ev.clientY;
-      const rect = el.getBoundingClientRect();
+      const rect = widget.getBoundingClientRect();
       startLeft = rect.left;
       startTop = rect.top;
-      el.setPointerCapture(ev.pointerId);
+      widget.setPointerCapture(ev.pointerId);
     });
 
-    el.addEventListener('pointermove', (ev) => {
+    widget.addEventListener('pointermove', (ev) => {
       if (!isDragging) return;
       const dx = ev.clientX - dragStartX;
       const dy = ev.clientY - dragStartY;
       if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
         hasMoved = true;
-        widget.addClass("is-dragging");
+        widget.classList.add("is-dragging");
       }
       if (hasMoved) {
-        el.style.left = `${startLeft + dx}px`;
-        el.style.top = `${startTop + dy}px`;
-        el.style.bottom = 'auto';
+        widget.style.left = `${startLeft + dx}px`;
+        widget.style.top = `${startTop + dy}px`;
+        widget.style.bottom = 'auto';
       }
     });
 
-    el.addEventListener('pointerup', (ev) => {
+    widget.addEventListener('pointerup', (ev) => {
       if (!isDragging) return;
       isDragging = false;
-      el.releasePointerCapture(ev.pointerId);
+      widget.releasePointerCapture(ev.pointerId);
       if (hasMoved) {
-        setTimeout(() => widget.removeClass("is-dragging"), 100);
+        setTimeout(() => widget.classList.remove("is-dragging"), 100);
         game.user.setFlag("ClueBook", "widgetPos", {
-          left: parseInt(el.style.left),
-          top: parseInt(el.style.top)
+          left: parseInt(widget.style.left),
+          top: parseInt(widget.style.top)
         });
       }
     });
@@ -218,12 +239,14 @@ Hooks.on("updateUser", (user, updateData) => {
   if (settings.showQuickWidget !== undefined) {
     if (!settings.showQuickWidget) {
       // Just hide the bubbles (menu) if it's currently open, do not hide the widget
-      $("#cluebook-widget").removeClass("cb-menu-active");
+      const widget = document.getElementById("cluebook-widget");
+      if (widget) widget.classList.remove("cb-menu-active");
     }
   }
 
   if (settings.showCalendarWidget !== undefined) {
-    if (settings.showCalendarWidget) {
+    const globalEnableTimeWidget = game.settings.get("ClueBook", "enableTimeWidget");
+    if (settings.showCalendarWidget && globalEnableTimeWidget) {
       if (!calendarWidgetApp) {
         calendarWidgetApp = new CalendarWidget();
         calendarWidgetApp.render({ force: true });
@@ -239,11 +262,17 @@ Hooks.on("updateUser", (user, updateData) => {
 
 // Live Sync
 Hooks.on("updateJournalEntry", (journal, data, options, userId) => {
-  if (!clueBookApp || !clueBookApp.rendered) return;
-  if (journal.id === clueBookApp.state.activeWorkspace || journal.name === "ClueBook_Shared_DB") {
-    // If another user updated the board we are currently looking at, and we are not actively editing
-    if (userId !== game.user.id && !clueBookApp.state.editingEntryId) {
-      clueBookApp.render();
+  if (!clueBookApp?.rendered) return;
+  if (journal.id === clueBookApp.state.activeWorkspace) {
+    if (userId === game.user.id || clueBookApp.state.editingEntryId) return;
+
+    // Do not re-render if user is actively typing in an input field to prevent losing focus/input
+    const activeEl = document.activeElement;
+    if (activeEl && clueBookApp.element?.contains(activeEl) && ["INPUT", "TEXTAREA", "SELECT"].includes(activeEl.tagName)) {
+      return;
     }
+
+    clueBookApp.render();
   }
 });
+

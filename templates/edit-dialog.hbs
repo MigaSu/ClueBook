@@ -1,98 +1,124 @@
 <div class="cb-edit-dialog-form" style="padding: 10px; display: flex; flex-direction: column; gap: 10px;">
   
-  <div class="form-group" style="display: flex; gap: 15px; flex-wrap: wrap;">
-    <div style="flex: 1; display: flex; flex-direction: column; min-width: 250px;">
-      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Цвет карточки</label>
-      <div class="color-palette" style="display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 5px;">
-        <label class="color-swatch color-yellow" title="Желтый" style="cursor: pointer;"><input type="radio" name="color" value="yellow" style="display:none;" {{#if (eq entry.color "yellow")}}checked{{/if}}></label>
-        <label class="color-swatch color-red" title="Красный" style="cursor: pointer;"><input type="radio" name="color" value="red" style="display:none;" {{#if (eq entry.color "red")}}checked{{/if}}></label>
-        <label class="color-swatch color-green" title="Зеленый" style="cursor: pointer;"><input type="radio" name="color" value="green" style="display:none;" {{#if (eq entry.color "green")}}checked{{/if}}></label>
-        <label class="color-swatch color-blue" title="Синий" style="cursor: pointer;"><input type="radio" name="color" value="blue" style="display:none;" {{#if (eq entry.color "blue")}}checked{{/if}}></label>
-        <label class="color-swatch color-purple" title="Фиолетовый" style="cursor: pointer;"><input type="radio" name="color" value="purple" style="display:none;" {{#if (eq entry.color "purple")}}checked{{/if}}></label>
-        <label class="color-swatch color-orange" title="Оранжевый" style="cursor: pointer;"><input type="radio" name="color" value="orange" style="display:none;" {{#if (eq entry.color "orange")}}checked{{/if}}></label>
-        <label class="color-swatch color-teal" title="Бирюзовый" style="cursor: pointer;"><input type="radio" name="color" value="teal" style="display:none;" {{#if (eq entry.color "teal")}}checked{{/if}}></label>
-        <label class="color-swatch color-pink" title="Розовый" style="cursor: pointer;"><input type="radio" name="color" value="pink" style="display:none;" {{#if (eq entry.color "pink")}}checked{{/if}}></label>
-        <label class="color-swatch color-brown" title="Коричневый" style="cursor: pointer;"><input type="radio" name="color" value="brown" style="display:none;" {{#if (eq entry.color "brown")}}checked{{/if}}></label>
-        <label class="color-swatch color-custom" title="Свой цвет" style="cursor: pointer; position: relative; overflow: hidden;">
-          <input type="color" name="customColorHex" value="{{#if isCustomColor}}{{entry.color}}{{else}}#7b61ff{{/if}}" style="position: absolute; opacity: 0; width: 200%; height: 200%; left: -50%; top: -50%; cursor: pointer;">
-          <input type="radio" name="color" value="custom" style="display:none;" {{#if isCustomColor}}checked{{/if}}>
-          <div class="custom-color-bg" style="width: 100%; height: 100%; background: {{#if isCustomColor}}{{entry.color}}{{else}}conic-gradient(red, yellow, lime, aqua, blue, magenta, red){{/if}}; border-radius: 50%;"></div>
-        </label>
-      </div>
+  {{#if isGM}}
+    <input type="hidden" name="sceneUuid" value="{{entry.sceneUuid}}">
+    <input type="hidden" name="actorUuid" value="{{entry.actorUuid}}">
+  {{/if}}
+
+  {{#if isMassEdit}}
+  <p class="notes" style="margin-bottom: 5px; font-weight: bold; color: var(--color-text-highlight);">
+    {{localize "CLUEBOOK.MassEdit.SelectedCount" count=entriesCount}}
+  </p>
+  {{/if}}
+
+  <!-- Color Row -->
+  <div class="form-group" style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 6px;">
+    <!-- Color Swatches -->
+    <div class="color-palette" style="display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; flex: 1; padding-bottom: 6px;">
+      <label class="color-swatch color-yellow" title="{{localize 'CLUEBOOK.Colors.Yellow'}}" style="cursor: pointer;"><input type="radio" name="color" value="yellow" style="display:none;" {{#if (eq entry.color "yellow")}}checked{{/if}}></label>
+      <label class="color-swatch color-red" title="{{localize 'CLUEBOOK.Colors.Red'}}" style="cursor: pointer;"><input type="radio" name="color" value="red" style="display:none;" {{#if (eq entry.color "red")}}checked{{/if}}></label>
+      <label class="color-swatch color-green" title="{{localize 'CLUEBOOK.Colors.Green'}}" style="cursor: pointer;"><input type="radio" name="color" value="green" style="display:none;" {{#if (eq entry.color "green")}}checked{{/if}}></label>
+      <label class="color-swatch color-blue" title="{{localize 'CLUEBOOK.Colors.Blue'}}" style="cursor: pointer;"><input type="radio" name="color" value="blue" style="display:none;" {{#if (eq entry.color "blue")}}checked{{/if}}></label>
+      <label class="color-swatch color-purple" title="{{localize 'CLUEBOOK.Colors.Purple'}}" style="cursor: pointer;"><input type="radio" name="color" value="purple" style="display:none;" {{#if (eq entry.color "purple")}}checked{{/if}}></label>
+      <label class="color-swatch color-orange" title="{{localize 'CLUEBOOK.Colors.Orange'}}" style="cursor: pointer;"><input type="radio" name="color" value="orange" style="display:none;" {{#if (eq entry.color "orange")}}checked{{/if}}></label>
+      <label class="color-swatch color-teal" title="{{localize 'CLUEBOOK.Colors.Teal'}}" style="cursor: pointer;"><input type="radio" name="color" value="teal" style="display:none;" {{#if (eq entry.color "teal")}}checked{{/if}}></label>
+      <label class="color-swatch color-pink" title="{{localize 'CLUEBOOK.Colors.Pink'}}" style="cursor: pointer;"><input type="radio" name="color" value="pink" style="display:none;" {{#if (eq entry.color "pink")}}checked{{/if}}></label>
+      <label class="color-swatch color-brown" title="{{localize 'CLUEBOOK.Colors.Brown'}}" style="cursor: pointer;"><input type="radio" name="color" value="brown" style="display:none;" {{#if (eq entry.color "brown")}}checked{{/if}}></label>
+      <label class="color-swatch color-custom" title="{{localize 'CLUEBOOK.Color.Custom'}}" style="cursor: pointer; position: relative; overflow: hidden;">
+        <input type="color" name="customColorHex" value="{{#if isCustomColor}}{{entry.color}}{{else}}#7b61ff{{/if}}" style="position: absolute; opacity: 0; width: 200%; height: 200%; left: -50%; top: -50%; cursor: pointer;">
+        <input type="radio" name="color" value="custom" style="display:none;" {{#if isCustomColor}}checked{{/if}}>
+        <div class="custom-color-bg" style="width: 100%; height: 100%; background: {{#if isCustomColor}}{{entry.color}}{{else}}conic-gradient(red, yellow, lime, aqua, blue, magenta, red){{/if}}; border-radius: 50%;"></div>
+      </label>
     </div>
     
-    <div style="display: flex; flex-direction: column;">
-      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Цвет текста</label>
-      <div class="color-palette text-color-palette" style="display: flex; gap: 5px; height: 30px;">
-        <label class="color-swatch text-color-dark" title="Темный (по умолчанию)" style="cursor: pointer; width: 30px; height: 30px; border-radius: 4px; background: #e2e8f0; border: 1px solid rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;">
-          <input type="radio" name="textColor" value="dark" style="display:none;" {{#if (or (not entry.textColor) (eq entry.textColor "dark"))}}checked{{/if}}>
-          <span style="color: #2d3748; font-weight: bold; font-size: 16px; margin: 0; padding: 0; line-height: 1;">A</span>
-        </label>
-        <label class="color-swatch text-color-light" title="Светлый" style="cursor: pointer; width: 30px; height: 30px; border-radius: 4px; background: #2d3748; border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
-          <input type="radio" name="textColor" value="light" style="display:none;" {{#if (eq entry.textColor "light")}}checked{{/if}}>
-          <span style="color: #fff; font-weight: bold; font-size: 16px; margin: 0; padding: 0; line-height: 1;">A</span>
-        </label>
-      </div>
+    <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.1); margin: 0 5px;"></div>
+    
+    <!-- Text Color -->
+    <div class="color-palette text-color-palette" style="display: flex; gap: 4px;">
+      <label class="color-swatch text-color-dark" title="{{localize 'CLUEBOOK.Color.Dark'}}" style="cursor: pointer; width: 24px; height: 24px; border-radius: 4px; background: #e2e8f0; border: 1px solid rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;">
+        <input type="radio" name="textColor" value="dark" style="display:none;" {{#unless isMassEdit}}{{#if (or (not entry.textColor) (eq entry.textColor "dark"))}}checked{{/if}}{{/unless}}>
+        <span style="color: #2d3748; font-weight: bold; font-size: 14px; margin: 0; padding: 0; line-height: 1;">A</span>
+      </label>
+      <label class="color-swatch text-color-light" title="{{localize 'CLUEBOOK.Color.Light'}}" style="cursor: pointer; width: 24px; height: 24px; border-radius: 4px; background: #2d3748; border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;">
+        <input type="radio" name="textColor" value="light" style="display:none;" {{#if (eq entry.textColor "light")}}checked{{/if}}>
+        <span style="color: #fff; font-weight: bold; font-size: 14px; margin: 0; padding: 0; line-height: 1;">A</span>
+      </label>
     </div>
   </div>
 
-  {{#if (eq sourceTab "notes")}}
-    <div class="form-group" style="display: flex; flex-direction: column;">
-      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Заголовок</label>
-      <input type="text" name="name" value="{{entry.name}}" class="cluebook-input" placeholder="Заголовок">
+  <!-- Tags Input Row -->
+  {{#if showTags}}
+  <div class="form-group cb-tags-input-group" style="position: relative;">
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <i class="fas fa-tags" style="color: rgba(255,255,255,0.4); margin-left: 5px;"></i>
+      <div class="cb-tags-wrapper" style="flex: 1; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; background: rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 4px; min-height: 32px;">
+        {{#each entry.resolvedTags}}
+          <span class="cb-tag {{#if this.isSecret}}cb-tag-secret{{/if}}" data-tag-id="{{this.id}}" style="background: {{this.color}};">
+            {{this.name}}
+            <i class="fas fa-times cb-tag-remove"></i>
+          </span>
+        {{/each}}
+        <input type="text" class="cb-tag-input" placeholder="{{localize 'CLUEBOOK.Tags.InputPlaceholder'}}" style="border: none; background: transparent; color: #fff; outline: none; flex: 1; min-width: 100px;">
+      </div>
     </div>
-    <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
-      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Текст заметки</label>
-      <textarea name="text" class="cluebook-input" rows="8" style="resize: vertical; min-height: 150px;">{{entry.text}}</textarea>
+    <!-- Autocomplete Dropdown -->
+    <div class="cb-tags-autocomplete" style="display: none; position: absolute; top: 100%; left: 30px; right: 0; background: #1a1a24; border: 1px solid rgba(123, 97, 255, 0.5); border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 10;">
+      <!-- populated dynamically -->
+    </div>
+    <!-- Hidden input to store actual tags array for form submission -->
+    <input type="hidden" name="tags" value="">
+  </div>
+  {{else}}
+    <input type="hidden" name="tags" value="">
+  {{/if}}
+
+  {{#unless isMassEdit}}
+
+  {{#if (eq sourceTab "notes")}}
+    <div class="form-group">
+      <input type="text" name="name" value="{{entry.name}}" class="cluebook-input cb-input-lg" placeholder="📝 {{localize 'CLUEBOOK.Entry.Title'}}">
     </div>
   {{/if}}
 
   {{#if (eq sourceTab "npc")}}
-    <div class="form-group" style="display: flex; flex-direction: column;">
-      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Имя</label>
-      <input type="text" name="name" value="{{entry.name}}" class="cluebook-input" placeholder="Имя">
+    <div class="form-group" style="display: flex; gap: 8px;">
+      <input type="text" name="name" value="{{entry.name}}" class="cluebook-input cb-input-lg" placeholder="🎭 {{localize 'CLUEBOOK.Entry.NPCName'}}" style="flex: 1;">
+      <select name="lifeStatus" class="cluebook-input cb-input-lg" style="width: 140px; flex: 0 0 auto;">
+        <option value="alive" {{#if (or (eq entry.lifeStatus "alive") (and (not entry.lifeStatus) (not entry.isDead)))}}selected{{/if}}>💚 {{localize 'CLUEBOOK.Entry.Alive'}}</option>
+        <option value="unknown" {{#if (eq entry.lifeStatus "unknown")}}selected{{/if}}>❓ {{localize 'CLUEBOOK.Entry.Unknown'}}</option>
+        <option value="dead" {{#if (or (eq entry.lifeStatus "dead") (and (not entry.lifeStatus) entry.isDead))}}selected{{/if}}>💀 {{localize 'CLUEBOOK.Entry.Dead'}}</option>
+      </select>
     </div>
-    <div style="display: flex; gap: 10px;">
-      <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
-        <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Локация</label>
-        <input type="text" name="location" value="{{entry.location}}" class="cluebook-input" placeholder="Локация" maxlength="150">
+    <div style="display: flex; gap: 8px;">
+      <div class="form-group" style="flex: 1;">
+        <input type="text" name="location" value="{{entry.location}}" class="cluebook-input" placeholder="📍 {{localize 'CLUEBOOK.Entry.Location'}}" maxlength="150">
       </div>
-      <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
-        <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Отношение</label>
-        <input type="text" name="attitude" value="{{entry.attitude}}" class="cluebook-input" placeholder="Отношение" maxlength="150">
+      <div class="form-group" style="flex: 1;">
+        <input type="text" name="attitude" value="{{entry.attitude}}" class="cluebook-input" placeholder="🤝 {{localize 'CLUEBOOK.Entry.Attitude'}}" maxlength="150">
       </div>
     </div>
+  {{/if}}
 
-    <div class="form-group" style="display: flex; flex-direction: column;">
-      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Статус жизни</label>
-      <div class="cb-segmented-control npc-status-control">
-        <label title="Жив">
-          <input type="radio" name="lifeStatus" value="alive" {{#if (or (eq entry.lifeStatus "alive") (and (not entry.lifeStatus) (not entry.isDead)))}}checked{{/if}}>
-          <span><i class="fas fa-heartbeat"></i> Жив</span>
-        </label>
-        <label title="Неизвестно">
-          <input type="radio" name="lifeStatus" value="unknown" {{#if (eq entry.lifeStatus "unknown")}}checked{{/if}}>
-          <span><i class="fas fa-question-circle"></i> ?</span>
-        </label>
-        <label title="Мёртв">
-          <input type="radio" name="lifeStatus" value="dead" {{#if (or (eq entry.lifeStatus "dead") (and (not entry.lifeStatus) entry.isDead))}}checked{{/if}}>
-          <span><i class="fas fa-skull"></i> Мёртв</span>
-        </label>
-      </div>
+  {{#if (eq sourceTab "locations")}}
+    <div class="form-group">
+      <input type="text" name="name" value="{{entry.name}}" class="cluebook-input cb-input-lg" placeholder="🗺️ {{localize 'CLUEBOOK.Entry.LocationName'}}">
     </div>
-    <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
-      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Заметки о персонаже</label>
-      <textarea name="note" class="cluebook-input" rows="6" style="resize: vertical;">{{entry.note}}</textarea>
+    <div style="display: flex; gap: 8px;">
+      <div class="form-group" style="flex: 1;">
+        <input type="text" name="subtitle" value="{{entry.subtitle}}" class="cluebook-input" placeholder="📍 {{localize 'CLUEBOOK.Location.Subtitle'}}" maxlength="150">
+      </div>
+      <div class="form-group" style="flex: 1;">
+        <input type="text" name="owner" value="{{entry.owner}}" class="cluebook-input" placeholder="👤 {{localize 'CLUEBOOK.Location.Owner'}}" maxlength="150">
+      </div>
     </div>
   {{/if}}
 
   {{#if (eq sourceTab "quests")}}
-    <div class="form-group" style="display: flex; flex-direction: column;">
-      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Статус</label>
-      <select name="status" class="cluebook-input">
-        <option value="active" {{#if (eq entry.status "active")}}selected{{/if}}>Активно</option>
-        <option value="completed" {{#if (eq entry.status "completed")}}selected{{/if}}>Выполнено</option>
-        <option value="failed" {{#if (eq entry.status "failed")}}selected{{/if}}>Провалено</option>
+    <div class="form-group" style="display: flex; gap: 8px;">
+      <select name="status" class="cluebook-input cb-input-lg" style="flex: 1;">
+        <option value="active" {{#if (eq entry.status "active")}}selected{{/if}}>▶️ {{localize 'CLUEBOOK.Quest.Active'}}</option>
+        <option value="completed" {{#if (eq entry.status "completed")}}selected{{/if}}>✅ {{localize 'CLUEBOOK.Quest.Completed'}}</option>
+        <option value="failed" {{#if (eq entry.status "failed")}}selected{{/if}}>❌ {{localize 'CLUEBOOK.Quest.Failed'}}</option>
       </select>
     </div>
 
@@ -101,18 +127,18 @@
         <legend style="padding: 0 5px; font-size: 13px; font-weight: bold;">
           <label style="cursor: pointer; display: flex; align-items: center; gap: 5px;">
             <input type="checkbox" name="hasDeadline" {{#if entry.deadlineTimestamp}}checked{{/if}}>
-            Привязать ко времени
+            {{localize 'CLUEBOOK.Time.BindToTime'}}
           </label>
         </legend>
         <div class="deadline-fields" {{#unless entry.deadlineTimestamp}}style="display:none;"{{/unless}}>
           <div class="cb-segmented-control">
             <label>
               <input type="radio" name="timeMode" value="by" {{#if (or (eq entry.timeMode "by") (not entry.timeMode))}}checked{{/if}}>
-              <span><i class="fas fa-hourglass-end"></i> Сделать ДО</span>
+              <span><i class="fas fa-hourglass-end"></i> {{localize 'CLUEBOOK.Time.By'}}</span>
             </label>
             <label>
               <input type="radio" name="timeMode" value="at" {{#if (eq entry.timeMode "at")}}checked{{/if}}>
-              <span><i class="fas fa-clock"></i> Строго В</span>
+              <span><i class="fas fa-clock"></i> {{localize 'CLUEBOOK.Time.At'}}</span>
             </label>
           </div>
           {{{deadlineDateHTML}}}
@@ -120,44 +146,39 @@
       </fieldset>
     {{else}}
       <fieldset style="border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin: 0;">
-        <legend style="padding: 0 5px; font-size: 13px; font-weight: bold;">Время / Дедлайн</legend>
+        <legend style="padding: 0 5px; font-size: 13px; font-weight: bold;">{{localize 'CLUEBOOK.Time.TimeDeadline'}}</legend>
         <div class="cb-segmented-control">
           <label>
             <input type="radio" name="timeMode" value="by" {{#if (or (eq entry.timeMode "by") (not entry.timeMode))}}checked{{/if}}>
-            <span><i class="fas fa-hourglass-end"></i> Сделать ДО</span>
+            <span><i class="fas fa-hourglass-end"></i> {{localize 'CLUEBOOK.Time.By'}}</span>
           </label>
           <label>
             <input type="radio" name="timeMode" value="at" {{#if (eq entry.timeMode "at")}}checked{{/if}}>
-            <span><i class="fas fa-clock"></i> Строго В</span>
+            <span><i class="fas fa-clock"></i> {{localize 'CLUEBOOK.Time.At'}}</span>
           </label>
         </div>
-        <input type="text" name="deadline" value="{{entry.deadline}}" class="cluebook-input" placeholder="Укажите дату или время">
+        <input type="text" name="deadline" value="{{entry.deadline}}" class="cluebook-input" placeholder="{{localize 'CLUEBOOK.Time.InputPlaceholder'}}">
       </fieldset>
     {{/if}}
-    
-    <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
-      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Описание квеста</label>
-      <textarea name="text" class="cluebook-input" rows="6" style="resize: vertical;">{{entry.text}}</textarea>
-    </div>
   {{/if}}
 
   {{#if (eq sourceTab "timeline")}}
     {{#if isSimpleCalendarActive}}
       <fieldset style="border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin: 0;">
         <legend style="padding: 0 5px; font-size: 13px; font-weight: bold; color: #4caf50;">
-          <i class="fas fa-play"></i> Время начала
+          <i class="fas fa-play"></i> {{localize 'CLUEBOOK.Time.StartTime'}}
         </legend>
         {{{startDateHTML}}}
       </fieldset>
       
       <fieldset style="border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin: 0;">
         <legend style="padding: 0 5px; font-size: 13px; font-weight: bold; color: #ff5252;">
-          <i class="fas fa-stop"></i> Окончание события
+          <i class="fas fa-stop"></i> {{localize 'CLUEBOOK.Time.EndTime'}}
         </legend>
         <div style="display: flex; gap: 10px; margin-bottom: 8px; font-size: 13px;">
-          <label style="cursor: pointer;"><input type="radio" name="endMode" value="none" {{#if (eq endMode "none")}}checked{{/if}}> Моментальное</label>
-          <label style="cursor: pointer;"><input type="radio" name="endMode" value="time" {{#if (eq endMode "time")}}checked{{/if}}> Указать дату</label>
-          <label style="cursor: pointer;"><input type="radio" name="endMode" value="duration" {{#if (eq endMode "duration")}}checked{{/if}}> Длительность</label>
+          <label style="cursor: pointer;"><input type="radio" name="endMode" value="none" {{#if (eq endMode "none")}}checked{{/if}}> {{localize 'CLUEBOOK.Time.EndModeNone'}}</label>
+          <label style="cursor: pointer;"><input type="radio" name="endMode" value="time" {{#if (eq endMode "time")}}checked{{/if}}> {{localize 'CLUEBOOK.Time.EndModeTime'}}</label>
+          <label style="cursor: pointer;"><input type="radio" name="endMode" value="duration" {{#if (eq endMode "duration")}}checked{{/if}}> {{localize 'CLUEBOOK.Time.EndModeDuration'}}</label>
         </div>
         
         <div class="end-time-fields" {{#unless (eq endMode "time")}}style="display:none;"{{/unless}}>
@@ -167,15 +188,15 @@
         <div class="end-duration-fields" {{#unless (eq endMode "duration")}}style="display:none;"{{/unless}}>
           <div style="display: flex; gap: 10px; align-items: center;">
             <div style="flex: 1;">
-              <label style="font-size: 10px; opacity: 0.7;">Дни</label>
+              <label style="font-size: 10px; opacity: 0.7;">{{localize 'CLUEBOOK.Time.Days'}}</label>
               <input type="number" name="duration_days" value="{{duration.days}}" min="0" class="cluebook-input" style="width: 100%; text-align: center;">
             </div>
             <div style="flex: 1;">
-              <label style="font-size: 10px; opacity: 0.7;">Часы</label>
+              <label style="font-size: 10px; opacity: 0.7;">{{localize 'CLUEBOOK.Time.Hours'}}</label>
               <input type="number" name="duration_hours" value="{{duration.hours}}" min="0" class="cluebook-input" style="width: 100%; text-align: center;">
             </div>
             <div style="flex: 1;">
-              <label style="font-size: 10px; opacity: 0.7;">Минуты</label>
+              <label style="font-size: 10px; opacity: 0.7;">{{localize 'CLUEBOOK.Time.Minutes'}}</label>
               <input type="number" name="duration_minutes" value="{{duration.minutes}}" min="0" class="cluebook-input" style="width: 100%; text-align: center;">
             </div>
           </div>
@@ -183,29 +204,72 @@
       </fieldset>
     {{else}}
       <div class="form-group" style="display: flex; flex-direction: column;">
-        <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Время/Дата</label>
-        <input type="text" name="time" value="{{entry.time}}" class="cluebook-input" placeholder="Время/Дата">
+        <input type="text" name="time" value="{{entry.time}}" class="cluebook-input cb-input-lg" placeholder="🕑 {{localize 'CLUEBOOK.Time.TimeDate'}}">
       </div>
     {{/if}}
-    <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
-      <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px;">Описание события</label>
-      <textarea name="event" class="cluebook-input" rows="6" style="resize: vertical;">{{entry.event}}</textarea>
-    </div>
   {{/if}}
 
+  <!-- Linked Badges (Drop Zone Info) -->
   {{#if isGM}}
-  <div class="form-group" style="display: flex; flex-direction: column; flex: 1;">
-    <label style="font-size: 12px; opacity: 0.8; margin-bottom: 3px; color: #ff9800;"><i class="fas fa-user-secret"></i> Заметки Мастера (Скрыто от игроков)</label>
-    <textarea name="gmNotes" class="cluebook-input gm-notes-input" rows="4" style="resize: vertical; border-left: 3px solid #ff9800; background: rgba(255, 152, 0, 0.05);">{{entry.gmNotes}}</textarea>
+  <!-- Dedicated Drop Zone for Scene/Actor -->
+  {{#if isGM}}
+  {{#if (or (eq sourceTab "npc") (or (eq sourceTab "locations") (eq sourceTab "notes")))}}
+  <div class="cb-entity-dropzone" style="border: 2px dashed rgba(255,255,255,0.2); border-radius: 6px; padding: 10px; text-align: center; color: rgba(255,255,255,0.5); transition: all 0.2s;">
+    {{#if (and (eq sourceTab "npc") entry.actorUuid)}}
+      <div class="cb-badge cb-badge-actor" data-action="remove-link" data-type="actorUuid" title="{{localize 'CLUEBOOK.Entry.RemoveActor'}}" style="display: inline-flex;">
+        <i class="fas fa-user-ninja"></i> {{#if actorName}}{{actorName}}{{else}}{{localize 'CLUEBOOK.Entry.Actor'}}{{/if}} <i class="fas fa-times"></i>
+      </div>
+    {{else if (and (or (eq sourceTab "locations") (eq sourceTab "notes")) entry.sceneUuid)}}
+      <div class="cb-badge cb-badge-scene" data-action="remove-link" data-type="sceneUuid" title="{{localize 'CLUEBOOK.Entry.RemoveScene'}}" style="display: inline-flex;">
+        <i class="fas fa-map"></i> {{#if sceneName}}{{sceneName}}{{else}}{{localize 'CLUEBOOK.Entry.Scene'}}{{/if}} <i class="fas fa-times"></i>
+      </div>
+    {{/if}}
+    
+    <span class="cb-drop-placeholder" style="{{#if (or (and (eq sourceTab "npc") entry.actorUuid) (and (or (eq sourceTab "locations") (eq sourceTab "notes")) entry.sceneUuid))}}display: none;{{/if}}">
+      <i class="fas fa-link"></i> {{#if (eq sourceTab "npc")}}{{localize 'CLUEBOOK.Entry.DropActor'}}{{else}}{{localize 'CLUEBOOK.Entry.DropScene'}}{{/if}}
+    </span>
   </div>
   {{/if}}
+  {{/if}}
+  {{/if}}
 
-  <div style="margin-top: 10px; display: flex; gap: 10px; justify-content: center;">
+  <!-- Tabs for Text -->
+  <div class="cb-tabs-container">
+    <div class="cb-tab-headers">
+      <div class="cb-tab-header active" data-tab="public-notes"><i class="fas fa-align-left"></i> {{localize 'CLUEBOOK.Entry.Description'}}</div>
+      {{#if isGM}}
+      <div class="cb-tab-header" data-tab="gm-notes"><i class="fas fa-user-secret"></i> {{localize 'CLUEBOOK.Entry.GMNotes'}}</div>
+      {{/if}}
+    </div>
+    
+    <div class="cb-tab-content active" data-tab="public-notes">
+      {{#if (eq sourceTab "notes")}}
+        <textarea name="text" class="cluebook-input" rows="8" placeholder="{{localize 'CLUEBOOK.Entry.NotePlaceholder'}}">{{entry.text}}</textarea>
+      {{else if (eq sourceTab "npc")}}
+        <textarea name="note" class="cluebook-input" rows="8" placeholder="{{localize 'CLUEBOOK.Entry.NPCPH'}}">{{entry.note}}</textarea>
+      {{else if (eq sourceTab "locations")}}
+        <textarea name="note" class="cluebook-input" rows="8" placeholder="{{localize 'CLUEBOOK.Entry.LocationPH'}}">{{entry.note}}</textarea>
+      {{else if (eq sourceTab "quests")}}
+        <textarea name="text" class="cluebook-input" rows="8" placeholder="{{localize 'CLUEBOOK.Entry.QuestPH'}}">{{entry.text}}</textarea>
+      {{else if (eq sourceTab "timeline")}}
+        <textarea name="event" class="cluebook-input" rows="8" placeholder="{{localize 'CLUEBOOK.Entry.TimelinePH'}}">{{entry.event}}</textarea>
+      {{/if}}
+    </div>
+    
+    {{#if isGM}}
+    <div class="cb-tab-content" data-tab="gm-notes">
+      <textarea name="gmNotes" class="cluebook-input gm-notes-input" rows="8" placeholder="{{localize 'CLUEBOOK.Entry.GMNotesPH'}}">{{entry.gmNotes}}</textarea>
+    </div>
+    {{/if}}
+  </div>
+  {{/unless}}
+
+  <div style="margin-top: 5px; display: flex; gap: 10px; justify-content: center;">
     <button type="button" data-action="saveDialog" class="cluebook-btn" style="flex: 1; padding: 8px; font-size: 14px; font-weight: bold; background: rgba(255,255,255,0.1); border: 1px solid var(--cb-accent); color: #fff; border-radius: 4px; cursor: pointer;">
-      <i class="fas fa-save"></i> Сохранить
+      <i class="fas fa-save"></i> {{localize 'CLUEBOOK.Entry.Save'}}
     </button>
     <button type="button" data-action="saveDialog" data-close="true" class="cluebook-btn" style="flex: 1; padding: 8px; font-size: 14px; font-weight: bold; background: var(--cb-accent); color: #fff; border: none; border-radius: 4px; cursor: pointer;">
-      <i class="fas fa-check"></i> Сохранить и закрыть
+      <i class="fas fa-check"></i> {{localize 'CLUEBOOK.Entry.SaveAndClose'}}
     </button>
   </div>
 </div>

@@ -4,7 +4,7 @@
   "description": "Модуль для создания заметок, управления квестами и связи улик на доске детектива.",
   "version": "1.0.0",
   "compatibility": {
-    "minimum": "11",
+    "minimum": "12",
     "verified": "14"
   },
   "authors": [
@@ -17,6 +17,7 @@
   "download": "https://github.com/pauk27000-commits/ClueBook/releases/download/v1.0.0/module.zip",
   "socket": true,
   "esmodules": [
+    "scripts/data-models.js",
     "scripts/main.js"
   ],
   "styles": [

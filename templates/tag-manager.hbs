@@ -1,0 +1,28 @@
+<form class="cluebook-tag-manager">
+  <div class="cb-tm-header">
+    <p class="settings-hint">{{localize "CLUEBOOK.Tags.Manage"}}</p>
+  </div>
+
+  <div class="cb-tm-list">
+    {{#if hasTags}}
+      {{#each tags}}
+      <div class="cb-tm-row" data-tag-id="{{this.id}}">
+        <input type="color" class="cb-tm-color" value="{{this.color}}" title="{{localize 'CLUEBOOK.Tags.Color'}}">
+        <input type="text" class="cb-tm-name cluebook-input" value="{{this.name}}" placeholder="{{localize 'CLUEBOOK.Tags.TagName'}}">
+        <label class="cb-tm-secret" title="{{localize 'CLUEBOOK.Tags.SecretHint'}}">
+          <i class="fas {{#if this.isSecret}}fa-eye-slash{{else}}fa-eye{{/if}}"></i>
+          <input type="checkbox" class="cb-tm-secret-cb" {{#if this.isSecret}}checked{{/if}} style="display:none;">
+        </label>
+        <button type="button" class="cb-tm-delete" title="{{localize 'CLUEBOOK.Tags.Delete'}}"><i class="fas fa-trash"></i></button>
+      </div>
+      {{/each}}
+    {{else}}
+      <p class="cb-tm-empty">{{localize "CLUEBOOK.Tags.NoTags"}}</p>
+    {{/if}}
+  </div>
+
+  <div class="cb-tm-footer">
+    <button type="button" id="cb-tm-add" class="cb-btn"><i class="fas fa-plus"></i> {{localize "CLUEBOOK.Tags.AddTag"}}</button>
+    <button type="submit" class="cb-btn cb-btn-primary"><i class="fas fa-save"></i> {{localize "CLUEBOOK.AppActions.Save"}}</button>
+  </div>
+</form>

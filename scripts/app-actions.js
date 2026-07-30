@@ -1,6 +1,20 @@
 import { ClueBookEditDialog } from "./edit-dialog.js";
+import { ClueBookSocket } from "./socket.js";
+import { ClueBookTagManager } from "./tag-manager.js";
+
 export const ClueBookActionsMixin = (Base) => class extends Base {
-  static async _onSubmitForm(event, form, formData) {}
+  static async _onManageTags(event, target) {
+    let journal = null;
+    if (this.state.activeWorkspace !== "personal") {
+      journal = this._getWorkspaceJournal();
+    }
+    
+    new ClueBookTagManager({
+      workspace: this.state.activeWorkspace,
+      journal: journal
+    }).render(true);
+  }
+
   static async _onToggleZenMode(event, target) {
     this.state.isZenMode = !this.state.isZenMode;
     if (this.state.isZenMode) {
@@ -13,11 +27,6 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
     this.render({ parts: ["content"] });
   }
 
-  static async _onToggleMode(event, target) {
-    this.state.isShared = !this.state.isShared;
-    this.render({ parts: ["content"] });
-  }
-  
   static async _onToggleEdit(event, target) {
     event.stopPropagation();
     if (this.state.isReadOnly) return;
@@ -31,7 +40,7 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
     if (this.state.activeWorkspace === "personal") {
       dataObj = game.user.getFlag("ClueBook", "data") || {};
     } else {
-      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
+      const journal = this._getWorkspaceJournal();
       if (journal) dataObj = journal.getFlag("ClueBook", "data") || {};
     }
 
@@ -42,6 +51,7 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
       entry: entryData,
       sourceTab: sourceTab,
       entryId: entryId,
+      workspace: this.state.activeWorkspace,
       onSave: async (updateData) => {
         const flagUpdates = {};
         for (const [key, value] of Object.entries(updateData)) {
@@ -51,21 +61,6 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
         this.render({ parts: ["content"] });
       }
     }).render(true);
-  }
-
-  static async _onToggleText(event, target) {
-    event.preventDefault();
-    event.stopPropagation();
-    const wrapper = target.closest('.is-long-text');
-    if (wrapper) {
-      wrapper.classList.toggle('is-expanded');
-      const span = target.querySelector('span');
-      if (wrapper.classList.contains('is-expanded')) {
-        if (span) span.innerText = game.i18n.localize("CLUEBOOK.Sticker.Collapse");
-      } else {
-        if (span) span.innerText = game.i18n.localize("CLUEBOOK.Sticker.Expand");
-      }
-    }
   }
 
   static async _onTogglePin(event, target) {
@@ -142,13 +137,7 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
     const entryId = entry.dataset.entryId;
     const sourceTab = entry.dataset.sourceTab || this.state.activeTab;
     
-    let data = {};
-    if (this.state.activeWorkspace !== "personal") {
-      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
-      if (journal) data = journal.getFlag("ClueBook", "data") || {};
-    } else {
-      data = game.user.getFlag("ClueBook", "data") || {};
-    }
+    let data = this._getWorkspaceData();
     
     const currentEntry = data[sourceTab]?.[entryId];
     if (!currentEntry) return;
@@ -157,22 +146,32 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
     this.render({ parts: ["content"] });
   }
 
-  static async _onShareEntry(event, target) {
+  static async _onShareOverlay(event, target) {
     event.stopPropagation();
     const entryElement = target.closest('.cluebook-entry');
     const entryId = entryElement.dataset.entryId;
     const sourceTab = entryElement.dataset.sourceTab || this.state.activeTab;
     
-    let data = {};
-    if (this.state.activeWorkspace !== "personal") {
-      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
-      if (journal) data = journal.getFlag("ClueBook", "data") || {};
-    } else {
-      data = game.user.getFlag("ClueBook", "data") || {};
-    }
+    let data = this._getWorkspaceData();
     
     const entry = data[sourceTab]?.[entryId];
     if (!entry) return;
+    
+    // Check if players have observer access to the board
+    let canPlayersSee = false;
+    if (this.state.activeWorkspace !== "personal" && !this.state.activeWorkspace.startsWith("personal_")) {
+      const journal = this._getWorkspaceJournal();
+      if (journal && journal.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) {
+        canPlayersSee = true;
+      }
+    }
+    
+    // Automatically make it public if it was hidden and players have access
+    if (entry.isHidden && canPlayersSee) {
+      await this._saveDataRaw(sourceTab, entryId, "isHidden", false);
+      entry.isHidden = false;
+      this.render({ parts: ["content"] });
+    }
     
     // Process text for chat (enrich UUID links)
     const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
@@ -182,25 +181,35 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
       let newText = text.replace(uuidRegex, match => `@UUID[${match}]`);
       const compendiumRegex = /(?<!@UUID\[)\bCompendium\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+\b/g;
       newText = newText.replace(compendiumRegex, match => `@UUID[${match}]`);
+      // Parse qnmention
+      newText = newText.replace(/\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g, (match, id, name, customText) => {
+        const displayText = customText || name;
+        return `<a class="content-link cb-mention-link" data-mention-id="${id}"><i class="fas fa-book"></i> ${displayText}</a>`;
+      });
       return newText;
     };
     
     const enrich = async (t) => await TE.enrichHTML(processUUIDs(t), { async: true });
     
-    let contentHTML = `<div class="cb-chat-message color-${entry.color || 'yellow'}">`;
+    let contentHTML = `<div class="cb-overlay-inner color-${entry.color || 'yellow'}">`;
     
     if (sourceTab === "notes") {
-      contentHTML += `<div class="cb-chat-body">${await enrich(entry.text)}</div>`;
+      contentHTML += `<div class="cb-overlay-body">${await enrich(entry.text)}</div>`;
     } else if (sourceTab === "npc") {
       const npcIcon = entry.isDead ? "fa-skull" : "fa-user";
-      contentHTML += `<h3 class="cb-chat-title"><i class="fas ${npcIcon}"></i> ${entry.name || game.i18n.localize("CLUEBOOK.AppActions.UnknownNPC")}</h3>`;
+      contentHTML += `<h3 class="cb-overlay-title"><i class="fas ${npcIcon}"></i> ${entry.name ? processUUIDs(entry.name) : game.i18n.localize("CLUEBOOK.AppActions.UnknownNPC")}</h3>`;
       if (entry.isDead) contentHTML += `<p><strong><i class="fas fa-skull" style="color:#ff5252;"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Status")}:</strong> ${game.i18n.localize("CLUEBOOK.AppActions.Dead")}</p>`;
-      if (entry.location) contentHTML += `<p><strong>${game.i18n.localize("CLUEBOOK.AppActions.Location")}:</strong> ${entry.location}</p>`;
-      if (entry.attitude) contentHTML += `<p><strong>${game.i18n.localize("CLUEBOOK.AppActions.Attitude")}:</strong> ${entry.attitude}</p>`;
-      if (entry.note) contentHTML += `<div class="cb-chat-body">${await enrich(entry.note)}</div>`;
+      if (entry.location) contentHTML += `<p><strong>${game.i18n.localize("CLUEBOOK.AppActions.Location")}:</strong> ${await enrich(entry.location)}</p>`;
+      if (entry.attitude) contentHTML += `<p><strong>${game.i18n.localize("CLUEBOOK.AppActions.Attitude")}:</strong> ${await enrich(entry.attitude)}</p>`;
+      if (entry.note) contentHTML += `<div class="cb-overlay-body">${await enrich(entry.note)}</div>`;
+    } else if (sourceTab === "locations") {
+      contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-map-marked-alt"></i> ${entry.name ? processUUIDs(entry.name) : game.i18n.localize("CLUEBOOK.AppActions.UnknownLocation")}</h3>`;
+      if (entry.subtitle) contentHTML += `<p><strong><i class="fas fa-map"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Subtitle")}:</strong> ${await enrich(entry.subtitle)}</p>`;
+      if (entry.owner) contentHTML += `<p><strong><i class="fas fa-crown"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Owner")}:</strong> ${await enrich(entry.owner)}</p>`;
+      if (entry.note) contentHTML += `<div class="cb-overlay-body">${await enrich(entry.note)}</div>`;
     } else if (sourceTab === "quests") {
       const statusIcon = entry.status === "completed" ? "fa-check-circle" : (entry.status === "failed" ? "fa-times-circle" : "fa-clock");
-      contentHTML += `<h3 class="cb-chat-title"><i class="fas fa-scroll"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Quest")} <i class="fas ${statusIcon} cb-status-${entry.status}"></i></h3>`;
+      contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-scroll"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Quest")} <i class="fas ${statusIcon} cb-status-${entry.status}"></i></h3>`;
       
       if (entry.deadlineTimestamp && window.SimpleCalendar?.api) {
         const scApi = window.SimpleCalendar.api;
@@ -213,38 +222,138 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
         else contentHTML += `<p><strong><i class="fas fa-hourglass-end"></i> ${game.i18n.localize("CLUEBOOK.AppActions.DoBy")}:</strong> ${entry.deadline}</p>`;
       }
 
-      contentHTML += `<div class="cb-chat-body">${await enrich(entry.text)}</div>`;
+      contentHTML += `<div class="cb-overlay-body">${await enrich(entry.text)}</div>`;
     } else if (sourceTab === "timeline") {
-      contentHTML += `<h3 class="cb-chat-title"><i class="fas fa-hourglass-half"></i> ${entry.time || game.i18n.localize("CLUEBOOK.AppActions.UnknownTime")}</h3>`;
-      contentHTML += `<div class="cb-chat-body">${await enrich(entry.event)}</div>`;
+      contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-hourglass-half"></i> ${entry.time || game.i18n.localize("CLUEBOOK.AppActions.UnknownTime")}</h3>`;
+      contentHTML += `<div class="cb-overlay-body">${await enrich(entry.event)}</div>`;
     }
     
     contentHTML += `</div>`;
     
-    ChatMessage.create({
-      author: game.user.id,
-      content: contentHTML
+    // Broadcast via socket to all players (and self)
+    game.socket.emit("module.ClueBook", {
+      action: "showOverlay",
+      content: contentHTML,
+      entry: entry,
+      sourceTab: sourceTab
     });
     
-    ui.notifications.info(game.i18n.localize("CLUEBOOK.AppActions.SentToChat"));
+    // Show to GM as well
+    if (window.ClueBookOverlay) {
+      window.ClueBookOverlay.show(contentHTML, entry, sourceTab);
+    }
+    
+    ui.notifications.info(game.i18n.localize("CLUEBOOK.AppActions.SentToOverlay"));
+  }
+
+  static async _onActivateScene(event, target) {
+    event.stopPropagation();
+    event.preventDefault();
+    
+    if (!game.user.isGM) return;
+
+    const sceneUuid = target.dataset.sceneId;
+    if (!sceneUuid) return;
+
+    const scene = await fromUuid(sceneUuid);
+    if (!scene) {
+      ui.notifications.warn("Scene not found.");
+      return;
+    }
+
+    if (event.shiftKey) {
+      // Activate for everyone
+      await scene.activate();
+      ui.notifications.info(game.i18n.format("CLUEBOOK.AppActions.SceneActivatedAll", { name: scene.name }));
+    } else {
+      // Just view
+      await scene.view();
+      ui.notifications.info(game.i18n.format("CLUEBOOK.AppActions.ScenePreview", { name: scene.name }));
+    }
+  }
+
+  static async _onOpenActor(event, target) {
+    event.stopPropagation();
+    event.preventDefault();
+    
+    if (!game.user.isGM) return;
+
+    const actorUuid = target.dataset.actorId;
+    if (!actorUuid) return;
+
+    const actor = await fromUuid(actorUuid);
+    if (!actor) {
+      ui.notifications.warn("Actor not found.");
+      return;
+    }
+
+    const gp = window.GinzzzuPortraits;
+    const isGinzzuActive = game.modules.get("ginzzzu-portraits")?.active && gp && typeof gp.togglePortrait === "function";
+
+    if (!isGinzzuActive) {
+      actor.sheet.render(true);
+      return;
+    }
+
+    const existingMenu = document.querySelector('.cb-context-menu');
+    if (existingMenu) existingMenu.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'cb-context-menu';
+    menu.innerHTML = `
+      <div class="cb-menu-item" data-action="open-sheet"><i class="fas fa-id-card"></i> ${game.i18n.localize("CLUEBOOK.AppActions.OpenActorSheet")}</div>
+      <div class="cb-menu-item" data-action="show-portrait"><i class="fas fa-user-circle"></i> ${game.i18n.localize("CLUEBOOK.AppActions.ShowPortraitGinzzu")}</div>
+    `;
+
+    document.body.appendChild(menu);
+    menu.style.left = `${event.clientX}px`;
+    menu.style.top = `${event.clientY}px`;
+
+    menu.querySelector('[data-action="open-sheet"]').onclick = () => {
+      actor.sheet.render(true);
+      closeMenu();
+    };
+
+    menu.querySelector('[data-action="show-portrait"]').onclick = () => {
+      try { gp.togglePortrait(actor); } catch(e) { console.error(e); }
+      closeMenu();
+    };
+
+    const closeMenu = (e) => {
+      if (e && menu.contains(e.target)) return;
+      menu.remove();
+      document.removeEventListener('click', closeMenu);
+      document.removeEventListener('contextmenu', closeMenu);
+    };
+
+    setTimeout(() => {
+      document.addEventListener('click', closeMenu);
+      document.addEventListener('contextmenu', closeMenu);
+    }, 0);
   }
 
   static async _onExportJSON(event, target) {
     let data = {};
+    let settingsObj = {};
     const workspaceName = this.state.activeWorkspace !== "personal" 
       ? game.journal.get(this.state.activeWorkspace)?.name || "shared_board"
       : "personal_board";
 
     if (this.state.activeWorkspace !== "personal") {
-      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
-      if (journal) data = journal.getFlag("ClueBook", "data") || {};
+      const journal = this._getWorkspaceJournal();
+      if (journal) {
+        data = journal.getFlag("ClueBook", "data") || {};
+        settingsObj = journal.getFlag("ClueBook", "settings") || {};
+      }
     } else {
       data = game.user.getFlag("ClueBook", "data") || {};
+      settingsObj = game.user.getFlag("ClueBook", "settings") || {};
     }
 
     const exportData = {
       entries: [],
-      links: Object.values(data.links || {})
+      links: Object.values(data.links || {}),
+      tags: Object.values(settingsObj.tags || {})
     };
 
     // Flatten entries across tabs
@@ -297,113 +406,261 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
     const isPersonal = this.state.activeWorkspace === "personal" || this.state.activeWorkspace.startsWith("personal_");
     
     let currentName;
-    if (this.state.activeWorkspace === "personal") {
-      currentName = game.user.getFlag("ClueBook", "personalWorkspaceName") || game.i18n.localize("CLUEBOOK.Workspace.Personal");
-    } else if (this.state.activeWorkspace.startsWith("personal_")) {
-      const u = game.users.get(this.state.activeWorkspace.split("_")[1]);
-      currentName = u ? (u.getFlag("ClueBook", "personalWorkspaceName") || game.i18n.format("CLUEBOOK.Workspace.PersonalUser", { user: u.name })) : game.i18n.localize("CLUEBOOK.Workspace.Personal");
-    } else {
-      currentName = game.journal.get(this.state.activeWorkspace)?.name || "shared_board";
-    }
+    let settingsObj = {};
+    let isOwner = false;
+    let journal = null;
 
     if (isPersonal) {
       if (this.state.activeWorkspace.startsWith("personal_")) {
         ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.CannotRenameOthers"));
         return;
       }
-      const newName = await foundry.applications.api.DialogV2.prompt({
-        window: { title: game.i18n.localize("CLUEBOOK.AppActions.RenameClueBookTitle") },
-        content: `${game.i18n.localize("CLUEBOOK.AppActions.RenameClueBookPrompt")}<input type="text" name="wsName" value="${currentName}" autofocus>`,
-        ok: { callback: (event, button) => button.form.elements.wsName.value },
-        rejectClose: false
-      });
-      if (newName && newName.trim() !== "" && newName !== currentName) {
-        await game.user.setFlag("ClueBook", "personalWorkspaceName", newName.trim());
-        this.render({ parts: ["content"] });
+      currentName = game.user.getFlag("ClueBook", "personalWorkspaceName") || game.i18n.localize("CLUEBOOK.Workspace.Personal");
+      settingsObj = game.user.getFlag("ClueBook", "settings") || {};
+      isOwner = true;
+    } else {
+      journal = game.journal.get(this.state.activeWorkspace);
+      if (!journal) return;
+      isOwner = journal.isOwner;
+      if (!isOwner) {
+        ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.OnlyOwnerCanEditSettings"));
+        return;
       }
-      return;
+      currentName = journal.name || "shared_board";
+      settingsObj = journal.getFlag("ClueBook", "settings") || {};
     }
 
-    const journal = game.journal.get(this.state.activeWorkspace);
-    if (!journal) return;
+    let accessHTML = '';
+    if (!isPersonal) {
+      const currentOwnership = journal.ownership || {};
+      let userCheckboxes = '';
+      game.users.forEach(u => {
+        if (u.id === game.user.id || u.isGM) return; // Self and GM always have access
+        const hasAccess = currentOwnership[u.id] === 3;
+        userCheckboxes += `<label style="display:block; margin-bottom: 5px;"><input type="checkbox" name="user_${u.id}" ${hasAccess ? 'checked' : ''}> ${u.name}</label>`;
+      });
 
-    // Check ownership
-    const isOwner = journal.isOwner;
-    if (!isOwner) {
-      ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.OnlyOwnerCanEditSettings"));
-      return;
+      accessHTML = `
+            <div class="form-group" style="margin-top: 10px;">
+              <label>${game.i18n.localize("CLUEBOOK.AppActions.WhoHasAccess")}</label>
+              <div style="max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 5px; margin-top: 5px; font-size: 13px;">
+                ${userCheckboxes || game.i18n.localize("CLUEBOOK.AppActions.NoOtherPlayers")}
+              </div>
+            </div>
+            <div class="setting-row flex-checkbox" style="margin-top: 15px;">
+              <label for="cb-edit-ws-readonly">${game.i18n.localize("CLUEBOOK.AppActions.ReadOnlyForPlayers")}</label>
+              <div class="cb-toggle">
+                <input type="checkbox" name="readOnly" id="cb-edit-ws-readonly" ${settingsObj.readOnly ? 'checked' : ''}>
+                <label for="cb-edit-ws-readonly"></label>
+              </div>
+            </div>
+      `;
     }
-
-    const currentOwnership = journal.ownership || {};
-    let userCheckboxes = '';
-    
-    game.users.forEach(u => {
-      if (u.id === game.user.id || u.isGM) return; // Self and GM always have access
-      const hasAccess = currentOwnership[u.id] === 3;
-      userCheckboxes += `<label style="display:block; margin-bottom: 5px;"><input type="checkbox" name="user_${u.id}" ${hasAccess ? 'checked' : ''}> ${u.name}</label>`;
-    });
 
     const content = `
-      <form>
-        <div class="form-group">
-          <label>${game.i18n.localize("CLUEBOOK.AppActions.BoardName")}</label>
-          <input type="text" name="workspaceName" value="${currentName}" required autofocus>
-        </div>
-        <hr>
-        <div class="form-group">
-          <label>${game.i18n.localize("CLUEBOOK.AppActions.WhoHasAccess")}</label>
-          <div style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.1); padding: 5px; border-radius: 5px; margin-top: 5px;">
-            ${userCheckboxes || game.i18n.localize("CLUEBOOK.AppActions.NoOtherPlayers")}
+      <form class="cluebook-board-settings-form">
+        <div class="settings-grid" style="grid-template-columns: 1fr; max-height: 50vh; overflow-y: auto;">
+          <!-- Access & General -->
+          <div class="settings-card">
+            <h3><i class="fas fa-lock"></i> ${game.i18n.localize("CLUEBOOK.Settings.CategoryAccess")}</h3>
+            <div class="setting-row">
+              <label>${game.i18n.localize("CLUEBOOK.AppActions.BoardName")}</label>
+              <input type="text" name="workspaceName" value="${currentName}" required autofocus class="setting-input cluebook-input" style="flex: 0 0 auto; max-width: 60%;">
+            </div>
+            ${accessHTML}
+            <div class="setting-row flex-checkbox" style="margin-top: 15px;">
+              <label for="cb-edit-ws-gm-vis">${game.i18n.localize("CLUEBOOK.Settings.HideGMVisibilityBtn")}</label>
+              <div class="cb-toggle">
+                <input type="checkbox" name="hideGMVisibilityBtn" id="cb-edit-ws-gm-vis" ${(settingsObj.hideGMVisibilityBtn === true) ? 'checked' : ''}>
+                <label for="cb-edit-ws-gm-vis"></label>
+              </div>
+            </div>
+            <div class="setting-row flex-checkbox">
+              <label for="cb-edit-ws-gm-over">${game.i18n.localize("CLUEBOOK.Settings.HideGMOverlayBtn")}</label>
+              <div class="cb-toggle">
+                <input type="checkbox" name="hideGMOverlayBtn" id="cb-edit-ws-gm-over" ${(settingsObj.hideGMOverlayBtn === true) ? 'checked' : ''}>
+                <label for="cb-edit-ws-gm-over"></label>
+              </div>
+            </div>
+            <div class="setting-row flex-checkbox">
+              <label for="cb-edit-ws-gm-send">${game.i18n.localize("CLUEBOOK.Settings.HideSendToBoardBtn")}</label>
+              <div class="cb-toggle">
+                <input type="checkbox" name="hideSendToBoardBtn" id="cb-edit-ws-gm-send" ${(settingsObj.hideSendToBoardBtn === true) ? 'checked' : ''}>
+                <label for="cb-edit-ws-gm-send"></label>
+              </div>
+            </div>
           </div>
-        </div>
-        <hr>
-        <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
-          <input type="checkbox" name="readOnly" id="cb-edit-ws-readonly" ${journal.getFlag("ClueBook", "settings")?.readOnly ? 'checked' : ''}>
-          <label for="cb-edit-ws-readonly" style="margin: 0; cursor: pointer;">${game.i18n.localize("CLUEBOOK.AppActions.ReadOnlyForPlayers")}</label>
+
+          <!-- Board Appearance -->
+          <div class="settings-card">
+            <h3><i class="fas fa-project-diagram"></i> ${game.i18n.localize("CLUEBOOK.Settings.CategoryBoardAppearance")}</h3>
+            
+            <div class="setting-row">
+              <label>${game.i18n.localize("CLUEBOOK.Settings.LinkColor")}</label>
+              <input type="color" name="theme_linkColor" value="${settingsObj.theme?.linkColor || '#ff5252'}" style="height: 30px; cursor: pointer;" class="setting-input">
+            </div>
+            
+            <div class="setting-row">
+              <label>${game.i18n.localize("CLUEBOOK.Settings.LinkStyle")}</label>
+              <select name="theme_linkStyle" class="setting-input cluebook-input">
+                <option value="solid" ${(settingsObj.theme?.linkStyle === "solid") ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleSolid")}</option>
+                <option value="6,4" ${(!settingsObj.theme?.linkStyle || settingsObj.theme?.linkStyle === "6,4") ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleDashed")}</option>
+                <option value="2,4" ${(settingsObj.theme?.linkStyle === "2,4") ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleDotted")}</option>
+              </select>
+            </div>
+            
+            <div class="setting-row flex-checkbox">
+              <label for="cb-sw-grid">${game.i18n.localize("CLUEBOOK.Settings.SnapToGrid")}</label>
+              <div class="cb-toggle">
+                <input type="checkbox" name="theme_snapToGrid" id="cb-sw-grid" ${settingsObj.theme?.snapToGrid ? 'checked' : ''}>
+                <label for="cb-sw-grid"></label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interaction -->
+          <div class="settings-card">
+            <h3><i class="fas fa-mouse-pointer"></i> ${game.i18n.localize("CLUEBOOK.Settings.CategoryInteraction")}</h3>
+            <div class="setting-row flex-checkbox">
+              <label for="cb-sw-hover">${game.i18n.localize("CLUEBOOK.Settings.HoverHighlight")}</label>
+              <div class="cb-toggle">
+                <input type="checkbox" name="theme_hoverHighlight" id="cb-sw-hover" ${(settingsObj.theme?.hoverHighlight !== false) ? 'checked' : ''}>
+                <label for="cb-sw-hover"></label>
+              </div>
+            </div>
+            
+            <div class="setting-row">
+              <label>${game.i18n.localize("CLUEBOOK.Settings.HoverDelay")}</label>
+              <input type="number" name="theme_hoverDelay" value="${settingsObj.theme?.hoverDelay ?? 1000}" min="100" max="3000" step="100" class="setting-input cluebook-input" style="width:80px;">
+            </div>
+            
+            <div class="setting-row">
+              <label>${game.i18n.localize("CLUEBOOK.Settings.HighlightDuration")}</label>
+              <input type="number" name="theme_highlightDuration" value="${settingsObj.theme?.highlightDuration ?? 2}" min="1" max="10" step="1" class="setting-input cluebook-input" style="width:80px;">
+            </div>
+          </div>
+
+          <!-- Data / Colors -->
+          <div class="settings-card">
+            <h3><i class="fas fa-database"></i> ${game.i18n.localize("CLUEBOOK.Settings.CategoryData")}</h3>
+            
+            <h4 style="margin: 0 0 5px 0; font-size: 13px; color: var(--cb-text-muted); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom:3px;">${game.i18n.localize("CLUEBOOK.Settings.DefaultColors")}</h4>
+            
+            <div class="setting-row">
+              <label>${game.i18n.localize("CLUEBOOK.Settings.Notes")}</label>
+              <select name="dc_notes" class="setting-input cluebook-input">
+                ${["yellow","green","blue","red","purple","orange","teal","pink","brown"].map(c => `<option value="${c}" ${(settingsObj.defaultColors?.notes === c || (!settingsObj.defaultColors?.notes && c === "yellow")) ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Colors." + c.charAt(0).toUpperCase() + c.slice(1))}</option>`).join('')}
+              </select>
+            </div>
+            <div class="setting-row">
+              <label>${game.i18n.localize("CLUEBOOK.Settings.Characters")}</label>
+              <select name="dc_npc" class="setting-input cluebook-input">
+                ${["yellow","green","blue","red","purple","orange","teal","pink","brown"].map(c => `<option value="${c}" ${(settingsObj.defaultColors?.npc === c || (!settingsObj.defaultColors?.npc && c === "green")) ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Colors." + c.charAt(0).toUpperCase() + c.slice(1))}</option>`).join('')}
+              </select>
+            </div>
+            <div class="setting-row">
+              <label>${game.i18n.localize("CLUEBOOK.Settings.Locations")}</label>
+              <select name="dc_locations" class="setting-input cluebook-input">
+                ${["yellow","green","blue","red","purple","orange","teal","pink","brown"].map(c => `<option value="${c}" ${(settingsObj.defaultColors?.locations === c || (!settingsObj.defaultColors?.locations && c === "blue")) ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Colors." + c.charAt(0).toUpperCase() + c.slice(1))}</option>`).join('')}
+              </select>
+            </div>
+            <div class="setting-row">
+              <label>${game.i18n.localize("CLUEBOOK.Settings.Quests")}</label>
+              <select name="dc_quests" class="setting-input cluebook-input">
+                ${["yellow","green","blue","red","purple","orange","teal","pink","brown"].map(c => `<option value="${c}" ${(settingsObj.defaultColors?.quests === c || (!settingsObj.defaultColors?.quests && c === "purple")) ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Colors." + c.charAt(0).toUpperCase() + c.slice(1))}</option>`).join('')}
+              </select>
+            </div>
+            <div class="setting-row">
+              <label>${game.i18n.localize("CLUEBOOK.Settings.Timeline")}</label>
+              <select name="dc_timeline" class="setting-input cluebook-input">
+                ${["yellow","green","blue","red","purple","orange","teal","pink","brown"].map(c => `<option value="${c}" ${(settingsObj.defaultColors?.timeline === c || (!settingsObj.defaultColors?.timeline && c === "red")) ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Colors." + c.charAt(0).toUpperCase() + c.slice(1))}</option>`).join('')}
+              </select>
+            </div>
+          </div>
         </div>
       </form>
     `;
 
-    const dialog = new Dialog({
-      title: game.i18n.localize("CLUEBOOK.AppActions.BoardSettings"),
+    new foundry.applications.api.DialogV2({
+      window: { title: game.i18n.localize("CLUEBOOK.AppActions.BoardSettings") },
       content: content,
-      buttons: {
-        save: {
-          icon: '<i class="fas fa-save"></i>',
+      buttons: [
+        {
+          action: "save",
           label: game.i18n.localize("CLUEBOOK.AppActions.Save"),
-          callback: async (html) => {
-            const newName = html.find('[name="workspaceName"]').val();
+          icon: "fas fa-save",
+          default: true,
+          callback: async (event, button, dialog) => {
+            const form = button.form;
+            const newName = form.elements.workspaceName?.value?.trim();
             if (!newName) return;
 
-            // Gather permissions
-            const ownership = { default: currentOwnership.default || 0 };
-            ownership[game.user.id] = 3; // OWNER
-            game.users.filter(u => u.isGM).forEach(gm => ownership[gm.id] = 3);
+            const isReadOnly = form.elements.readOnly?.checked ?? false;
+            const hideGMVisibilityBtn = form.elements.hideGMVisibilityBtn?.checked ?? false;
+            const hideGMOverlayBtn = form.elements.hideGMOverlayBtn?.checked ?? false;
+            const hideSendToBoardBtn = form.elements.hideSendToBoardBtn?.checked ?? false;
+            
+            const updatedSettings = {
+                ...settingsObj,
+                readOnly: isReadOnly,
+                hideGMVisibilityBtn: hideGMVisibilityBtn,
+                hideGMOverlayBtn: hideGMOverlayBtn,
+                hideSendToBoardBtn: hideSendToBoardBtn,
+                theme: {
+                  ...(settingsObj.theme || {}),
+                  linkColor: form.elements.theme_linkColor?.value || '#ff5252',
+                  linkStyle: form.elements.theme_linkStyle?.value || '6,4',
+                  snapToGrid: form.elements.theme_snapToGrid?.checked ?? false,
+                  hoverHighlight: form.elements.theme_hoverHighlight?.checked ?? true,
+                  hoverDelay: parseInt(form.elements.theme_hoverDelay?.value) || 1000,
+                  highlightDuration: parseInt(form.elements.theme_highlightDuration?.value) || 2
+                },
+                defaultColors: {
+                  ...(settingsObj.defaultColors || {}),
+                  notes: form.elements.dc_notes?.value || "yellow",
+                  npc: form.elements.dc_npc?.value || "green",
+                  locations: form.elements.dc_locations?.value || "blue",
+                  quests: form.elements.dc_quests?.value || "purple",
+                  timeline: form.elements.dc_timeline?.value || "red"
+                }
+            };
 
-            html.find('input[type="checkbox"]').each(function() {
-              if (this.name === "readOnly") return;
-              const userId = this.name.split('_')[1];
-              if (userId) {
-                if (this.checked) ownership[userId] = 3; // Give OWNER access
-                else ownership[userId] = 0; // Revoke access
-              }
-            });
+            if (isPersonal) {
+              await game.user.setFlag("ClueBook", "personalWorkspaceName", newName);
+              await game.user.setFlag("ClueBook", "settings", updatedSettings);
+            } else {
+              const ownership = { default: journal.ownership.default || 0 };
+              ownership[game.user.id] = 3;
+              game.users.filter(u => u.isGM).forEach(gm => ownership[gm.id] = 3);
+  
+              form.querySelectorAll('input[type="checkbox"]').forEach(input => {
+                if (input.name.startsWith("user_")) {
+                  const userId = input.name.split('_')[1];
+                  if (userId) {
+                    ownership[userId] = input.checked ? 3 : 0;
+                  }
+                }
+              });
+  
+              const updates = { 
+                "flags.ClueBook.isWorkspace": true,
+                "flags.ClueBook.settings": updatedSettings
+              };
+              await journal.update(updates);
+              ClueBookSocket.updateBoard(journal.id, newName, ownership);
+            }
 
-            const isReadOnly = html.find('[name="readOnly"]').is(':checked');
-            await journal.update({ "flags.ClueBook.settings.readOnly": isReadOnly });
-
-            ClueBookSocket.updateBoard(journal.id, newName.trim(), ownership);
             this.render({ parts: ["content"] });
           }
         },
-        cancel: {
-          icon: '<i class="fas fa-times"></i>',
-          label: game.i18n.localize("CLUEBOOK.AppActions.Cancel")
+        {
+          action: "cancel",
+          label: game.i18n.localize("CLUEBOOK.AppActions.Cancel"),
+          icon: "fas fa-times"
         }
-      },
-      default: "save"
-    });
-    dialog.render(true);
+      ],
+      rejectClose: false
+    }).render(true);
   }
 
   static async _onDeleteWorkspace(event, target) {
@@ -416,7 +673,7 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
       return;
     }
 
-    const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
+    const journal = this._getWorkspaceJournal();
     if (!journal) return;
 
     const confirmed = await foundry.applications.api.DialogV2.confirm({
@@ -437,13 +694,7 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
     const entryId = entry.dataset.entryId;
     const sourceTab = entry.dataset.sourceTab || this.state.activeTab;
     
-    let data = {};
-    if (this.state.activeWorkspace !== "personal") {
-      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
-      if (journal) data = journal.getFlag("ClueBook", "data") || {};
-    } else {
-      data = game.user.getFlag("ClueBook", "data") || {};
-    }
+    let data = this._getWorkspaceData();
     
     const entryData = data[sourceTab]?.[entryId];
     if (!entryData || !entryData.onBoard) return;
@@ -455,9 +706,12 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
     const W = this.position.width;
     const H = this.position.height - 50; // offset for tabs
     
-    // Approximate card center
-    const cardCenterX = bx + 100;
-    const cardCenterY = by + 50;
+    // Calculate card center dynamically from DOM if card exists
+    const cardEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
+    const cardW = cardEl?.offsetWidth || 280;
+    const cardH = cardEl?.offsetHeight || 160;
+    const cardCenterX = bx + (cardW / 2);
+    const cardCenterY = by + (cardH / 2);
     
     const panX = W / 2 - (cardCenterX * zoom);
     const panY = H / 2 - (cardCenterY * zoom);
@@ -487,13 +741,7 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
     const targetId = target.dataset.targetId;
     if (!targetId) return;
 
-    let data = {};
-    if (this.state.activeWorkspace !== "personal") {
-      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
-      if (journal) data = journal.getFlag("ClueBook", "data") || {};
-    } else {
-      data = game.user.getFlag("ClueBook", "data") || {};
-    }
+    let data = this._getWorkspaceData();
 
     let targetEntry = null;
     let targetTab = null;
@@ -515,9 +763,12 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
       const by = targetEntry.boardY || 0;
       const zoom = 0.7; 
       const W = this.position.width;
-      const H = this.position.height - 50; 
-      const panX = W / 2 - ((bx + 100) * zoom);
-      const panY = H / 2 - ((by + 50) * zoom);
+      const H = this.position.height - 50;
+      const cardEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${targetId}"]`);
+      const cardW = cardEl?.offsetWidth || 280;
+      const cardH = cardEl?.offsetHeight || 160;
+      const panX = W / 2 - ((bx + (cardW / 2)) * zoom);
+      const panY = H / 2 - ((by + (cardH / 2)) * zoom);
       
       this.state.camera = { zoom, panX, panY };
       this.state.activeTab = "board";
@@ -548,23 +799,33 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
     }, durationMs);
   }
 
-  static async _onCreateSuggestedLink(event, target) {
+  static async _onJumpToTab(event, target) {
     event.stopPropagation();
-    const targetId = target.dataset.targetId;
     const entry = target.closest('.cluebook-entry');
-    const sourceId = entry.dataset.entryId;
-    if (!targetId || !sourceId) return;
-
-    let links = this._getWorkspaceLinks();
-    const [a, b] = [sourceId, targetId].sort();
-    const key = `${a}_${b}`;
+    if (!entry) return;
+    const entryId = entry.dataset.entryId;
+    const sourceTab = entry.dataset.sourceTab;
+    if (!sourceTab || sourceTab === "board") return;
     
-    if (!links[key]) {
-      const newLink = { source: sourceId, target: targetId, label: "", style: "solid", color: "" };
-      await this._updateWorkspaceData({ [`flags.ClueBook.data.links.${key}`]: newLink });
-      ui.notifications.info(game.i18n.localize("CLUEBOOK.AppActions.LinkCreated"));
-      this.render({ parts: ["content"] });
-    }
+    this.state.activeTab = sourceTab;
+    await game.user.setFlag("ClueBook", "lastTab", sourceTab);
+    this.state.highlightedEntryId = entryId;
+    await this.render();
+    
+    setTimeout(() => {
+      const el = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80);
+    
+    const settings = this.getSettings();
+    const durationMs = (settings.theme.highlightDuration || 2) * 1000;
+    setTimeout(() => {
+       if (this.state.highlightedEntryId === entryId) {
+          this.state.highlightedEntryId = null;
+          const el = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
+          if (el) el.classList.remove('is-highlighted');
+       }
+    }, durationMs);
   }
 
   static async _onDeleteLink(event, target) {
@@ -585,32 +846,6 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
     }
   }
 
-  static async _onDismissSuggestedLink(event, target) {
-    event.stopPropagation();
-    const targetId = target.dataset.targetId;
-    const entry = target.closest('.cluebook-entry');
-    const sourceId = entry.dataset.entryId;
-    const sourceTab = entry.dataset.sourceTab;
-    if (!targetId || !sourceId || !sourceTab) return;
-
-    let data = {};
-    if (this.state.activeWorkspace !== "personal") {
-      const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
-      if (journal) data = journal.getFlag("ClueBook", "data") || {};
-    } else {
-      data = game.user.getFlag("ClueBook", "data") || {};
-    }
-
-    const entryData = data[sourceTab]?.[sourceId];
-    if (entryData) {
-      const dismissed = entryData.dismissedLinks || [];
-      if (!dismissed.includes(targetId)) {
-        dismissed.push(targetId);
-        await ClueBookApp._saveDataRaw(sourceTab, sourceId, "dismissedLinks", dismissed);
-        this.render({ parts: ["content"] });
-      }
-    }
-  }
 
 
   static async _onImportJSON(event, target) {
@@ -672,22 +907,90 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
       const idMap = {};
       
       let data = {};
+      let settingsObj = {};
+      let targetJournal = null;
       if (this.state.activeWorkspace !== "personal") {
-        const journal = game.journal.get(this.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
-        if (journal) data = journal.getFlag("ClueBook", "data") || {};
+        targetJournal = this._getWorkspaceJournal();
+        if (targetJournal) {
+          data = targetJournal.getFlag("ClueBook", "data") || {};
+          settingsObj = targetJournal.getFlag("ClueBook", "settings") || {};
+        }
       } else {
         data = game.user.getFlag("ClueBook", "data") || {};
+        settingsObj = game.user.getFlag("ClueBook", "settings") || {};
       }
 
-      let gridX = 100;
-      let gridY = 100;
-      const xSpacing = 350;
-      const ySpacing = 250;
-      const maxColumns = 4;
-      let currentIdx = 0;
+      // Process and merge tags dictionary from parsed.tags and entry.tags
+      const existingTags = { ...(settingsObj.tags || {}) };
+      const tagIdMap = {};
+      const tagUpdates = {};
+
+      if (parsed.tags) {
+        const incomingTags = Array.isArray(parsed.tags) ? parsed.tags : Object.values(parsed.tags);
+        for (const t of incomingTags) {
+          if (!t) continue;
+          const tagName = typeof t === "string" ? t.trim() : (t.name ? t.name.trim() : "");
+          if (!tagName) continue;
+
+          let match = Object.values(existingTags).find(ex => ex && ex.name.toLowerCase() === tagName.toLowerCase());
+          if (match) {
+            if (typeof t === "object" && t.id) tagIdMap[t.id] = match.id;
+            tagIdMap[tagName] = match.id;
+          } else {
+            const newTagId = (typeof t === "object" && t.id) ? t.id : foundry.utils.randomID();
+            const tagObj = {
+              id: newTagId,
+              name: tagName,
+              color: (typeof t === "object" && t.color) ? t.color : "#7b61ff",
+              isSecret: (typeof t === "object" && t.isSecret) ? Boolean(t.isSecret) : false
+            };
+            existingTags[newTagId] = tagObj;
+            if (typeof t === "object" && t.id) tagIdMap[t.id] = newTagId;
+            tagIdMap[tagName] = newTagId;
+            tagUpdates[`flags.ClueBook.settings.tags.${newTagId}`] = tagObj;
+          }
+        }
+      }
 
       // Process entries
       for (const entry of parsed.entries) {
+        // Resolve tags on entries (IDs or Names)
+        if (entry.tags && Array.isArray(entry.tags)) {
+          const resolvedTags = [];
+          for (const rawTag of entry.tags) {
+            if (!rawTag) continue;
+            const tagStr = String(rawTag).trim();
+            if (!tagStr) continue;
+
+            if (tagIdMap[tagStr]) {
+              resolvedTags.push(tagIdMap[tagStr]);
+            } else if (existingTags[tagStr]) {
+              resolvedTags.push(tagStr);
+            } else {
+              let match = Object.values(existingTags).find(ex => ex && ex.name.toLowerCase() === tagStr.toLowerCase());
+              if (match) {
+                tagIdMap[tagStr] = match.id;
+                resolvedTags.push(match.id);
+              } else {
+                const newTagId = foundry.utils.randomID();
+                const colors = ["#7b61ff", "#2196f3", "#4caf50", "#ff9800", "#e91e63", "#00bcd4"];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                const tagObj = {
+                  id: newTagId,
+                  name: tagStr,
+                  color: randomColor,
+                  isSecret: false
+                };
+                existingTags[newTagId] = tagObj;
+                tagIdMap[tagStr] = newTagId;
+                tagUpdates[`flags.ClueBook.settings.tags.${newTagId}`] = tagObj;
+                resolvedTags.push(newTagId);
+              }
+            }
+          }
+          entry.tags = resolvedTags;
+        }
+
         const tempId = entry.id;
         const action = entry.action || "create"; // create / update / delete
 
@@ -804,7 +1107,7 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
       // Second pass: Replace internal links in text fields with new IDs
       for (const [key, entry] of Object.entries(updateData)) {
         if (entry && !key.startsWith('flags.ClueBook.data.links.')) {
-          ['text', 'note', 'event', 'gmNotes'].forEach(field => {
+          ['text', 'note', 'event', 'gmNotes', 'subtitle', 'owner', 'location', 'attitude'].forEach(field => {
             if (entry[field] && typeof entry[field] === 'string') {
               // Regex matches [[qnmention:OLD_ID:Title]] and replaces OLD_ID with realId
               entry[field] = entry[field].replace(/\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g, (match, oldId, name, customText) => {
@@ -815,6 +1118,10 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
             }
           });
         }
+      }
+
+      if (Object.keys(tagUpdates).length > 0) {
+        Object.assign(updateData, tagUpdates);
       }
 
       await this._updateWorkspaceData(updateData);
@@ -834,83 +1141,27 @@ export const ClueBookActionsMixin = (Base) => class extends Base {
       const currentTs = game.time.worldTime;
       const dt = scApi.timestampToDate(currentTs);
       const formatted = scApi.formatDateTime(dt);
-      calendarInfo = `
-В вашем мире АКТИВЕН Simple Calendar! 
-Даты должны передаваться как UNIX-таймстемпы (в секундах).
-В данный момент игровое время: ${formatted.date} ${formatted.time} (UNIX: ${currentTs}).
-Прибавляйте секунды к ${currentTs} (86400 = 1 день), чтобы задать дату в будущем.`;
+      calendarInfo = game.i18n.format("CLUEBOOK.AppActions.AIPromptCalendarActive", {
+        date: formatted.date,
+        time: formatted.time,
+        currentTs: currentTs
+      });
     } else {
-      calendarInfo = `
-В вашем мире НЕ АКТИВЕН Simple Calendar.
-Даты передаются как обычные строки текста (например, "12:00", "Завтра").`;
+      calendarInfo = game.i18n.localize("CLUEBOOK.AppActions.AIPromptCalendarInactive");
     }
 
-    const gmNotesFieldText = game.user.isGM ? '\n- Во всех карточках может присутствовать поле "gmNotes" (скрытые записи Мастера).' : '';
-    const textFieldsAllowed = game.user.isGM ? '"text", "note", "event", "gmNotes"' : '"text", "note", "event"';
+    const gmNotesFieldText = game.user.isGM ? game.i18n.localize("CLUEBOOK.AppActions.AIPromptGMNotes") : '';
 
-    const formatText = `Структура данных модуля ClueBook (JSON):
-
-ГЛОБАЛЬНАЯ СТРУКТУРА:
-1. Массив "entries" — содержит все карточки.
-
-КАРТОЧКИ ("entries"):
-Обязательные поля:
-- "id": Уникальный строковый идентификатор. (Используйте простые ID, например "npc1", "clue2").
-- "tab": Тип карточки ("notes", "npc", "quests", "timeline").
-- "color": Цвет карточки: предустановленный ("yellow", "red", "green", "blue", "purple", "orange", "teal", "pink", "brown") или любой HEX-код цвета (например, "#7b61ff").
-
-Поля в зависимости от типа ("tab"):
-- notes (Заметка): "text" (основной текст), "name" (название).
-- npc (Персонаж): "name" (имя), "location" (локация), "attitude" (отношение), "lifeStatus" (статус жизни: "alive", "unknown", "dead"), "note" (описание).
-- quests (Квест): "text" (описание), "status" (состояние: "active", "completed", "failed"), "timeMode" (режим времени: "by" - сделать до, "at" - строго в), "deadlineTimestamp" (число-UNIX, если есть SimpleCalendar) или "deadline" (строка, если нет SC).
-- timeline (Событие): "event" (что произошло), "startTimestamp" (число-UNIX), "endTimestamp" (число-UNIX). Если SimpleCalendar нет, используйте текстовое поле "time".${gmNotesFieldText}
-${calendarInfo}
-
-УПРАВЛЕНИЕ КАРТОЧКАМИ (ДОБАВЛЕНИЕ, ОБНОВЛЕНИЕ, УДАЛЕНИЕ):
-В любой карточке можно передать необязательное поле "action" ("create", "update", "delete").
-- "action": "create" (или поле не указано) — если карточка с таким "id" уже существует, она обновляется; если нет — создается новая.
-- "action": "update" (или "edit") — обновляет поля существующей карточки по ее "id". Если карточки с таким "id" нет, ничего не происходит.
-- "action": "delete" (или "remove") — удаляет существующую карточку по ее "id" из базы данных вместе со всеми ее связями.
-
-Пример минимального JSON:
-{
-  "entries": [
-    {
-      "id": "npc1",
-      "action": "create",
-      "tab": "npc",
-      "color": "green",
-      "name": "Мэр Гудвин",
-      "location": "Ратуша",
-      "attitude": "Дружелюбный",
-      "lifeStatus": "alive",
-      "note": "Пожилой мэр города."
-    },
-    {
-      "id": "note1",
-      "action": "update",
-      "tab": "notes",
-      "color": "#7b61ff",
-      "text": "Обновленный текст встречи с мэром Гудвином."
-    },
-    {
-      "id": "old_clue_id",
-      "action": "delete",
-      "tab": "notes"
-    }
-  ]
-}
-
-ВНИМАНИЕ ДЛЯ ИИ (CRITICAL INSTRUCTION):
-В этом формате КАТЕГОРИЧЕСКИ ЗАПРЕЩАЕТСЯ генерировать ключ "links", а также поля "boardX" и "boardY".
-Также КАТЕГОРИЧЕСКИ ЗАПРЕЩАЕТСЯ генерировать любые внутренние связи, упоминания или ссылки между карточками (не используйте конструкции [[qnmention:...]] или @UUID).
-В твоем ответе должен быть ТОЛЬКО массив "entries" и ничего больше! Строго соблюдай эту структуру.`;
+    const formatText = game.i18n.format("CLUEBOOK.AppActions.AIPrompt", {
+      calendarInfo: calendarInfo,
+      gmNotesFieldText: gmNotesFieldText
+    });
     try {
       await navigator.clipboard.writeText(formatText);
-      ui.notifications.info("Формат данных (Структура JSON) скопирован в буфер обмена!");
+      ui.notifications.info(game.i18n.localize("CLUEBOOK.AppActions.FormatCopied"));
     } catch (err) {
       console.error(err);
-      ui.notifications.error("Не удалось скопировать в буфер обмена. Возможно, нет прав доступа.");
+      ui.notifications.error(game.i18n.localize("CLUEBOOK.AppActions.FormatCopyError"));
     }
   }
 
@@ -935,7 +1186,7 @@ ${calendarInfo}
     
     const isOnBoard = entry.dataset.onBoard === "true";
     if (isOnBoard && entry.dataset.pinned === "true") {
-      ui.notifications.warn("Нельзя убрать с доски закрепленную карточку!");
+      ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.CannotRemovePinned"));
       return;
     }
     const newValue = !isOnBoard;
@@ -947,12 +1198,12 @@ ${calendarInfo}
   static async _onRemoveFromBoard(event, target) {
     const entry = target.closest('.cluebook-entry');
     if (entry && entry.dataset.pinned === "true") {
-      ui.notifications.warn("Нельзя убрать с доски закрепленную карточку!");
+      ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.CannotRemovePinned"));
       return;
     }
     const proceed = await foundry.applications.api.DialogV2.confirm({
-      window: { title: "Убрать с доски" },
-      content: "<p>Убрать эту запись с доски? (Она останется в своей вкладке)</p>",
+      window: { title: game.i18n.localize("CLUEBOOK.AppActions.RemoveFromBoardTitle") },
+      content: game.i18n.localize("CLUEBOOK.AppActions.RemoveFromBoardPrompt"),
       rejectClose: false
     });
 
@@ -1004,17 +1255,15 @@ ${calendarInfo}
     this.render({ parts: ["content"] });
 
     // Open Edit Dialog automatically for the new entry
-    const sourceTab = activeTab;
-    const data = (this._getWorkspaceJournal() || game.user).getFlag("ClueBook", "data")?.[sourceTab]?.[id] || newEntry;
-    
     new ClueBookEditDialog({
-      entry: data,
-      sourceTab: sourceTab,
+      entry: newEntry,
+      sourceTab: activeTab,
       entryId: id,
+      workspace: this.state.activeWorkspace,
       onSave: async (updateData) => {
         const flagUpdates = {};
         for (const [key, value] of Object.entries(updateData)) {
-          flagUpdates[`flags.ClueBook.data.${sourceTab}.${id}.${key}`] = value;
+          flagUpdates[`flags.ClueBook.data.${activeTab}.${id}.${key}`] = value;
         }
         await this._updateWorkspaceData(flagUpdates);
         this.render({ parts: ["content"] });
@@ -1026,12 +1275,12 @@ ${calendarInfo}
     if (event) event.stopPropagation();
     const entryEl = target.closest('.cluebook-entry');
     if (entryEl && entryEl.dataset.pinned === "true") {
-      ui.notifications.warn("Нельзя удалить закрепленную карточку!");
+      ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.CannotDeletePinned"));
       return;
     }
     const proceed = await foundry.applications.api.DialogV2.confirm({
-      window: { title: "Удаление записи" },
-      content: "<p>Вы уверены, что хотите удалить эту запись?</p>",
+      window: { title: game.i18n.localize("CLUEBOOK.AppActions.DeleteEntryTitle") },
+      content: game.i18n.localize("CLUEBOOK.AppActions.DeleteEntryPrompt"),
       rejectClose: false
     });
 
@@ -1059,6 +1308,203 @@ ${calendarInfo}
     this.render({ parts: ["content"] });
   }
 
+  _showListContextMenu(ev) {
+    if (this.state.isReadOnly) return;
+    
+    const existingMenu = document.querySelector('.cb-context-menu');
+    if (existingMenu) existingMenu.remove();
+
+    const menu = document.createElement('div');
+    menu.className = 'cb-context-menu';
+    menu.innerHTML = `
+      <div class="cb-menu-item" data-action="mass-edit"><i class="fas fa-pencil-alt"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Edit")}</div>
+      <div class="cb-menu-separator"></div>
+      <div class="cb-menu-item" data-action="toggle-visibility"><i class="fas fa-eye-slash"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Visibility")}</div>
+      <div class="cb-menu-item" data-action="toggle-board"><i class="fas fa-project-diagram"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Board")}</div>
+      <div class="cb-menu-separator"></div>
+      <div class="cb-menu-item danger" data-action="delete"><i class="fas fa-trash"></i> ${game.i18n.localize("CLUEBOOK.Entry.Delete")} [Del]</div>
+    `;
+
+    document.body.appendChild(menu);
+
+    menu.style.left = `${ev.clientX}px`;
+    menu.style.top = `${ev.clientY}px`;
+
+    const closeMenu = (e) => {
+      if (e && e.target && e.target.closest && e.target.closest('.cb-context-menu')) return;
+      menu.remove();
+      document.removeEventListener('click', closeMenu);
+      document.removeEventListener('contextmenu', closeMenu);
+    };
+
+    setTimeout(() => {
+      document.addEventListener('click', closeMenu);
+      document.addEventListener('contextmenu', closeMenu);
+    }, 100);
+
+    menu.addEventListener('click', async (menuEv) => {
+      menuEv.stopPropagation();
+      const actionEl = menuEv.target.closest('.cb-menu-item');
+      if (!actionEl) return;
+      
+      const action = actionEl.dataset.action;
+      closeMenu();
+      await this._executeListContextMenuAction(action);
+    });
+  }
+
+  async _executeListContextMenuAction(action) {
+    const ids = Array.from(this.state.selectedEntries);
+    if (ids.length < 1) return;
+
+    if (action === 'delete') {
+      return this._onDeleteGroup();
+    } else if (action === 'toggle-visibility') {
+      return this._onMassToggleVisibility(ids);
+    } else if (action === 'toggle-board') {
+      return this._onMassToggleBoard(ids);
+    } else if (action === 'mass-edit') {
+      return this._onMassEditDialog(ids);
+    }
+  }
+
+  async _onMassToggleVisibility(ids) {
+    const updates = {};
+    const workspaceData = this._getWorkspaceData();
+    let hideAll = false;
+    
+    // If any selected entry is visible, the action will hide all. Otherwise show all.
+    for (const id of ids) {
+       for (const [tab, list] of Object.entries(workspaceData)) {
+         if (list[id]) {
+           if (!list[id].isHidden) hideAll = true;
+           break;
+         }
+       }
+    }
+
+    ids.forEach(id => {
+      for (const [tab, list] of Object.entries(workspaceData)) {
+        if (list[id]) {
+          updates[`flags.ClueBook.data.${tab}.${id}.isHidden`] = hideAll;
+        }
+      }
+    });
+
+    if (Object.keys(updates).length > 0) {
+      await this._updateWorkspaceData(updates);
+      this.render({ parts: ["content"] });
+    }
+  }
+
+  async _onMassToggleBoard(ids) {
+    const updates = {};
+    const workspaceData = this._getWorkspaceData();
+    let sendToBoard = false;
+    
+    // If any selected entry is NOT on board, the action will send all to board. Otherwise remove all.
+    for (const id of ids) {
+       for (const [tab, list] of Object.entries(workspaceData)) {
+         if (list[id]) {
+           if (!list[id].onBoard) sendToBoard = true;
+           break;
+         }
+       }
+    }
+
+    ids.forEach(id => {
+      for (const [tab, list] of Object.entries(workspaceData)) {
+        if (list[id]) {
+          updates[`flags.ClueBook.data.${tab}.${id}.onBoard`] = sendToBoard;
+          if (sendToBoard && (list[id].boardX === undefined || list[id].boardY === undefined)) {
+             updates[`flags.ClueBook.data.${tab}.${id}.boardX`] = Math.floor(Math.random() * 200) + 100;
+             updates[`flags.ClueBook.data.${tab}.${id}.boardY`] = Math.floor(Math.random() * 200) + 100;
+          }
+        }
+      }
+    });
+
+    if (Object.keys(updates).length > 0) {
+      await this._updateWorkspaceData(updates);
+      this.render({ parts: ["content"] });
+    }
+  }
+
+  async _onMassEditDialog(ids) {
+    const workspaceData = this._getWorkspaceData();
+    const entries = [];
+    
+    // First pass to get all entries and their tags
+    ids.forEach(id => {
+      for (const [tab, list] of Object.entries(workspaceData)) {
+        if (list[id]) {
+           entries.push({ tab, id, data: list[id] });
+           break;
+        }
+      }
+    });
+
+    if (entries.length === 0) return;
+
+    // Compute common tags
+    let commonTags = new Set(entries[0].data.tags || []);
+    for (let i = 1; i < entries.length; i++) {
+      const entryTags = new Set(entries[i].data.tags || []);
+      commonTags = new Set([...commonTags].filter(x => entryTags.has(x)));
+    }
+
+    const mockEntry = {
+       tags: Array.from(commonTags),
+       color: "",
+       textColor: ""
+    };
+
+    new ClueBookEditDialog({
+      entry: mockEntry,
+      workspace: this.state.activeWorkspace,
+      isMassEdit: true,
+      entriesCount: ids.length,
+      onSave: async (savedData) => {
+        const updates = {};
+        
+        const tagsToAdd = (savedData.tags || []).filter(t => !commonTags.has(t));
+        const tagsToRemove = Array.from(commonTags).filter(t => !(savedData.tags || []).includes(t));
+        
+        entries.forEach(entry => {
+          const pathPrefix = `flags.ClueBook.data.${entry.tab}.${entry.id}`;
+          
+          if (savedData.color) {
+             updates[`${pathPrefix}.color`] = savedData.color === "custom" ? (savedData.customColorHex || "#7b61ff") : savedData.color;
+             updates[`${pathPrefix}.isCustomColor`] = (savedData.color === "custom" || !["yellow", "red", "green", "blue", "purple", "orange", "teal", "pink", "brown"].includes(savedData.color));
+          }
+          if (savedData.textColor) {
+             updates[`${pathPrefix}.textColor`] = savedData.textColor;
+          }
+          
+          if (tagsToAdd.length > 0 || tagsToRemove.length > 0) {
+             let currentTags = [...(entry.data.tags || [])];
+             // Remove tags
+             if (tagsToRemove.length > 0) {
+                 currentTags = currentTags.filter(t => !tagsToRemove.includes(t));
+             }
+             // Add tags
+             if (tagsToAdd.length > 0) {
+                 tagsToAdd.forEach(t => {
+                     if (!currentTags.includes(t)) currentTags.push(t);
+                 });
+             }
+             updates[`${pathPrefix}.tags`] = currentTags;
+          }
+        });
+        
+        if (Object.keys(updates).length > 0) {
+          await this._updateWorkspaceData(updates);
+          this.render({ parts: ["content"] });
+        }
+      }
+    }).render(true);
+  }
+
   async _onDeleteGroup() {
     const ids = Array.from(this.state.selectedEntries);
     if (ids.length === 0) return;
@@ -1070,13 +1516,15 @@ ${calendarInfo}
     });
 
     if (nonPinnedIds.length === 0) {
-      ui.notifications.warn("Все выбранные карточки закреплены и не могут быть удалены!");
+      ui.notifications.warn(game.i18n.localize("CLUEBOOK.Board.AllPinnedWarn"));
       return;
     }
 
+    const isBoard = this.state.activeTab === "board";
+
     const proceed = await foundry.applications.api.DialogV2.confirm({
-      window: { title: "Удаление группы" },
-      content: `<p>Вы уверены, что хотите удалить <b>${nonPinnedIds.length}</b> выделенных записей?</p>`,
+      window: { title: isBoard ? game.i18n.localize("CLUEBOOK.AppActions.RemoveFromBoardTitle") : game.i18n.localize("CLUEBOOK.AppActions.DeleteGroupTitle") },
+      content: game.i18n.format(isBoard ? "CLUEBOOK.AppActions.RemoveFromBoardPrompt" : "CLUEBOOK.AppActions.DeleteGroupPrompt", { count: nonPinnedIds.length }),
       rejectClose: false
     });
 
@@ -1089,10 +1537,17 @@ ${calendarInfo}
       const entryEl = this.element.querySelector(`[data-entry-id="${id}"]`);
       if (entryEl) {
         const sourceTab = entryEl.dataset.sourceTab;
-        if (sourceTab) updates[`flags.ClueBook.data.${sourceTab}.-=${id}`] = null;
+        if (sourceTab) {
+          if (isBoard) {
+            updates[`flags.ClueBook.data.${sourceTab}.${id}.onBoard`] = false;
+          } else {
+            updates[`flags.ClueBook.data.${sourceTab}.-=${id}`] = null;
+          }
+        }
       }
       
-      // Delete associated links
+      // Delete associated links if we are completely deleting the entries, OR if we are removing them from the board (since they are no longer on the board to be linked)
+      // Actually, removing from board should also delete links attached to it
       for (const [key, l] of Object.entries(links)) {
         if (l.source === id || l.target === id) {
           updates[`flags.ClueBook.data.links.-=${key}`] = null;
@@ -1101,66 +1556,65 @@ ${calendarInfo}
     });
 
     if (Object.keys(updates).length > 0) {
-      if (this.state.activeWorkspace !== 'personal') {
-        const j = game.journal.get(this.state.activeWorkspace) || game.journal.getName('ClueBook_Shared_DB');
-        if (j) await j.update(updates);
-      } else {
-        await game.user.update(updates);
-      }
+      await this._updateWorkspaceData(updates);
     }
     
     this.state.selectedEntries.clear();
     this.state.selectedEntryId = null;
     this.render({ parts: ["content"] });
   }
+
   async _createNewWorkspace() {
     let userCheckboxes = '';
     game.users.forEach(u => {
-      if (u.id === game.user.id || u.isGM) return; // Self and GM always have access
+      if (u.id === game.user.id || u.isGM) return;
       userCheckboxes += `<label style="display:block; margin-bottom: 5px;"><input type="checkbox" name="user_${u.id}"> ${u.name}</label>`;
     });
 
+    const defaultName = game.i18n.localize("CLUEBOOK.AppActions.NewBoardDefaultName");
     const content = `
       <form>
         <div class="form-group">
-          <label>Название доски/блокнота:</label>
-          <input type="text" name="workspaceName" value="Новая доска" required autofocus>
+          <label>${game.i18n.localize("CLUEBOOK.AppActions.BoardNamePrompt")}</label>
+          <input type="text" name="workspaceName" value="${defaultName}" required autofocus>
         </div>
         <hr>
         <div class="form-group">
-          <label>Кто имеет доступ (Вы и Мастер всегда имеют доступ):</label>
+          <label>${game.i18n.localize("CLUEBOOK.AppActions.WhoHasAccessPrompt")}</label>
           <div style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.1); padding: 5px; border-radius: 5px; margin-top: 5px;">
-            ${userCheckboxes || "<em>Нет других игроков</em>"}
+            ${userCheckboxes || game.i18n.localize("CLUEBOOK.AppActions.NoOtherPlayers")}
           </div>
         </div>
         <hr>
         <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
           <input type="checkbox" name="readOnly" id="cb-ws-readonly">
-          <label for="cb-ws-readonly" style="margin: 0; cursor: pointer;">Режим "Только чтение" для игроков</label>
+          <label for="cb-ws-readonly" style="margin: 0; cursor: pointer;">${game.i18n.localize("CLUEBOOK.AppActions.ReadOnlyForPlayers")}</label>
         </div>
       </form>
     `;
 
-    const dialog = new Dialog({
-      title: "Создать новую доску",
+    new foundry.applications.api.DialogV2({
+      window: { title: game.i18n.localize("CLUEBOOK.AppActions.CreateNewBoardTitle") },
       content: content,
-      buttons: {
-        create: {
-          icon: '<i class="fas fa-check"></i>',
-          label: "Создать",
-          callback: async (html) => {
-            const name = html.find('[name="workspaceName"]').val();
+      buttons: [
+        {
+          action: "create",
+          label: game.i18n.localize("CLUEBOOK.AppActions.CreateBtn"),
+          icon: "fas fa-check",
+          default: true,
+          callback: async (event, button, dialog) => {
+            const form = button.form;
+            const name = form.elements.workspaceName?.value?.trim();
             if (!name) return;
 
-            // Gather permissions
             const ownership = { default: 0 };
-            ownership[game.user.id] = 3; // OWNER
-            
+            ownership[game.user.id] = 3;
             game.users.filter(u => u.isGM).forEach(gm => ownership[gm.id] = 3);
 
-            html.find('input[type="checkbox"]:checked').each(function() {
-              const userId = this.name.split('_')[1];
-              if (userId) ownership[userId] = 3; // Give OWNER access to selected users
+            form.querySelectorAll('input[type="checkbox"]:checked').forEach(input => {
+              if (input.name === "readOnly") return;
+              const userId = input.name.split('_')[1];
+              if (userId) ownership[userId] = 3;
             });
 
             let folder = game.folders.find(f => f.name === "ClueBook Boards" && f.type === "JournalEntry");
@@ -1169,8 +1623,7 @@ ${calendarInfo}
             }
 
             if (game.user.isGM) {
-              const isReadOnly = html.find('[name="readOnly"]').is(':checked');
-              // Create Journal
+              const isReadOnly = form.elements.readOnly?.checked ?? false;
               const journal = await JournalEntry.create({
                 name: name,
                 folder: folder ? folder.id : null,
@@ -1178,7 +1631,7 @@ ${calendarInfo}
                 flags: {
                   ClueBook: {
                     isWorkspace: true,
-                    data: {}, // Empty initial data
+                    data: {},
                     settings: { readOnly: isReadOnly }
                   }
                 }
@@ -1189,30 +1642,24 @@ ${calendarInfo}
                 this.render();
               }
             } else {
-              console.log("ClueBook | Player emitting createBoard socket event:", {
-                action: "createBoard",
-                userId: game.user.id,
-                name: name,
-                ownership: ownership
-              });
               game.socket.emit("module.ClueBook", {
                 action: "createBoard",
                 userId: game.user.id,
                 name: name,
                 ownership: ownership
               });
-              ui.notifications.info("Запрос на создание доски отправлен Мастеру...");
+              ui.notifications.info(game.i18n.localize("CLUEBOOK.AppActions.CreateRequestSent"));
             }
           }
         },
-        cancel: {
-          icon: '<i class="fas fa-times"></i>',
-          label: "Отмена"
+        {
+          action: "cancel",
+          label: game.i18n.localize("CLUEBOOK.AppActions.Cancel"),
+          icon: "fas fa-times"
         }
-      },
-      default: "create"
-    });
-    dialog.render(true);
+      ],
+      rejectClose: false
+    }).render(true);
   }
 
   static async showQuickAddDialog(type, activeWorkspace = null) {
@@ -1224,54 +1671,62 @@ ${calendarInfo}
     let title = '';
 
     if (type === "notes") {
-      title = "Добавить заметку";
+      title = game.i18n.localize("CLUEBOOK.AppActions.QuickAddTitleNote");
       content = `
         <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
-          <input type="text" name="name" class="cluebook-input" placeholder="Название (необязательно)" style="width: 100%;" autofocus onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); const next = this.closest('.window-content').querySelector('textarea'); if (next) next.focus(); }">
-          <textarea name="text" class="cluebook-input" placeholder="Текст заметки..." style="width: 100%; min-height: 80px;" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('button[data-action=ok]').click(); }"></textarea>
+          <input type="text" name="name" class="cluebook-input" placeholder="${game.i18n.localize("CLUEBOOK.EntryDetails.Untitled")}" style="width: 100%;" autofocus onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); const next = this.closest('.window-content').querySelector('textarea'); if (next) next.focus(); }">
+          <textarea name="text" class="cluebook-input" placeholder="..." style="width: 100%; min-height: 80px;" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('button[data-action=ok]').click(); }"></textarea>
         </div>
       `;
     } else if (type === "npc") {
-      title = "Добавить персонажа";
+      title = game.i18n.localize("CLUEBOOK.AppActions.QuickAddTitleNPC");
       content = `
         <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
-          <input type="text" name="name" class="cluebook-input" placeholder="Имя" style="width: 100%;" autofocus onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('input[name=location]').focus(); }">
-          <input type="text" name="location" class="cluebook-input" placeholder="Локация" style="width: 100%;" onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('input[name=attitude]').focus(); }">
-          <input type="text" name="attitude" class="cluebook-input" placeholder="Отношение" style="width: 100%;" onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('textarea[name=note]').focus(); }">
-          <textarea name="note" class="cluebook-input" placeholder="Описание..." style="width: 100%; min-height: 60px;" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('button[data-action=ok]').click(); }"></textarea>
+          <input type="text" name="name" class="cluebook-input" placeholder="${game.i18n.localize("CLUEBOOK.AppActions.UnknownNPC")}" style="width: 100%;" autofocus onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('input[name=location]').focus(); }">
+          <input type="text" name="location" class="cluebook-input" placeholder="${game.i18n.localize("CLUEBOOK.AppActions.Location")}" style="width: 100%;" onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('input[name=attitude]').focus(); }">
+          <input type="text" name="attitude" class="cluebook-input" placeholder="${game.i18n.localize("CLUEBOOK.AppActions.Attitude")}" style="width: 100%;" onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('textarea[name=note]').focus(); }">
+          <textarea name="note" class="cluebook-input" placeholder="..." style="width: 100%; min-height: 60px;" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('button[data-action=ok]').click(); }"></textarea>
         </div>
       `;
     } else if (type === "quests") {
-      title = "Добавить квест";
+      title = game.i18n.localize("CLUEBOOK.AppActions.QuickAddTitleQuest");
       content = `
         <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
           <select name="status" class="cluebook-input" style="width: 100%;">
-            <option value="active">Активно</option>
-            <option value="completed">Выполнено</option>
-            <option value="failed">Провалено</option>
+            <option value="active">${game.i18n.localize("CLUEBOOK.Quest.Active")}</option>
+            <option value="completed">${game.i18n.localize("CLUEBOOK.Quest.Completed")}</option>
+            <option value="failed">Failed</option>
           </select>
-          <textarea name="text" class="cluebook-input" placeholder="Описание квеста..." style="width: 100%; min-height: 80px;" autofocus onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('button[data-action=ok]').click(); }"></textarea>
+          <textarea name="text" class="cluebook-input" placeholder="..." style="width: 100%; min-height: 80px;" autofocus onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('button[data-action=ok]').click(); }"></textarea>
         </div>
       `;
     } else if (type === "timeline") {
-      title = "Добавить событие";
+      title = game.i18n.localize("CLUEBOOK.AppActions.QuickAddTitleTimeline");
       content = `
         <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
-          <textarea name="event" class="cluebook-input" placeholder="Описание события..." style="width: 100%; min-height: 80px;" autofocus onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('button[data-action=ok]').click(); }"></textarea>
+          <textarea name="event" class="cluebook-input" placeholder="..." style="width: 100%; min-height: 80px;" autofocus onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('button[data-action=ok]').click(); }"></textarea>
+        </div>
+      `;
+    } else if (type === "locations") {
+      title = game.i18n.localize("CLUEBOOK.AppActions.QuickAddTitleLocation");
+      content = `
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+          <input type="text" name="name" class="cluebook-input" placeholder="${game.i18n.localize("CLUEBOOK.EntryDetails.Untitled")}" style="width: 100%;" autofocus onkeydown="if(event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('textarea[name=note]').focus(); }">
+          <textarea name="note" class="cluebook-input" placeholder="..." style="width: 100%; min-height: 80px;" onkeydown="if(event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); event.stopPropagation(); this.closest('.window-content').querySelector('button[data-action=ok]').click(); }"></textarea>
         </div>
       `;
     }
 
     content += `
       <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px;">
-        <label style="font-size: 12px; color: var(--cb-text-muted);">Цвет карточки:</label>
+        <label style="font-size: 12px; color: var(--cb-text-muted);">${game.i18n.localize("CLUEBOOK.AppActions.CardColor")}</label>
         <select name="color" class="cluebook-input" style="width: 100%;">
-          <option value="default">По умолчанию</option>
-          <option value="yellow">Желтый</option>
-          <option value="green">Зеленый</option>
-          <option value="blue">Синий</option>
-          <option value="red">Красный</option>
-          <option value="purple">Фиолетовый</option>
+          <option value="default">${game.i18n.localize("CLUEBOOK.AppActions.DefaultColor")}</option>
+          <option value="yellow">${game.i18n.localize("CLUEBOOK.Colors.Yellow")}</option>
+          <option value="green">${game.i18n.localize("CLUEBOOK.Colors.Green")}</option>
+          <option value="blue">${game.i18n.localize("CLUEBOOK.Colors.Blue")}</option>
+          <option value="red">${game.i18n.localize("CLUEBOOK.Colors.Red")}</option>
+          <option value="purple">${game.i18n.localize("CLUEBOOK.Colors.Purple")}</option>
         </select>
       </div>
     `;
@@ -1280,7 +1735,7 @@ ${calendarInfo}
       window: { title },
       content: `<form>${content}</form>`,
       ok: {
-        label: "Создать",
+        label: game.i18n.localize("CLUEBOOK.AppActions.CreateBtn"),
         icon: "fas fa-check",
         callback: (event, button, dialog) => {
           const formElement = event.target.closest('form') || event.target.closest('.window-app').querySelector('form');
@@ -1299,7 +1754,7 @@ ${calendarInfo}
     let maxSort = 0;
     let document = game.user;
     if (activeWorkspace !== "personal") {
-      document = game.journal.get(activeWorkspace) || game.journal.getName("ClueBook_Shared_DB") || game.user;
+      document = game.journal.get(activeWorkspace) || game.user;
     }
     const currentData = document.getFlag("ClueBook", "data")?.[type] || {};
     Object.values(currentData).forEach(e => {
@@ -1321,7 +1776,7 @@ ${calendarInfo}
     const flagPath = `flags.ClueBook.data.${type}.${entryId}`;
     
     if (activeWorkspace !== "personal") {
-      const journal = game.journal.get(activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
+      const journal = game.journal.get(activeWorkspace);
       if (journal) {
         if (journal.isOwner) {
           await journal.update({ [flagPath]: entryData });
@@ -1339,7 +1794,7 @@ ${calendarInfo}
       await game.user.update({ [flagPath]: entryData });
     }
 
-    ui.notifications.info(`Запись добавлена в "${title}".`);
+    ui.notifications.info(game.i18n.format("CLUEBOOK.AppActions.EntryAddedTo", { title }));
     
     // Auto-refresh the main app if it is open
     const app = Array.from(foundry.applications.instances.values()).find(w => w.constructor.name === "ClueBookApp");
@@ -1360,7 +1815,7 @@ ${calendarInfo}
     if (app.state.activeWorkspace === "personal") {
       dataObj = game.user.getFlag("ClueBook", "data") || {};
     } else {
-      const journal = game.journal.get(app.state.activeWorkspace) || game.journal.getName("ClueBook_Shared_DB");
+      const journal = game.journal.get(app.state.activeWorkspace);
       if (journal) dataObj = journal.getFlag("ClueBook", "data") || {};
     }
 
@@ -1368,7 +1823,7 @@ ${calendarInfo}
       currentVal = dataObj[tab][entryId][field];
     }
 
-    const timestamp = await ClueBookDatePicker.prompt(currentVal, "Выбор даты и времени");
+    const timestamp = await ClueBookDatePicker.prompt(currentVal, "Р’С‹Р±РѕСЂ РґР°С‚С‹ Рё РІСЂРµРјРµРЅРё");
     if (timestamp !== null) {
       const input = entry.querySelector(`input[data-field="${field}"]`);
       if (input) {
@@ -1396,7 +1851,7 @@ ${calendarInfo}
               trashBtn.type = "button";
               trashBtn.dataset.action = "clearDate";
               trashBtn.dataset.field = field;
-              trashBtn.title = "Удалить дату";
+              trashBtn.title = "РЈРґР°Р»РёС‚СЊ РґР°С‚Сѓ";
               trashBtn.style.cssText = "flex: 0 0 30px; padding: 2px; background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.5); border-radius: 4px; color: #ff5252;";
               if (field === "deadlineTimestamp") trashBtn.style.height = "30px";
               trashBtn.innerHTML = `<i class="fas fa-trash"></i>`;
@@ -1427,10 +1882,10 @@ ${calendarInfo}
       // Instant UI update
       const pickBtn = entry.querySelector(`button[data-action="pickDate"][data-field="${field}"]`);
       if (pickBtn) {
-        let defaultText = "Дата...";
-        if (field === "deadlineTimestamp") defaultText = "Дедлайн (необязательно)...";
-        if (field === "startTimestamp") defaultText = "Начало (необязательно)...";
-        if (field === "endTimestamp") defaultText = "Конец (необязательно)...";
+        let defaultText = game.i18n.localize("CLUEBOOK.DatePicker.Date");
+        if (field === "deadlineTimestamp") defaultText = game.i18n.localize("CLUEBOOK.DatePicker.Deadline");
+        if (field === "startTimestamp") defaultText = game.i18n.localize("CLUEBOOK.DatePicker.Start");
+        if (field === "endTimestamp") defaultText = game.i18n.localize("CLUEBOOK.DatePicker.End");
         
         let icon = "far fa-calendar-alt";
         let color = "#fff";
@@ -1445,3 +1900,4 @@ ${calendarInfo}
     }
   }
 };
+

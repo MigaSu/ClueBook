@@ -1,4 +1,4 @@
-﻿export class ClueBookDatePicker {
+export class ClueBookDatePicker {
   /**
    * Open the custom date picker dialog.
    * @param {number|null} initialTimestamp - The starting timestamp (optional). If null, defaults to current world time.
@@ -50,37 +50,41 @@
       maxDays
     };
 
-    const content = await renderTemplate("modules/ClueBook/templates/date-picker.hbs", templateData);
+    const content = await foundry.applications.handlebars.renderTemplate("modules/ClueBook/templates/date-picker.hbs", templateData);
 
     return new Promise((resolve) => {
-      new Dialog({
-        title: title,
+      new foundry.applications.api.DialogV2({
+        window: { title: title },
         content: content,
-        classes: ["dialog", "cb-date-picker-dialog"],
-        buttons: {
-          save: {
-            icon: '<i class="fas fa-check"></i>',
+        classes: ["cb-date-picker-dialog"],
+        buttons: [
+          {
+            action: "save",
             label: game.i18n.localize("CLUEBOOK.DatePicker.Select"),
-            callback: (html) => {
-              const year = Number(html.find('[name="year"]').val()) || 0;
-              const month = Number(html.find('[name="month"]').val()) || 0;
-              const day = Number(html.find('[name="day"]').val()) || 1;
-              const hour = Number(html.find('[name="hour"]').val()) || 0;
-              const minute = Number(html.find('[name="minute"]').val()) || 0;
+            icon: "fas fa-check",
+            default: true,
+            callback: (event, button, dialog) => {
+              const form = button.form;
+              const year = Number(form.elements.year?.value) || 0;
+              const month = Number(form.elements.month?.value) || 0;
+              const day = Number(form.elements.day?.value) || 1;
+              const hour = Number(form.elements.hour?.value) || 0;
+              const minute = Number(form.elements.minute?.value) || 0;
 
-              // Convert back to timestamp
               const newTimestamp = scApi.dateToTimestamp({ year, month, day, hour, minute });
               resolve(newTimestamp);
             }
           },
-          cancel: {
-            icon: '<i class="fas fa-times"></i>',
+          {
+            action: "cancel",
             label: game.i18n.localize("CLUEBOOK.DatePicker.Cancel"),
+            icon: "fas fa-times",
             callback: () => resolve(null)
           }
-        },
-        default: "save"
+        ],
+        rejectClose: false
       }).render(true);
     });
   }
 }
+
