@@ -3,37 +3,42 @@
 [![Downloads](https://img.shields.io/github/downloads/MigaSu/ClueBook/total)](https://github.com/MigaSu/ClueBook/releases)
 [![Downloads Latest](https://img.shields.io/github/downloads/MigaSu/ClueBook/latest/total)](https://github.com/MigaSu/ClueBook/releases)
 
-ClueBook — это удобный модуль для Foundry VTT, который помогает вести записи, управлять квестами и связывать улики на интерактивной доске детектива.
+*Читать на [Русском](README_RU.md)*
 
-## Основные возможности
-* Плавающий виджет для быстрого создания заметок, NPC, локаций, квестов и событий таймлайна.
-* Доска зацепок (Detective Board) для визуального выстраивания связей.
-* Интеграция с внутриигровым календарем (отслеживание времени и сроков), поддерживает Simple Calendar Reborn и Ginzzzu's Portraits & NPC Dock.
-* Встроенная система тегов для удобной сортировки.
+ClueBook is a handy module for Foundry VTT that helps you take notes, manage quests, and link clues on an interactive detective board.
 
-## Скриншоты
+## Key Features
+* Floating widget for quickly creating notes, NPCs, locations, quests, and timeline events.
+* Detective Board for visually establishing connections.
+* In-game calendar integration (tracking time and deadlines), supports Simple Calendar Reborn and Ginzzzu's Portraits & NPC Dock.
+* Built-in tag system for convenient sorting.
 
-### Плавающий виджет
-Удобное круговое меню для быстрого создания заметок, квестов, локаций и NPC прямо поверх экрана.
-![Плавающий виджет](Screenshots/widget.png)
+## Screenshots
 
-### Доска детектива (Detective Board)
-Интерактивная доска, где можно выстраивать визуальные связи (линии) между карточками, чтобы не запутаться в расследовании.
-![Доска детектива](Screenshots/board.png)
+### Floating Widget
+A convenient radial menu for quickly creating notes, quests, locations, and NPCs right on top of your screen.
+![Floating Widget](Screenshots/widget.png)
 
-### Окно редактирования квеста
-Настройка дедлайнов (с привязкой к календарю), цветные категории, теги и удобный текстовый редактор.
-![Окно квеста](Screenshots/editor.png)
+### Detective Board
+An interactive board where you can visually link (draw lines between) cards so you don't get lost in your investigation.
+![Detective Board](Screenshots/board.png)
 
-## Некоторые возможности
-* **Инструменты Мастера**: Прямо с доски GM может запускать макросы, включать плейлисты и звуки, активировать сцены, а также в один клик открывать листы персонажей (NPC и игроков).
-* **Упоминания через @**: В тексте любой заметки введите `@`, чтобы быстро найти и сослаться на другую запись, персонажа, предмет или журнал.
-* **Drag & Drop (Перетаскивание)**: Вы можете хватать и перетаскивать сущности (актеров, предметы, другие журналы) из боковой панели прямо в текст заметки — модуль автоматически подхватит UUID и создаст красивую ссылку.
-* **Визуальные связи**: На доске детектива можно соединять карточки между собой, чтобы наглядно видеть, как улики, локации и персонажи связаны друг с другом.
-* **Сроки квестов**: В настройках квеста или события можно задать дату начала и дедлайн — они подвяжутся к глобальному времени мира.
+### Quest Edit Window
+Deadline setup (linked to the calendar), colored categories, tags, and a user-friendly text editor.
+![Quest Edit Window](Screenshots/editor.png)
 
-## Установка
-1. Скопируйте ссылку на манифест:
+## Additional Features
+* **GM Tools**: Right from the board, the GM can trigger macros, play playlists and sounds, activate scenes, and open character sheets (NPCs and players) with a single click.
+* **@ Mentions**: Type `@` in any note's text to quickly find and reference another entry, character, item, or journal.
+* **Drag & Drop**: You can grab and drag entities (actors, items, other journals) from the sidebar directly into a note's text — the module will automatically grab the UUID and create a neat link.
+* **Visual Connections**: On the detective board, you can connect cards to each other to clearly see how clues, locations, and characters relate.
+* **Quest Deadlines**: In a quest or event's settings, you can set a start date and a deadline — they will sync with the world's global time.
+
+## Installation
+1. Copy the manifest link:
    `https://github.com/MigaSu/ClueBook/releases/latest/download/module.json`
-2. В Foundry VTT откройте вкладку **Add-on Modules** и нажмите **Install Module**.
-3. Вставьте ссылку в поле **Manifest URL** и нажмите Install.
+2. In Foundry VTT, go to the **Add-on Modules** tab and click **Install Module**.
+3. Paste the link into the **Manifest URL** field and click Install.
+
+---
+*Special thanks to AI 3.1 for assisting with the architecture design and some parts of the code.*
