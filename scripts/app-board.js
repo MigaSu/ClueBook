@@ -819,8 +819,25 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
 
     if (!proceed) return;
 
-    const [a, b] = [s, t].sort();
-    const key = `${a}_${b}`;
+    let links = this._getWorkspaceLinks();
+    let key = null;
+    const [a, b] = [String(s), String(t)].sort();
+    const sortedKey = `${a}_${b}`;
+    
+    if (links[sortedKey]) {
+      key = sortedKey;
+    } else {
+      for (let k in links) {
+        const l = links[k];
+        if ((String(l.source) === String(s) && String(l.target) === String(t)) || 
+            (String(l.source) === String(t) && String(l.target) === String(s))) {
+          key = k;
+          break;
+        }
+      }
+    }
+
+    if (!key) return;
     
     await this._updateWorkspaceData({ [`flags.ClueBook.data.links.-=${key}`]: null });
     this.render({ parts: ["content"] });
@@ -828,12 +845,30 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
 
   async _editConnectionSettings(s, t) {
     let links = this._getWorkspaceLinks();
-    const [a, b] = [s, t].sort();
-    const key = `${a}_${b}`;
+    let link = null;
+    let key = null;
+    const [a, b] = [String(s), String(t)].sort();
+    const sortedKey = `${a}_${b}`;
     
-    if (!links[key]) return;
+    if (links[sortedKey]) {
+      key = sortedKey;
+      link = links[sortedKey];
+    } else {
+      for (let k in links) {
+        const l = links[k];
+        if ((String(l.source) === String(s) && String(l.target) === String(t)) || 
+            (String(l.source) === String(t) && String(l.target) === String(s))) {
+          key = k;
+          link = l;
+          break;
+        }
+      }
+    }
     
-    const link = links[key];
+    if (!link) return;
+    
+    const linkObj = link; // just in case it's redefined later
+
     const currentLabel = link.label || "";
     const currentColor = link.color || ""; // Empty means default theme color
     const currentStyle = link.style || "solid";
@@ -855,9 +890,9 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       <div class="cb-link-setting">
         <label>${game.i18n.localize("CLUEBOOK.Board.LinkStyleLabel")}</label>
         <select name="style">
-          <option value="solid" ${currentStyle === 'solid' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Board.LinkStyleSolid")}</option>
-          <option value="dashed" ${currentStyle === 'dashed' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Board.LinkStyleDashed")}</option>
-          <option value="dotted" ${currentStyle === 'dotted' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Board.LinkStyleDotted")}</option>
+          <option value="solid" ${currentStyle === 'solid' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleSolid")}</option>
+          <option value="dashed" ${currentStyle === 'dashed' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleDashed")}</option>
+          <option value="dotted" ${currentStyle === 'dotted' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleDotted")}</option>
         </select>
       </div>
       <div class="cb-link-setting">
@@ -872,7 +907,6 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
            <div class="cb-color-preset" style="background: #9e9e9e;" data-c="#9e9e9e" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
         </div>
         <input type="color" name="color" value="${currentColor || '#ffffff'}">
-        <p style="font-size: 11px; color: #666; margin-top: 2px;">${game.i18n.localize("CLUEBOOK.Board.ColorHint")}</p>
       </div>
     `;
 
