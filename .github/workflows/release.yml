@@ -43,7 +43,7 @@ jobs:
         run: |
           curl -X POST "https://api.foundryvtt.com/_api/packages/release_version/" \
           -H "Content-Type: application/json" \
-          -H "Authorization: ${{ secrets.FOUNDRY_TOKEN }}" \
+          -H "Authorization: ${{ secrets.FOUNDRY_RELEASE_TOKEN }}" \
           -d '{
             "id": "ClueBook",
             "release": {
