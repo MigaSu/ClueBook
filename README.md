@@ -1,5 +1,8 @@
 # ClueBook
 
+[![Downloads](https://img.shields.io/github/downloads/MigaSu/ClueBook/total)](https://github.com/MigaSu/ClueBook/releases)
+[![Downloads Latest](https://img.shields.io/github/downloads/MigaSu/ClueBook/latest/total)](https://github.com/MigaSu/ClueBook/releases)
+
 ClueBook — это удобный модуль для Foundry VTT, который помогает вести записи, управлять квестами и связывать улики на интерактивной доске детектива.
 
 ## Основные возможности
