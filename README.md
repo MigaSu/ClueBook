@@ -31,6 +31,6 @@ ClueBook — это удобный модуль для Foundry VTT, которы
 
 ## Установка
 1. Скопируйте ссылку на манифест:
-   `https://github.com/pauk27000-commits/ClueBook/releases/latest/download/module.json`
+   `https://github.com/MigaSu/ClueBook/releases/latest/download/module.json`
 2. В Foundry VTT откройте вкладку **Add-on Modules** и нажмите **Install Module**.
 3. Вставьте ссылку в поле **Manifest URL** и нажмите Install.
