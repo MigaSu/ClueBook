@@ -1,0 +1,192 @@
+<div class="cluebook-entry {{#if (eq this.id @root.editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id @root.highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-text-color="{{this.textColor}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" tabindex="-1" {{#unless @root.isBoardView}}draggable="true"{{/unless}} style="{{#if @root.isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; z-index: 10; {{#if (eq this.id @root.highlightedEntryId)}}animation-duration: {{@root.settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#if this.isCustomColor}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}">
+  <div class="sticky-pin"></div>
+  {{#unless @root.isReadOnly}}
+  <div class="entry-controls">
+    {{#if @root.isGM}}
+    {{#if this.sceneUuid}}
+    <a data-action="activateScene" data-scene-id="{{this.sceneUuid}}" class="btn-scene" title="{{localize "CLUEBOOK.Location.ActivateScene"}} (Shift+Click: Активировать для игроков)"><i class="fas fa-play"></i></a>
+    {{/if}}
+    {{#if this.actorUuid}}
+    <a data-action="openActor" data-actor-id="{{this.actorUuid}}" class="btn-actor" title="Открыть персонажа"><i class="fas fa-id-card"></i></a>
+    {{/if}}
+    {{#unless @root.settings.hideGMVisibilityBtn}}
+    <a data-action="toggleVisibility" class="btn-visibility" title="{{#if this.isHidden}}{{localize "CLUEBOOK.Entry.ShowToPlayers"}}{{else}}{{localize "CLUEBOOK.Entry.HideFromPlayers"}}{{/if}}"><i class="fas {{#if this.isHidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+    {{/unless}}
+    {{#unless @root.settings.hideGMOverlayBtn}}
+    <a data-action="shareOverlay" class="btn-share" title="Показать на экранах игроков (Оверлей)"><i class="fas fa-bullhorn"></i></a>
+    {{/unless}}
+    {{/if}}
+    
+    {{#unless @root.settings.features.hideEditBtn}}
+    <a data-action="toggleEdit" class="btn-edit" title="{{localize "CLUEBOOK.Entry.Edit"}}"><i class="fas fa-pencil-alt"></i></a>
+    {{/unless}}
+
+    {{#if @root.isBoardView}}
+    <a class="btn-link" title="{{localize "CLUEBOOK.Entry.LinkWithThread"}}"><i class="fas fa-link"></i></a>
+    <a data-action="jumpToTab" class="btn-jump" title="{{localize "CLUEBOOK.Entry.FindInList"}}"><i class="fas fa-layer-group"></i></a>
+    <a data-action="togglePin" class="btn-pin {{#if this.pinned}}active{{/if}}" title="{{#if this.pinned}}{{localize "CLUEBOOK.Entry.Unpin"}}{{else}}{{localize "CLUEBOOK.Entry.Pin"}}{{/if}}"><i class="fas {{#if this.pinned}}fa-lock{{else}}fa-lock-open{{/if}}"></i></a>
+    <a data-action="removeFromBoard" class="btn-remove-board" title="{{localize "CLUEBOOK.Entry.RemoveFromBoard"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-times"></i></a>
+    {{else}}
+    {{#if this.onBoard}}
+    <a data-action="jumpToBoard" class="btn-jump" title="{{localize "CLUEBOOK.Entry.FindOnBoard"}}"><i class="fas fa-map-marker-alt"></i></a>
+    {{/if}}
+    {{#unless @root.settings.hideSendToBoardBtn}}
+    <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="{{localize "CLUEBOOK.Entry.SendToBoard"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-project-diagram"></i></a>
+    {{/unless}}
+    <a data-action="deleteEntry" class="btn-delete" title="{{localize "CLUEBOOK.Entry.Delete"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-trash"></i></a>
+    {{/if}}
+  </div>
+  {{/unless}}
+  
+  <div class="entry-content" {{#if @root.isBoardView}}style="{{#if this.boardW}}width: {{this.boardW}}px;{{/if}} {{#if this.boardH}}height: {{this.boardH}}px;{{/if}}"{{/if}}>
+    <!-- View Mode -->
+    <div class="view-mode">
+      {{#if (eq this.sourceTab "notes")}}
+        {{#if this.name}}
+          <div class="display-title">{{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; margin-right: 5px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>{{/if}}{{this.name}}</div>
+        {{/if}}
+        <div class="display-text">{{{this.enriched.text}}}</div>
+      {{/if}}
+
+      {{#if (eq this.sourceTab "npc")}}
+        <div class="display-title" style="display: flex; align-items: center; justify-content: center;">
+          {{#if this.pinned}}
+            <i class="fas fa-lock" style="font-size: 11px; margin-right: 6px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>
+          {{/if}}
+          {{#if (or (eq this.lifeStatus "dead") (and (not this.lifeStatus) this.isDead))}}
+            <i class="fas fa-skull" style="color: rgba(0,0,0,0.7); font-size: 15px; margin-right: 6px;" title="{{localize "CLUEBOOK.Entry.Dead"}}"></i>
+          {{/if}}
+          {{#if (eq this.lifeStatus "unknown")}}
+            <i class="fas fa-question-circle" style="color: rgba(0,0,0,0.5); font-size: 15px; margin-right: 6px;" title="{{localize "CLUEBOOK.Entry.Unknown"}}"></i>
+          {{/if}}
+          {{#if (or (eq this.lifeStatus "alive") (and (not this.lifeStatus) (not this.isDead)))}}
+            <i class="fas fa-heartbeat" style="color: rgba(76,175,80,0.8); font-size: 15px; margin-right: 6px;" title="{{localize "CLUEBOOK.Entry.Alive"}}"></i>
+          {{/if}}
+          <span>{{this.name}}</span>
+        </div>
+        <div style="display: flex; gap: 5px; flex-wrap: wrap; margin: 4px 0; position: relative; z-index: 2;">
+          {{#if this.location}}<div class="cb-smart-badge"><i class="fas fa-map-marker-alt"></i> {{{this.enriched.location}}}</div>{{/if}}
+          {{#if this.attitude}}<div class="cb-smart-badge"><i class="fas fa-smile"></i> {{this.attitude}}</div>{{/if}}
+        </div>
+        <div class="display-text" style="position: relative; z-index: 2;">{{{this.enriched.note}}}</div>
+      {{/if}}
+      {{#if (eq this.sourceTab "locations")}}
+        <div class="display-title" style="display: flex; align-items: center; justify-content: center;">
+          {{#if this.pinned}}
+            <i class="fas fa-lock" style="font-size: 11px; margin-right: 6px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>
+          {{/if}}
+          <span>{{this.name}}</span>
+        </div>
+        <div style="display: flex; gap: 5px; flex-wrap: wrap; margin: 4px 0; position: relative; z-index: 2;">
+          {{#if this.subtitle}}<div class="cb-smart-badge"><i class="fas fa-map"></i> {{{this.enriched.subtitle}}}</div>{{/if}}
+          {{#if this.owner}}<div class="cb-smart-badge"><i class="fas fa-crown"></i> {{{this.enriched.owner}}}</div>{{/if}}
+        </div>
+        <div class="display-text" style="position: relative; z-index: 2;">{{{this.enriched.note}}}</div>
+      {{/if}}
+
+      {{#if (eq this.sourceTab "quests")}}
+        <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 5px; gap: 5px; width: 100%;">
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <div class="display-badge badge-{{this.status}}">{{this.translatedStatus}}</div>
+            {{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>{{/if}}
+          </div>
+          {{#if this.formattedDeadline}}
+            <div class="cb-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}} {{#if this.isOverdue}}is-overdue{{/if}}" title="{{#if (eq this.timeMode 'at')}}Запланировано{{else}}Осталось времени{{/if}}">
+              <div class="qtb-icon">
+                {{#if (eq this.timeMode 'at')}}<i class="fas fa-calendar-check"></i>{{else}}<i class="fas fa-hourglass-half"></i>{{/if}}
+              </div>
+              <div class="qtb-content">
+                <div class="qtb-left-block">
+                  <div class="qtb-label-small">{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.Assigned"}}{{else}}{{localize "CLUEBOOK.Quest.Deadline"}}{{/if}}</div>
+                  <div class="qtb-value-text">{{this.formattedDeadlineDate}}</div>
+                  <div class="qtb-value-text">{{this.formattedDeadlineTime}}</div>
+                </div>
+                <div class="qtb-right-block">
+                  <div class="qtb-label-small" style="text-align: center;">{{#if this.isOverdue}}{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.Passed"}}{{else}}{{localize "CLUEBOOK.Quest.Overdue"}}{{/if}}{{else}}{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.In"}}{{else}}{{localize "CLUEBOOK.Quest.Left"}}{{/if}}{{/if}}</div>
+                  <div class="qtb-value">{{this.timeStr}}</div>
+                </div>
+              </div>
+            </div>
+          {{else if (and this.deadline (not @root.isSimpleCalendarActive))}}
+            <div class="cb-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}}">
+              <div class="qtb-icon">
+                {{#if (eq this.timeMode 'at')}}<i class="fas fa-calendar-check"></i>{{else}}<i class="fas fa-hourglass-half"></i>{{/if}}
+              </div>
+              <div class="qtb-content">
+                <div class="qtb-left-block">
+                  <div class="qtb-label-small">{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.Scheduled"}}{{else}}{{localize "CLUEBOOK.Quest.Deadline"}}{{/if}}</div>
+                  <div class="qtb-value-text">{{this.deadline}}</div>
+                </div>
+              </div>
+            </div>
+          {{/if}}
+        </div>
+        <div class="display-text">{{{this.enriched.text}}}</div>
+      {{/if}}
+
+      {{#if (eq this.sourceTab "timeline")}}
+        {{#if (or this.formattedStart this.formattedEnd (and this.time (not @root.isSimpleCalendarActive)))}}
+          <div class="cb-quest-time-badge" style="margin-bottom: 8px;">
+            <div class="qtb-icon" style="background: rgba(255,255,255,0.1); color: #ccc;">
+              <i class="fas fa-history"></i>
+            </div>
+            <div class="qtb-content">
+              {{#if this.formattedStart}}
+              <div class="qtb-left-block" {{#unless this.formattedEnd}}style="border-right: none;"{{/unless}}>
+                <div class="qtb-label-small">{{#if this.formattedEnd}}{{localize "CLUEBOOK.Timeline.Start"}}{{else}}{{localize "CLUEBOOK.Timeline.Time"}}{{/if}}</div>
+                <div class="qtb-value-text">{{this.formattedStartDate}}</div>
+                <div class="qtb-value-text">{{this.formattedStartTime}}</div>
+              </div>
+              {{/if}}
+              {{#if this.formattedEnd}}
+              <div class="qtb-right-block" style="align-items: flex-start; {{#if this.formattedStart}}padding-left: 4px;{{/if}}">
+                <div class="qtb-label-small">{{localize "CLUEBOOK.Timeline.End"}}</div>
+                <div class="qtb-value-text">{{this.formattedEndDate}}</div>
+                <div class="qtb-value-text">{{this.formattedEndTime}}</div>
+              </div>
+              {{/if}}
+              {{#if (and (not this.formattedStart) this.time (not @root.isSimpleCalendarActive))}}
+              <div class="qtb-left-block" style="border-right: none;">
+                <div class="qtb-label-small">{{localize "CLUEBOOK.Timeline.Time"}}</div>
+                <div class="qtb-value-text">{{this.time}}</div>
+              </div>
+              {{/if}}
+            </div>
+          </div>
+        {{/if}}
+        <div class="timeline-event display-text">{{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; margin-right: 5px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>{{/if}}{{{this.enriched.event}}}</div>
+      {{/if}}
+      
+      {{#if @root.isGM}}
+        {{#if this.gmNotes}}
+          <div class="cb-gm-callout">
+            <div class="cb-gm-callout-header"><i class="fas fa-user-secret"></i> {{localize "CLUEBOOK.Entry.SecretGM"}}</div>
+            <div class="cb-gm-callout-body">{{{this.enriched.gmNotes}}}</div>
+          </div>
+        {{/if}}
+      {{/if}}
+
+      {{#if this.resolvedTags.length}}
+        <div class="cluebook-tags-container" style="margin-top: auto; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.05);">
+          {{#each this.resolvedTags}}
+            <span class="cb-tag {{#if this.isSecret}}cb-tag-secret{{/if}}" data-tag-id="{{this.id}}" style="cursor: pointer; background: {{this.color}};" title="{{this.name}}{{#if this.isSecret}} (Секретно){{/if}}">
+              {{#if this.isSecret}}<i class="fas fa-eye-slash" style="opacity:0.6; font-size:10px;"></i>{{/if}}
+              {{this.name}}
+            </span>
+          {{/each}}
+        </div>
+      {{/if}}
+
+      {{#if this.explicitLinks.length}}
+        <div class="cb-links-compact" style="margin-top: auto; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+          <i class="fas fa-link" style="opacity: 0.5; font-size: 12px;" title="{{localize "CLUEBOOK.Entry.Links"}}"></i>
+          {{#each this.explicitLinks}}
+            <span class="cb-link-chip" data-action="jumpToLinked" data-target-id="{{this.id}}" data-cb-preview="{{this.preview}}" style="position: relative; font-size: 12px; font-weight: 500; background: rgba(0,0,0,0.08); padding: 3px 8px; border-radius: 10px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+              {{this.name}}
+            </span>
+          {{/each}}
+        </div>
+      {{/if}}
+    </div>
+  </div>
+</div>

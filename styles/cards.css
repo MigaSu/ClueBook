@@ -1,0 +1,374 @@
+/* --- Grid Layout for Entries --- */
+.entries-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+  align-items: start;
+}
+
+
+/* --- Cards (Entries - Sticky Notes) --- */
+.cluebook-entry {
+  position: relative;
+  border-radius: 12px;
+  color: #1e293b;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.15), 0 4px 6px -4px rgba(0, 0, 0, 0.1), inset 1px 1px 0 rgba(255, 255, 255, 0.5), inset -1px -1px 0 rgba(0, 0, 0, 0.05);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  min-height: 120px;
+}
+.cluebook-entry:not(.is-editing):hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.2), 0 8px 12px -5px rgba(0, 0, 0, 0.12), inset 1px 1px 0 rgba(255, 255, 255, 0.6), inset -1px -1px 0 rgba(0, 0, 0, 0.05);
+  z-index: 20;
+}
+
+.entry-content {
+  padding: 24px 15px 15px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 120px;
+}
+
+.board-canvas {
+  /* will-change: transform; removed to fix blur */
+}
+
+.board-canvas .cluebook-entry {
+  /* Remove transform transition to prevent Chromium from creating a low-res GPU layer */
+  transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
+  transform: none !important;
+}
+.board-canvas .cluebook-entry:not(.is-editing):hover {
+  transform: none !important;
+}
+
+.board-canvas .entry-content {
+  padding: 6px 8px 8px 8px;
+  gap: 4px;
+  width: 300px;
+  min-width: 180px;
+  resize: both;
+  overflow: hidden;
+  position: relative;
+}
+
+.board-canvas .sticky-pin {
+  display: none;
+}
+
+.cluebook-entry::after {
+  /* Curled edge effect */
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  border-width: 0 10px 10px 0;
+  border-style: solid;
+  border-color: rgba(0,0,0,0.08) transparent transparent transparent;
+  box-shadow: -2px -2px 3px rgba(0,0,0,0.04);
+  border-bottom-right-radius: 8px;
+  pointer-events: none;
+}
+
+
+/* --- View / Edit Mode Toggle --- */
+.cluebook-entry .edit-mode {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.cluebook-entry .view-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 5px;
+  word-break: break-word;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.cluebook-entry.is-editing .edit-mode {
+  display: flex;
+}
+.cluebook-entry.is-editing .view-mode {
+  display: none;
+}
+
+/* View Mode Styling */
+.display-title {
+  font-size: 15.5px;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding-bottom: 4px;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+
+
+.display-text {
+  font-size: 14.2px;
+  line-height: 1.55;
+  color: #1e293b;
+  text-align: left;
+}
+
+.cb-smart-badge {
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.4), inset -1px -1px 0 rgba(0, 0, 0, 0.05);
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+}
+
+.display-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: bold;
+  text-transform: uppercase;
+  align-self: flex-start;
+  color: white;
+  white-space: nowrap;
+}
+.badge-active { background: #4caf50; }
+.badge-completed { background: #2196f3; }
+.badge-failed { background: #f44336; }
+
+
+/* --- Color Tags --- */
+.color-palette {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  justify-content: center;
+}
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.color-swatch:hover {
+  transform: scale(1.2);
+}
+.color-swatch.color-yellow { background: #ffd940; }
+.color-swatch.color-red { background: #ff6b6b; }
+.color-swatch.color-green { background: #7add80; }
+.color-swatch.color-blue { background: #6bccff; }
+.color-swatch.color-purple { background: #d47aec; }
+.color-swatch.color-orange { background: #ffb642; }
+.color-swatch.color-teal { background: #51e0d3; }
+.color-swatch.color-pink { background: #ff80b3; }
+.color-swatch.color-brown { background: #b99384; }
+
+.cluebook-entry[data-color="yellow"] { background: linear-gradient(135deg, #fff7c2 0%, #fff185 50%, #ffd940 100%); }
+.cluebook-entry[data-color="red"] { background: linear-gradient(135deg, #ffd1d1 0%, #ffb8b8 50%, #ff6b6b 100%); }
+.cluebook-entry[data-color="green"] { background: linear-gradient(135deg, #d3f9d4 0%, #bcf5be 50%, #7add80 100%); }
+.cluebook-entry[data-color="blue"] { background: linear-gradient(135deg, #d8f3ff 0%, #bdebff 50%, #6bccff 100%); }
+/* --- Grid Layout for Entries --- */
+.entries-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+  align-items: start;
+}
+
+
+/* --- Cards (Entries - Sticky Notes) --- */
+.cluebook-entry {
+  position: relative;
+  border-radius: 12px;
+  color: #1e293b;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.15), 0 4px 6px -4px rgba(0, 0, 0, 0.1), inset 1px 1px 0 rgba(255, 255, 255, 0.5), inset -1px -1px 0 rgba(0, 0, 0, 0.05);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+  min-height: 120px;
+}
+.cluebook-entry:not(.is-editing):hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.2), 0 8px 12px -5px rgba(0, 0, 0, 0.12), inset 1px 1px 0 rgba(255, 255, 255, 0.6), inset -1px -1px 0 rgba(0, 0, 0, 0.05);
+  z-index: 20;
+}
+
+.entry-content {
+  padding: 24px 15px 15px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 120px;
+}
+
+.board-canvas {
+  /* will-change: transform; removed to fix blur */
+}
+
+.board-canvas .cluebook-entry {
+  /* Remove transform transition to prevent Chromium from creating a low-res GPU layer */
+  transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
+  transform: none !important;
+}
+.board-canvas .cluebook-entry:not(.is-editing):hover {
+  transform: none !important;
+}
+
+.board-canvas .entry-content {
+  padding: 6px 8px 8px 8px;
+  gap: 4px;
+  width: 300px;
+  min-width: 180px;
+  resize: both;
+  overflow: hidden;
+  position: relative;
+}
+
+.board-canvas .sticky-pin {
+  display: none;
+}
+
+.cluebook-entry::after {
+  /* Curled edge effect */
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  border-width: 0 10px 10px 0;
+  border-style: solid;
+  border-color: rgba(0,0,0,0.08) transparent transparent transparent;
+  box-shadow: -2px -2px 3px rgba(0,0,0,0.04);
+  border-bottom-right-radius: 8px;
+  pointer-events: none;
+}
+
+
+/* --- View / Edit Mode Toggle --- */
+.cluebook-entry .edit-mode {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.cluebook-entry .view-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 5px;
+  word-break: break-word;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.cluebook-entry.is-editing .edit-mode {
+  display: flex;
+}
+.cluebook-entry.is-editing .view-mode {
+  display: none;
+}
+
+/* View Mode Styling */
+.display-title {
+  font-size: 15.5px;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding-bottom: 4px;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+
+
+.display-text {
+  font-size: 14.2px;
+  line-height: 1.55;
+  color: #1e293b;
+  text-align: left;
+}
+
+.cb-smart-badge {
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.4), inset -1px -1px 0 rgba(0, 0, 0, 0.05);
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+}
+
+.display-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: bold;
+  text-transform: uppercase;
+  align-self: flex-start;
+  color: white;
+  white-space: nowrap;
+}
+.badge-active { background: #4caf50; }
+.badge-completed { background: #2196f3; }
+.badge-failed { background: #f44336; }
+
+
+/* --- Color Tags --- */
+.color-palette {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  justify-content: center;
+}
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.color-swatch:hover {
+  transform: scale(1.2);
+}
+.color-swatch.color-yellow { background: #ffd940; }
+.color-swatch.color-red { background: #ff6b6b; }
+.color-swatch.color-green { background: #7add80; }
+.color-swatch.color-blue { background: #6bccff; }
+.color-swatch.color-purple { background: #d47aec; }
+.color-swatch.color-orange { background: #ffb642; }
+.color-swatch.color-teal { background: #51e0d3; }
+.color-swatch.color-pink { background: #ff80b3; }
+.color-swatch.color-brown { background: #b99384; }
+
+.cluebook-entry[data-color="yellow"] { background: linear-gradient(135deg, #fff7c2 0%, #fff185 50%, #ffd940 100%); }
+.cluebook-entry[data-color="red"] { background: linear-gradient(135deg, #ffd1d1 0%, #ffb8b8 50%, #ff6b6b 100%); }
+.cluebook-entry[data-color="green"] { background: linear-gradient(135deg, #d3f9d4 0%, #bcf5be 50%, #7add80 100%); }
+.cluebook-entry[data-color="blue"] { background: linear-gradient(135deg, #d8f3ff 0%, #bdebff 50%, #6bccff 100%); }
+.cluebook-entry[data-color="purple"] { background: linear-gradient(135deg, #f7dfff 0%, #eec9f7 50%, #d47aec 100%); }
+.cluebook-entry[data-color="orange"] { background: linear-gradient(135deg, #fff0c7 0%, #ffe4a3 50%, #ffb642 100%); }
+.cluebook-entry[data-color="teal"] { background: linear-gradient(135deg, #d7f9f7 0%, #bdf2ef 50%, #51e0d3 100%); }
+.cluebook-entry[data-color="pink"] { background: linear-gradient(135deg, #ffe3ee 0%, #ffd1e3 50%, #ff80b3 100%); }
+.cluebook-entry[data-color="brown"] { background: linear-gradient(135deg, #ebe1dd 0%, #dccbc4 50%, #b99384 100%); }
+
+/* Drag and Drop Line Indicators */
+.cluebook-entry.drop-target-above {
+  box-shadow: 0 -4px 0 0 var(--cb-accent, #7b61ff) !important;
+  transform: translateY(2px);
+}
+
+.cluebook-entry.drop-target-below {
+  box-shadow: 0 4px 0 0 var(--cb-accent, #7b61ff) !important;
+  transform: translateY(-2px);
+}

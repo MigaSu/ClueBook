@@ -1,0 +1,48 @@
+  <div class="settings-container">
+    <div class="settings-header" style="text-align: center; margin-bottom: 20px;">
+      <i class="fas fa-layer-group" style="font-size: 32px; color: var(--cb-accent); margin-bottom: 10px;"></i>
+      <h2 style="margin: 0; border: none; padding: 0;">{{localize "CLUEBOOK.Settings.ManageBoards"}}</h2>
+      <p class="settings-hint" style="margin-top: 5px;">{{localize "CLUEBOOK.Settings.ManageBoardsHint"}}</p>
+    </div>
+
+    <div class="settings-section" style="background: rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <select id="cb-workspace-select" class="setting-input" style="flex: 1; font-size: 16px; padding: 8px; height: auto;">
+          {{#each workspaces}}
+            <option value="{{this.id}}" {{#if (eq this.id ../activeWorkspace)}}selected{{/if}}>{{this.name}}</option>
+          {{/each}}
+        </select>
+        
+        <button type="button" data-action="editWorkspace" title="{{localize "CLUEBOOK.Settings.EditWorkspace"}}" style="flex: 0 0 auto; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
+          <i class="fas fa-cog"></i>
+        </button>
+
+        {{#if (and isGM (ne activeWorkspace "personal"))}}
+        <button type="button" data-action="deleteWorkspace" title="{{localize "CLUEBOOK.Settings.DeleteWorkspace"}}" style="flex: 0 0 auto; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.5); color: #ff5252; border-radius: 6px;">
+          <i class="fas fa-trash"></i>
+        </button>
+        {{/if}}
+      </div>
+      
+      <div style="margin-top: 15px; display: flex; justify-content: center;">
+        <button id="cb-workspace-create" type="button" style="width: auto; padding: 6px 15px; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.3); font-size: 13px; cursor: pointer; transition: all 0.2s;">
+          <i class="fas fa-plus"></i> {{localize "CLUEBOOK.Settings.CreateSharedBoard"}}
+        </button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3 style="font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;"><i class="fas fa-database"></i> {{localize "CLUEBOOK.Settings.DataJSON"}}</h3>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" data-action="importJSON" style="flex: 1; padding: 8px; cursor: pointer; background: rgba(123, 97, 255, 0.2); border: 1px solid rgba(123, 97, 255, 0.4); border-radius: 6px; font-size: 13px;">
+          <i class="fas fa-file-import"></i> {{localize "CLUEBOOK.Settings.Import"}}
+        </button>
+        <button type="button" data-action="exportJSON" style="flex: 1; padding: 8px; cursor: pointer; background: rgba(0, 150, 136, 0.2); border: 1px solid rgba(0, 150, 136, 0.4); border-radius: 6px; font-size: 13px;">
+          <i class="fas fa-file-export"></i> {{localize "CLUEBOOK.Settings.Export"}}
+        </button>
+        <button type="button" data-action="copyDataFormat" title="{{localize "CLUEBOOK.Settings.DataFormat"}}" style="flex: 0 0 auto; width: 38px; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
+          <i class="fas fa-code"></i>
+        </button>
+      </div>
+    </div>
+  </div>

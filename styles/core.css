@@ -1,0 +1,1352 @@
+
+/* --- Variables & Core Theme --- */
+.cluebook-window {
+  --cb-bg-solid: #1a1a24;
+  --cb-bg-glass: rgba(26, 26, 36, 0.85);
+  --cb-border: rgba(255, 255, 255, 0.08);
+  --cb-border-highlight: rgba(255, 255, 255, 0.2);
+  --cb-accent: #7b61ff;
+  --cb-accent-glow: rgba(123, 97, 255, 0.4);
+  --cb-text: #e0e0e0;
+  --cb-text-muted: #8b8b99;
+  --cb-input-bg: rgba(0, 0, 0, 0.25);
+  --cb-danger: #ff5252;
+  transition: opacity 0.3s ease !important;
+}
+
+
+/* --- Application Window --- */
+.cluebook-window .window-content {
+  display: flex;
+  flex-direction: row;
+  padding: 0;
+  background: var(--cb-bg-glass);
+  backdrop-filter: blur(12px); /* Glassmorphism */
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--cb-text);
+  border-radius: 0 0 8px 8px; /* Match standard AppV2 header radius */
+}
+
+
+/* --- Tabs Sidebar --- */
+.cluebook-tabs {
+  flex: 0 0 60px;
+  background: rgba(0, 0, 0, 0.3);
+  border-right: 1px solid var(--cb-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.cluebook-tabs .tabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-top: 10px;
+}
+
+.cluebook-tabs .item {
+  width: 100%;
+  height: 54px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  color: var(--cb-text-muted);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.cluebook-tabs .item:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cluebook-tabs .item.active {
+  color: var(--cb-accent);
+  background: rgba(123, 97, 255, 0.1);
+}
+
+.cluebook-tabs .item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10%;
+  height: 80%;
+  width: 3px;
+  background: var(--cb-accent);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 8px var(--cb-accent-glow);
+}
+
+.cluebook-tabs .mode-toggle {
+  margin-top: auto;
+  border-top: 1px solid var(--cb-border);
+  background: rgba(0,0,0,0.1);
+}
+
+.cluebook-tabs .mode-toggle a {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 22px;
+  color: var(--cb-text-muted);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cluebook-tabs .mode-toggle a:hover {
+  color: var(--cb-accent);
+  text-shadow: 0 0 8px var(--cb-accent-glow);
+}
+
+
+/* --- Search --- */
+.search-container {
+  position: relative;
+  width: 100%;
+}
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.5);
+  font-size: 14px;
+}
+.cluebook-search-input {
+  width: 100%;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  color: white;
+  padding: 8px 10px 8px 30px;
+  font-family: 'Signika', sans-serif;
+  transition: all 0.2s ease;
+}
+
+.board-recenter-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--cb-accent);
+  border: 1px solid var(--cb-border);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 18px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  transition: all 0.2s ease;
+}
+
+.board-recenter-btn:hover {
+  background: var(--cb-accent);
+  color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 0 15px var(--cb-accent-glow);
+}
+
+.cluebook-search-input:focus {
+  border-color: var(--cb-accent);
+  box-shadow: 0 0 5px var(--cb-accent-glow);
+  outline: none;
+}
+
+
+/* --- Content Area --- */
+.cluebook-content {
+  flex: 1;
+  padding: 15px 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cluebook-content::-webkit-scrollbar {
+  width: 6px;
+}
+.cluebook-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+
+/* --- Inputs (Adapted for Light BG) --- */
+.cluebook-input {
+  width: 100%;
+  background: rgba(0,0,0,0.05);
+  border: 1px solid transparent;
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+  border-radius: 4px;
+  color: #333;
+  padding: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.cluebook-input::placeholder {
+  color: rgba(0,0,0,0.4);
+  font-style: italic;
+}
+
+.cluebook-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.5);
+  border-bottom-color: var(--cb-accent);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+textarea.cluebook-input {
+  resize: none;
+  overflow-y: hidden;
+  min-height: 80px;
+  line-height: 1.4;
+}
+
+select.cluebook-input {
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px top 50%;
+  background-size: 10px auto;
+  padding: 4px 25px 4px 10px;
+  height: auto;
+  min-height: 30px;
+  box-sizing: border-box;
+  line-height: normal;
+}
+
+
+/* --- Buttons --- */
+.cluebook-content .add-entry-btn-container {
+  position: sticky;
+  bottom: 20px;
+  margin-top: 20px;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  pointer-events: none; /* Let clicks pass through container */
+}
+
+.cluebook-content .add-entry-btn-container button {
+  pointer-events: auto; /* Re-enable clicks for button */
+  width: auto;
+  min-width: 220px;
+  background: var(--cb-accent);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  border-radius: 30px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(5px);
+}
+
+.cluebook-content .add-entry-btn-container button:hover {
+  background: white;
+  color: var(--cb-accent);
+  box-shadow: 0 6px 25px var(--cb-accent-glow);
+  transform: translateY(-3px) scale(1.02);
+}
+
+.flexrow {
+  display: flex;
+  gap: 8px;
+}
+
+
+/* --- Quest Time Modes --- */
+
+
+
+/* --- Premium Quest Time Badge --- */
+.cb-quest-time-badge {
+  display: flex;
+  align-items: stretch;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+.cb-quest-time-badge.is-overdue {
+  border-color: #ff5252;
+  box-shadow: 0 0 8px rgba(255, 82, 82, 0.5);
+  animation: qnPulseOverdue 2s infinite;
+}
+@keyframes qnPulseOverdue {
+  0% { box-shadow: 0 0 4px rgba(255, 82, 82, 0.4); }
+  50% { box-shadow: 0 0 12px rgba(255, 82, 82, 0.8); }
+  100% { box-shadow: 0 0 4px rgba(255, 82, 82, 0.4); }
+}
+
+.cb-quest-time-badge .qtb-icon {
+  padding: 6px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.cb-quest-time-badge.mode-by .qtb-icon {
+  background: rgba(33, 150, 243, 0.2);
+  color: #64b5f6;
+  border-right: 1px solid rgba(33, 150, 243, 0.3);
+}
+.cb-quest-time-badge.mode-by.is-overdue .qtb-icon {
+  background: rgba(255, 82, 82, 0.2);
+  color: #ff5252;
+  border-right: 1px solid rgba(255, 82, 82, 0.3);
+}
+.cb-quest-time-badge.mode-at .qtb-icon {
+  background: rgba(76, 175, 80, 0.2);
+  color: #81c784;
+  border-right: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.cb-quest-time-badge .qtb-content {
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+.cb-quest-time-badge .qtb-left-block {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding-right: 6px;
+  flex-shrink: 1;
+}
+.cb-quest-time-badge .qtb-right-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cb-quest-time-badge .qtb-label-small {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 2px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.cb-quest-time-badge .qtb-value-text {
+  font-size: 11px;
+  font-weight: bold;
+  color: #ddd;
+}
+.cb-quest-time-badge .qtb-value {
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  white-space: nowrap;
+}
+.cb-quest-time-badge.is-overdue .qtb-value {
+  color: #ff5252;
+}
+
+
+/* --- Segmented Control --- */
+.cb-segmented-control {
+  display: flex;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 10px;
+}
+.cb-segmented-control label {
+  flex: 1;
+  text-align: center;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  color: #8b8b99;
+  transition: all 0.2s;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0;
+}
+.cb-segmented-control label:last-child {
+  border-right: none;
+}
+.cb-segmented-control input[type="radio"] {
+  display: none;
+}
+.cb-segmented-control label:has(input[value="by"]:checked) {
+  background: rgba(33, 150, 243, 0.3);
+  box-shadow: inset 0 0 10px rgba(33, 150, 243, 0.2);
+  color: #64b5f6;
+}
+.cb-segmented-control label:has(input[value="at"]:checked),
+.cb-segmented-control label:has(input[value="true"]:checked) {
+  background: rgba(76, 175, 80, 0.3);
+  box-shadow: inset 0 0 10px rgba(76, 175, 80, 0.2);
+  color: #81c784;
+}
+.cb-segmented-control.npc-status-control label:has(input[value="alive"]:checked) {
+  background: rgba(76, 175, 80, 0.3);
+  box-shadow: inset 0 0 10px rgba(76, 175, 80, 0.2);
+  color: #81c784;
+}
+.cb-segmented-control.npc-status-control label:has(input[value="dead"]:checked) {
+  background: rgba(255, 82, 82, 0.3);
+  box-shadow: inset 0 0 10px rgba(255, 82, 82, 0.2);
+  color: #ff5252;
+}
+.cb-segmented-control.npc-status-control label:has(input[value="unknown"]:checked) {
+  background: rgba(255, 152, 0, 0.3);
+  box-shadow: inset 0 0 10px rgba(255, 152, 0, 0.2);
+  color: #ffb74d;
+}
+
+
+/* --- Dead NPC Highlight --- */
+.cluebook-entry.is-dead {
+  filter: grayscale(0.8) opacity(0.85);
+}
+.cluebook-entry.is-dead .display-title {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: rgba(0,0,0,0.6);
+  color: rgba(0,0,0,0.7);
+}
+
+
+/* --- Premium Board Legend --- */
+.board-hotkeys-hint.premium-legend {
+  position: absolute;
+  bottom: 25px;
+  right: 25px;
+  background: rgba(15, 15, 20, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  border-radius: 12px;
+  color: #eee;
+  font-size: 13px;
+  pointer-events: auto;
+  z-index: 1000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  min-width: 250px;
+}
+.premium-legend .legend-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: bold;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 11px;
+}
+.premium-legend .legend-header .close-legend {
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s, color 0.2s;
+}
+.premium-legend .legend-header .close-legend:hover {
+  opacity: 1;
+  color: #ff5252;
+}
+.premium-legend .legend-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.premium-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.premium-legend .legend-item kbd {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-family: monospace;
+  color: #fff;
+  min-width: 40px;
+  text-align: center;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+
+/* --- Lasso and Group Selection --- */
+.cb-lasso-box {
+  position: absolute;
+  border: 1px solid var(--cb-accent);
+  background: rgba(123, 97, 255, 0.15);
+  pointer-events: none;
+  z-index: 9999;
+  border-radius: 2px;
+  box-shadow: inset 0 0 10px rgba(123, 97, 255, 0.1);
+}
+
+.cluebook-entry.is-selected::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px dashed var(--cb-accent);
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 20;
+  box-shadow: 0 0 15px var(--cb-accent-glow);
+  animation: cb-select-pulse 2s infinite alternate;
+}
+
+@keyframes cb-select-pulse {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+
+/* --- GM Notes Callout (Obsidian Style) --- */
+.cb-gm-callout {
+  margin-top: 12px;
+  background: rgba(0, 0, 0, 0.08);
+  border-left: 4px solid rgba(0, 0, 0, 0.4);
+  border-radius: 0 6px 6px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cb-gm-callout-header {
+  padding: 6px 10px 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.cb-gm-callout-body {
+  padding: 6px 10px 8px 10px;
+  font-size: 14.5px;
+  color: rgba(0, 0, 0, 0.9);
+  line-height: 1.4;
+}
+
+/* Force override Foundry's default paragraph margins inside GM Notes */
+.cb-gm-callout-body > *:first-child {
+  margin-top: 0 !important;
+}
+.cb-gm-callout-body > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+.cb-gm-callout-body p {
+  margin: 0 0 6px 0 !important;
+}
+.cb-gm-callout-body p:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Hide accidental empty paragraphs created by TinyMCE at the start */
+.cb-gm-callout-body > p:empty,
+.cb-gm-callout-body > p > br:only-child {
+  display: none !important;
+}
+
+
+/* --- Hover Link Highlight --- */
+.board-canvas.is-dimmed .cluebook-entry:not(.is-highlighted-node) {
+  opacity: 0.3 !important;
+  filter: grayscale(0.6);
+  transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.2s ease;
+}
+
+.board-canvas.is-dimmed .cluebook-entry.is-highlighted-node {
+  z-index: 100 !important;
+  box-shadow: 0 0 25px var(--cb-accent-glow), 0 0 10px rgba(255,255,255,0.2) !important;
+  transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.3s ease;
+}
+
+.board-canvas .cluebook-entry {
+  transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.2s ease, stroke-width 0.3s ease;
+}
+
+/* Custom Text Color for Cards */
+.cluebook-entry[data-text-color="light"] {
+  color: #f8f9fa;
+}
+.cluebook-entry[data-text-color="light"] .display-text,
+.cluebook-entry[data-text-color="light"] .display-text p,
+.cluebook-entry[data-text-color="light"] .display-text span,
+.cluebook-entry[data-text-color="light"] .display-text a,
+.cluebook-entry[data-text-color="light"] .display-text h1,
+.cluebook-entry[data-text-color="light"] .display-text h2,
+.cluebook-entry[data-text-color="light"] .display-text h3,
+.cluebook-entry[data-text-color="light"] .display-title,
+.cluebook-entry[data-text-color="light"] .cb-smart-badge,
+.cluebook-entry[data-text-color="light"] .timeline-event {
+  color: #f8f9fa !important;
+}
+.cluebook-entry[data-text-color="light"] .cb-smart-badge {
+  background: rgba(255,255,255,0.15);
+}
+.cluebook-entry[data-text-color="light"] .entry-controls a {
+  color: #f8f9fa;
+}
+.cluebook-entry[data-text-color="light"] .cb-quest-time-badge .qtb-value-text,
+.cluebook-entry[data-text-color="light"] .cb-quest-time-badge .qtb-label-small {
+  color: rgba(255,255,255,0.9);
+}
+.cluebook-entry[data-text-color="light"] .cb-quest-time-badge .qtb-value {
+  color: #fff;
+}
+.cluebook-entry[data-text-color="light"] .cb-link-chip {
+  color: #f8f9fa;
+  background: rgba(255,255,255,0.15);
+}
+.cluebook-entry[data-text-color="light"] i.fa-heartbeat {
+  color: #69f0ae !important;
+}
+.cluebook-entry[data-text-color="light"] i.fa-skull {
+  color: rgba(255,255,255,0.8) !important;
+}
+.cluebook-entry[data-text-color="light"] i.fa-question-circle {
+  color: rgba(255,255,255,0.6) !important;
+}
+.cluebook-entry[data-text-color="light"].is-dead .display-title {
+  text-decoration-color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.cluebook-entry .cb-mention-link {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.cluebook-entry .cb-mention-link:hover {
+  opacity: 0.7;
+}
+
+
+/* --- Empty State --- */
+.cb-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 250px;
+  width: 100%;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  padding: 20px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.cb-empty-state i {
+  font-size: 48px;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+.cb-empty-state p {
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+  text-align: center;
+}
+
+
+/* --- Custom Scene Dialog --- */
+.cluebook-scene-dialog {
+  background: rgba(26, 26, 36, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  color: #fff !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
+}
+
+.cluebook-scene-dialog .window-header {
+  background: rgba(0,0,0,0.3) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+  border-radius: 8px 8px 0 0 !important;
+}
+
+.cluebook-scene-dialog .window-content {
+  background: transparent !important;
+}
+
+.cluebook-scene-dialog .dialog-content {
+  color: #e0e0e0;
+}
+
+.cluebook-scene-dialog .dialog-buttons .dialog-button {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+  transition: all 0.2s ease !important;
+  border-radius: 6px !important;
+  margin: 0 5px !important;
+}
+
+.cluebook-scene-dialog .dialog-buttons .dialog-button:hover {
+  background: rgba(123, 97, 255, 0.4) !important;
+  border-color: #7b61ff !important;
+  box-shadow: 0 0 10px rgba(123, 97, 255, 0.3) !important;
+}
+
+
+
+
+
+
+
+
+/* --- Edit Dialog Restyling --- */
+.cb-input-lg {
+  font-size: 16px !important;
+  font-weight: bold;
+  height: 36px !important;
+}
+
+.cb-dropzone {
+  position: relative;
+}
+
+.cb-linked-badges {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 5px;
+}
+
+.cb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: all 0.2s;
+}
+
+.cb-badge:hover {
+  filter: brightness(1.2);
+  transform: translateY(-1px);
+}
+
+.cb-badge-scene {
+  background: #4caf50;
+}
+.cb-badge-actor {
+  background: #2196F3;
+}
+
+/* Tabs */
+.cb-tabs-container {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0,0,0,0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.05);
+  overflow: hidden;
+}
+
+.cb-tab-headers {
+  display: flex;
+  background: rgba(0,0,0,0.2);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.cb-tab-header {
+  flex: 1;
+  padding: 6px 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: bold;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.cb-tab-header:hover {
+  opacity: 1;
+  background: rgba(255,255,255,0.05);
+}
+
+.cb-tab-header.active {
+  opacity: 1;
+  background: rgba(255,255,255,0.1);
+  box-shadow: inset 0 -2px 0 var(--cb-accent);
+}
+
+.cb-tab-content {
+  display: none;
+  padding: 8px;
+}
+
+.cb-tab-content.active {
+  display: block;
+}
+
+.cb-tab-content textarea {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.cb-tab-content textarea:focus {
+  box-shadow: none !important;
+}
+
+
+/* --- Share Overlay (3D Card) --- */
+.cb-overlay-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0);
+  z-index: 999999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background 0.5s ease;
+  perspective: 1200px;
+}
+
+.cb-overlay-backdrop.cb-overlay-enter {
+  background: rgba(0,0,0,0.85);
+}
+
+.cb-overlay-backdrop.cb-overlay-exit {
+  background: rgba(0,0,0,0);
+}
+
+.cb-overlay-container {
+  transform-style: preserve-3d;
+  transform: rotateY(-90deg) scale(0.5);
+  opacity: 0;
+  transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s ease;
+}
+
+.cb-overlay-backdrop.cb-overlay-enter .cb-overlay-container {
+  transform: rotateY(0deg) scale(1);
+  opacity: 1;
+}
+
+.cb-overlay-backdrop.cb-overlay-exit .cb-overlay-container {
+  transform: rotateY(90deg) scale(0.5);
+  opacity: 0;
+}
+
+.cb-overlay-card {
+  width: 500px;
+  max-width: 90vw;
+  max-height: 80vh;
+  background: rgba(26, 26, 36, 0.95);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.05);
+  padding: 30px;
+  color: #e0e0e0;
+  position: relative;
+  overflow: visible; /* Changed from overflow-y: auto to allow dropdown to escape */
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+}
+
+.cb-overlay-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 30px;
+  height: 30px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.cb-overlay-close:hover {
+  background: #ff5252;
+  transform: scale(1.1) rotate(90deg);
+}
+
+.cb-overlay-inner {
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 5px; /* for scrollbar */
+}
+
+/* Custom scrollbar for overlay inner */
+.cb-overlay-inner::-webkit-scrollbar {
+  width: 6px;
+}
+.cb-overlay-inner::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+.cb-overlay-inner::-webkit-scrollbar-thumb {
+  background: rgba(123, 97, 255, 0.5);
+  border-radius: 4px;
+}
+.cb-overlay-inner::-webkit-scrollbar-thumb:hover {
+  background: rgba(123, 97, 255, 0.8);
+}
+
+.cb-overlay-inner.color-yellow { border-top: 4px solid #fbc02d; }
+.cb-overlay-inner.color-red { border-top: 4px solid #d32f2f; }
+.cb-overlay-inner.color-blue { border-top: 4px solid #1976d2; }
+.cb-overlay-inner.color-green { border-top: 4px solid #388e3c; }
+.cb-overlay-inner.color-purple { border-top: 4px solid #7b1fa2; }
+.cb-overlay-inner.color-orange { border-top: 4px solid #f57c00; }
+.cb-overlay-inner.color-teal { border-top: 4px solid #00796b; }
+.cb-overlay-inner.color-pink { border-top: 4px solid #c2185b; }
+.cb-overlay-inner.color-brown { border-top: 4px solid #5d4037; }
+
+.cb-overlay-title {
+  margin: 0 0 15px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cb-overlay-body {
+  font-size: 16px;
+}
+
+/* Epic Premium Additions */
+.cb-overlay-card.cb-epic-overlay {
+  background: linear-gradient(135deg, rgba(26,26,36,0.95) 0%, rgba(15,15,20,0.98) 100%);
+  border: 1px solid rgba(123, 97, 255, 0.4);
+  box-shadow: 0 0 40px rgba(123, 97, 255, 0.3), inset 0 0 20px rgba(123, 97, 255, 0.1);
+  padding: 40px;
+  animation: cb-epic-pulse 4s infinite alternate;
+}
+
+@keyframes cb-epic-pulse {
+  0% { box-shadow: 0 0 40px rgba(123, 97, 255, 0.2), inset 0 0 20px rgba(123, 97, 255, 0.1); }
+  100% { box-shadow: 0 0 60px rgba(123, 97, 255, 0.5), inset 0 0 30px rgba(123, 97, 255, 0.2); }
+}
+
+.cb-epic-overlay .cb-overlay-title {
+  font-size: 32px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(255,255,255,0.5);
+  border-bottom: 2px solid rgba(123, 97, 255, 0.5);
+  padding-bottom: 15px;
+  margin-bottom: 25px;
+  color: #fff;
+  justify-content: center;
+}
+
+.cb-epic-overlay .cb-overlay-body {
+  font-size: 18px;
+  line-height: 1.6;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.cb-epic-overlay .cb-overlay-inner {
+  border-top: none; /* override the simple top border */
+}
+
+/* Ensure links inside the overlay are styled nicely */
+.cb-epic-overlay .content-link {
+  background: rgba(123, 97, 255, 0.2) !important;
+  border: 1px solid rgba(123, 97, 255, 0.5) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  color: #d1c4ff !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.cb-epic-overlay .content-link i {
+  color: #a890ff !important;
+}
+
+.cb-epic-overlay .content-link:hover {
+  background: rgba(123, 97, 255, 0.4) !important;
+  color: #fff !important;
+  text-shadow: 0 0 8px rgba(123, 97, 255, 0.8) !important;
+  border-color: rgba(123, 97, 255, 0.8) !important;
+}
+
+
+/* --- Add Clue Button in Overlay --- */
+.cb-overlay-add-container {
+  margin-top: 25px;
+  text-align: center;
+  position: relative;
+}
+
+.cb-overlay-add-btn {
+  background: linear-gradient(135deg, rgba(123, 97, 255, 0.6), rgba(69, 39, 160, 0.8));
+  border: 1px solid rgba(123, 97, 255, 0.6);
+  border-radius: 8px;
+  color: white;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(123, 97, 255, 0.3);
+}
+
+.cb-overlay-add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(123, 97, 255, 0.6);
+  background: linear-gradient(135deg, rgba(123, 97, 255, 0.8), rgba(69, 39, 160, 1));
+}
+
+.cb-overlay-workspaces {
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26, 26, 36, 0.95);
+  border: 1px solid rgba(123, 97, 255, 0.5);
+  border-radius: 8px;
+  padding: 8px 0;
+  min-width: 200px;
+  max-height: 250px;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+
+/* Custom scrollbar for dropdown */
+.cb-overlay-workspaces::-webkit-scrollbar {
+  width: 6px;
+}
+.cb-overlay-workspaces::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+.cb-overlay-workspaces::-webkit-scrollbar-thumb {
+  background: rgba(123, 97, 255, 0.5);
+  border-radius: 4px;
+}
+.cb-overlay-workspaces::-webkit-scrollbar-thumb:hover {
+  background: rgba(123, 97, 255, 0.8);
+}
+
+.cb-overlay-workspaces.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* ========================================================================= */
+/* TAGS SYSTEM                                                               */
+/* ========================================================================= */
+
+.cluebook-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.cb-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  background: rgba(123, 97, 255, 0.4);
+  border: 1px solid rgba(123, 97, 255, 0.6);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.cb-tag.cb-tag-secret {
+  border-style: dashed;
+  opacity: 0.8;
+}
+
+.cb-tag:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.2);
+}
+
+.cb-tag-remove {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.cb-tag-remove:hover {
+  opacity: 1;
+  color: #ff5252;
+}
+
+/* Tag Manager Window */
+.cluebook-tag-manager {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 15px;
+}
+
+.cb-tm-header {
+  flex: 0 0 auto;
+}
+
+.cb-tm-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 5px;
+}
+
+.cb-tm-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0,0,0,0.2);
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.cb-tm-color {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+  background: transparent;
+}
+
+.cb-tm-name {
+  flex: 1;
+}
+
+.cb-tm-secret {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  cursor: pointer;
+  color: rgba(255,255,255,0.5);
+  transition: all 0.2s;
+}
+
+.cb-tm-secret:has(input:checked) {
+  color: #fbc02d;
+  background: rgba(251, 192, 45, 0.2);
+}
+
+.cb-tm-delete {
+  width: 30px;
+  height: 30px;
+  background: rgba(255, 0, 0, 0.1);
+  color: #ff5252;
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.cb-tm-delete:hover {
+  background: rgba(255, 0, 0, 0.3);
+}
+
+.cb-tm-empty {
+  text-align: center;
+  color: rgba(255,255,255,0.4);
+  font-style: italic;
+  padding: 20px;
+}
+
+.cb-tm-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cb-ws-item {
+  padding: 8px 16px;
+  color: #e0e0e0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cb-ws-item:hover {
+  background: rgba(123, 97, 255, 0.3);
+  color: white;
+}
+
+
+/* --- Hover Preview Popover for Card Links --- */
+.cb-hover-popover {
+  position: fixed;
+  z-index: 100000;
+  width: 280px;
+  max-width: 90vw;
+  background: rgba(18, 18, 26, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(123, 97, 255, 0.2);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  color: #e0e0e0;
+}
+
+.cb-hover-popover.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cb-hover-popover .cb-popover-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: 8px;
+  margin-bottom: 8px;
+}
+
+.cb-hover-popover .cb-popover-type {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cb-hover-popover .cb-popover-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.3;
+}
+
+.cb-hover-popover .cb-popover-body {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cb-hover-popover .cb-popover-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+/* Light Text Color overrides for dark themes */
+.cluebook-entry[data-text-color="light"] {
+  color: #ffffff;
+}
+.cluebook-entry[data-text-color="light"] .entry-subtitle,
+.cluebook-entry[data-text-color="light"] .entry-time,
+.cluebook-entry[data-text-color="light"] .entry-location,
+.cluebook-entry[data-text-color="light"] .entry-owner {
+  color: rgba(255, 255, 255, 0.7);
+}
+.cluebook-entry[data-text-color="light"] .entry-header i {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* --- Zen Mode --- */
+.cluebook-window.zen-mode {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 999999 !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+

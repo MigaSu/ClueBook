@@ -1,0 +1,271 @@
+/* --- Floating Widget --- */
+.cluebook-widget {
+  position: fixed;
+  left: 20px;
+  bottom: 80px; /* Above macro bar */
+  z-index: 100;
+  width: 48px;
+  height: 48px;
+}
+
+.cb-widget-main {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--cb-widget-color, var(--cb-accent, #7b61ff)), var(--cb-widget-color2, #4527a0));
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(123, 97, 255, 0.4);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.cluebook-widget.cb-menu-active .cb-widget-main {
+  transform: scale(1.1);
+  box-shadow: 0 8px 25px rgba(123, 97, 255, 0.6);
+}
+
+.cb-fab-menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 48px;
+  height: 48px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cb-fab-btn {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  background: rgba(26, 26, 36, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0;
+  transform: translate(0, 0) scale(0.5);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: auto;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.cb-fab-btn:hover {
+  background: var(--cb-accent, #7b61ff);
+  scale: 1.2;
+  color: white;
+}
+
+/* Directions */
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(1) { opacity: 1; transform: translate(90px, 0); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(2) { opacity: 1; transform: translate(83px, -34px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(3) { opacity: 1; transform: translate(64px, -64px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(4) { opacity: 1; transform: translate(34px, -83px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(5) { opacity: 1; transform: translate(0, -90px); }
+
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(1) { opacity: 1; transform: translate(-90px, 0); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(2) { opacity: 1; transform: translate(-83px, -34px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(3) { opacity: 1; transform: translate(-64px, -64px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(4) { opacity: 1; transform: translate(-34px, -83px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(5) { opacity: 1; transform: translate(0, -90px); }
+
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(1) { opacity: 1; transform: translate(90px, 0); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(2) { opacity: 1; transform: translate(83px, 34px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(3) { opacity: 1; transform: translate(64px, 64px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(4) { opacity: 1; transform: translate(34px, 83px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(5) { opacity: 1; transform: translate(0, 90px); }
+
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(1) { opacity: 1; transform: translate(-90px, 0); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(2) { opacity: 1; transform: translate(-83px, 34px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(3) { opacity: 1; transform: translate(-64px, 64px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(4) { opacity: 1; transform: translate(-34px, 83px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(5) { opacity: 1; transform: translate(0, 90px); }
+
+
+
+/* --- Compact Links & Tooltips --- */
+.cb-link-chip:hover {
+  background: var(--cb-accent) !important;
+  color: white !important;
+  box-shadow: 0 0 8px var(--cb-accent-glow);
+}
+
+.cb-custom-tooltip {
+  position: fixed;
+  background: rgba(26, 26, 36, 0.95);
+  backdrop-filter: blur(12px);
+  color: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  font-size: 13px;
+  white-space: normal;
+  text-align: left;
+  width: 250px;
+  z-index: 999999;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-50%) translateY(-90%);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* The Pin */
+.sticky-pin {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at 30% 30%, #ff5252, #b71c1c);
+  border-radius: 50%;
+  box-shadow: 2px 2px 3px rgba(0,0,0,0.4), inset -1px -1px 2px rgba(0,0,0,0.3);
+  z-index: 5;
+}
+
+.sticky-pin::before {
+  content: "";
+  position: absolute;
+  top: 40%;
+  left: 40%;
+  width: 3px;
+  height: 3px;
+  background: rgba(255,255,255,0.6);
+  border-radius: 50%;
+}
+
+.cluebook-entry .entry-controls {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  transform: scale(0.8);
+  z-index: 10;
+  display: flex;
+  gap: 5px;
+}
+
+
+/* --- Context Menu --- */
+.cb-context-menu {
+  position: absolute;
+  z-index: 999999;
+  background: rgba(15, 15, 20, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  padding: 5px 0;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+}
+.cb-context-menu .cb-menu-item {
+  padding: 8px 15px;
+  color: #ddd;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.1s, color 0.1s;
+}
+.cb-context-menu .cb-menu-item:hover {
+  background: rgba(123, 97, 255, 0.3);
+  color: #fff;
+}
+.cb-context-menu .cb-menu-item.danger:hover {
+  background: rgba(255, 82, 82, 0.3);
+  color: #ff5252;
+}
+.cb-context-menu .cb-menu-separator {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 5px 0;
+}
+
+.cluebook-entry:hover .entry-controls {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.cluebook-entry .entry-controls a {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 28px;
+  height: 28px;
+  color: white;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15), inset 1px 1px 0 rgba(255,255,255,0.2);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  font-size: 12px;
+  transition: transform 0.2s, filter 0.2s;
+}
+
+.cluebook-entry .entry-controls .btn-edit {
+  background: var(--cb-accent);
+}
+.cluebook-entry .entry-controls .btn-delete {
+  background: var(--cb-danger);
+}
+
+.cluebook-entry .entry-controls a:hover {
+  filter: brightness(1.2);
+  transform: scale(1.1);
+}
+
+.cluebook-entry.is-hidden {
+  opacity: 0.6;
+  border: 2px dashed rgba(255, 82, 82, 0.7);
+}
+
+.cluebook-entry .btn-visibility {
+  background: #555;
+}
+
+.cluebook-entry .entry-controls .btn-jump {
+  background: #009688;
+}
+
+.cluebook-entry .entry-controls .btn-scene {
+  background: #4caf50;
+  opacity: 1 !important;
+}
+
+.cluebook-entry .entry-controls .btn-actor {
+  background: #2196F3;
+  opacity: 1 !important;
+}
+
+
+/* --- Compact Links & Tooltips --- */
+
+/* Highlight Animation for Jumping to Cards */
+@keyframes qnPulse {
+  0% { box-shadow: 0 0 0 0 rgba(123, 97, 255, 0.7); border-color: rgba(123, 97, 255, 0.8); transform: scale(1.02); }
+  70% { box-shadow: 0 0 0 15px rgba(123, 97, 255, 0); border-color: inherit; transform: scale(1); }
+  100% { box-shadow: 0 0 0 0 rgba(123, 97, 255, 0); }
+}
+
+.cluebook-entry.is-highlighted {
+  animation: qnPulse 2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border: 2px solid var(--cb-accent) !important;
+  z-index: 100 !important;
+}
+
+

@@ -3,12 +3,31 @@ import { ClueBookDatePicker } from "./date-picker.js";
 import { ClueBookEditDialog } from "./edit-dialog.js";
 import { ClueBookDataMixin } from "./app-data.js";
 import { ClueBookBoardMixin } from "./app-board.js";
-import { ClueBookActionsMixin } from "./app-actions.js";
 import { ClueBookTagManager } from "./tag-manager.js";
+
+import { ClueBookEntryActionsMixin } from "./actions/entry-actions.js";
+import { ClueBookWorkspaceActionsMixin } from "./actions/workspace-actions.js";
+import { ClueBookIntegrationActionsMixin } from "./actions/integration-actions.js";
+import { ClueBookBoardActionsMixin } from "./actions/board-actions.js";
+import { ClueBookDragDropMixin } from "./actions/app-dragdrop.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
-const BaseApp = ClueBookActionsMixin(ClueBookBoardMixin(ClueBookDataMixin(HandlebarsApplicationMixin(ApplicationV2))));
+const BaseApp = ClueBookDragDropMixin(
+  ClueBookEntryActionsMixin(
+    ClueBookWorkspaceActionsMixin(
+      ClueBookIntegrationActionsMixin(
+        ClueBookBoardActionsMixin(
+          ClueBookBoardMixin(
+            ClueBookDataMixin(
+              HandlebarsApplicationMixin(ApplicationV2)
+            )
+          )
+        )
+      )
+    )
+  )
+);
 
 export class ClueBookApp extends BaseApp {
   constructor(options = {}) {
@@ -70,6 +89,18 @@ export class ClueBookApp extends BaseApp {
     return game.i18n.localize(this.options.window.title);
   }
 
+  static _formatSCTimestamp(timestamp) {
+    if (!window.SimpleCalendar?.api) return { date: "", time: "", full: "" };
+    const dt = window.SimpleCalendar.api.timestampToDate(timestamp);
+    if (!dt) return { date: "", time: "", full: "" };
+    const formatted = window.SimpleCalendar.api.formatDateTime(dt);
+    return {
+      date: formatted.date,
+      time: formatted.time,
+      full: `${formatted.date} ${formatted.time}`
+    };
+  }
+
   bringToFront() {
     super.bringToFront();
     if (foundry.applications?.instances) {
@@ -114,11 +145,15 @@ export class ClueBookApp extends BaseApp {
       cardsShowExplicitLinks: true,
       cardsShowSuggestedLinks: true,
       boardShowExplicitLinks: false,
-      boardShowSuggestedLinks: false
+      boardShowSuggestedLinks: false,
+      hideTags: false,
+      hideTagsOnCards: false
     },
     theme: {
       defaultWorkspace: "personal",
       accent: "#7b61ff",
+      widgetColor: "#7b61ff",
+      widgetColor2: "#4527a0",
       opacity: 85,
       linkColor: "#ff5252",
       linkStyle: "6,4",
@@ -448,7 +483,7 @@ export class ClueBookApp extends BaseApp {
   }
 
   _processTags(context, entries) {
-    if (!context.showTags) {
+    if (!context.showTags || this.getSettings()?.features?.hideTagsOnCards) {
       for (const entry of entries) {
         entry.resolvedTags = [];
       }
@@ -487,10 +522,10 @@ export class ClueBookApp extends BaseApp {
         const curr = game.time.worldTime;
         const diff = dl - curr;
         
-        const dt = scApi.timestampToDate(dl);
-        entry.formattedDeadline = scApi.formatDateTime(dt).date + " " + scApi.formatDateTime(dt).time;
-        entry.formattedDeadlineDate = scApi.formatDateTime(dt).date;
-        entry.formattedDeadlineTime = scApi.formatDateTime(dt).time;
+        const fmt = ClueBookApp._formatSCTimestamp(entry.deadline);
+        entry.formattedDeadline = fmt.full;
+        entry.formattedDeadlineDate = fmt.date;
+        entry.formattedDeadlineTime = fmt.time;
         
         const absDiff = Math.abs(diff);
         const d = Math.floor(absDiff / 86400);
@@ -519,17 +554,23 @@ export class ClueBookApp extends BaseApp {
       }
 
       if (entry.sourceTab === "timeline") {
-        if (entry.startTimestamp) {
+        if (entry.startTimestamp && scApi) {
           const dt = scApi.timestampToDate(entry.startTimestamp);
-          entry.formattedStart = scApi.formatDateTime(dt).date + " " + scApi.formatDateTime(dt).time;
-          entry.formattedStartDate = scApi.formatDateTime(dt).date;
-          entry.formattedStartTime = scApi.formatDateTime(dt).time;
+          if (dt) {
+            const fmt = ClueBookApp._formatSCTimestamp(entry.startTimestamp);
+            entry.formattedStart = fmt.full;
+            entry.formattedStartDate = fmt.date;
+            entry.formattedStartTime = fmt.time;
+          }
         }
-        if (entry.endTimestamp) {
+        if (entry.endTimestamp && scApi) {
           const dt = scApi.timestampToDate(entry.endTimestamp);
-          entry.formattedEnd = scApi.formatDateTime(dt).date + " " + scApi.formatDateTime(dt).time;
-          entry.formattedEndDate = scApi.formatDateTime(dt).date;
-          entry.formattedEndTime = scApi.formatDateTime(dt).time;
+          if (dt) {
+            const fmt = ClueBookApp._formatSCTimestamp(entry.endTimestamp);
+            entry.formattedEnd = fmt.full;
+            entry.formattedEndDate = fmt.date;
+            entry.formattedEndTime = fmt.time;
+          }
         }
       }
     }
@@ -1026,60 +1067,7 @@ export class ClueBookApp extends BaseApp {
     }
   }
 
-  _setupListDragDrop(html) {
-    let draggedItem = null;
-    const listContainer = html.querySelector('.entries-list');
-    if (!listContainer) return;
 
-    listContainer.addEventListener('dragover', ev => ev.preventDefault());
-
-    html.querySelectorAll('.entries-list .cluebook-entry').forEach(entry => {
-      entry.addEventListener('dragstart', (ev) => {
-        if (ev.target.closest('.entry-controls') || ev.target.closest('.edit-mode')) {
-          ev.preventDefault();
-          return;
-        }
-        draggedItem = entry;
-
-        listContainer.classList.add('is-dragging-list');
-        setTimeout(() => entry.classList.add('is-dragging'), 0);
-      });
-
-      entry.addEventListener('dragend', async () => {
-        if (!draggedItem) return;
-        listContainer.classList.remove('is-dragging-list');
-        draggedItem.classList.remove('is-dragging');
-        draggedItem = null;
-
-        // Save the new sort order
-        const allEntries = Array.from(listContainer.querySelectorAll('.cluebook-entry'));
-        const updates = {};
-        
-        allEntries.forEach((el, index) => {
-          const id = el.dataset.entryId;
-          const flagPath = `flags.ClueBook.data.${this.state.activeTab}.${id}.sort`;
-          updates[flagPath] = index;
-        });
-
-        await this._updateWorkspaceData(updates);
-      });
-
-      entry.addEventListener('dragenter', (ev) => {
-        ev.preventDefault();
-        if (!draggedItem || draggedItem === entry) return;
-
-        const allEntries = Array.from(listContainer.children);
-        const draggedIndex = allEntries.indexOf(draggedItem);
-        const targetIndex = allEntries.indexOf(entry);
-
-        if (draggedIndex < targetIndex) {
-          listContainer.insertBefore(draggedItem, entry.nextSibling);
-        } else {
-          listContainer.insertBefore(draggedItem, entry);
-        }
-      });
-    });
-  }
 
   _bindSettingsListeners(html) {
     const saveSetting = async (scope, key, value) => {

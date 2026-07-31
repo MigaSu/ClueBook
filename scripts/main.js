@@ -7,8 +7,15 @@ import { ClueBookOverlay } from "./overlay.js";
 let clueBookApp = null;
 let calendarWidgetApp = null;
 
-Hooks.once("init", () => {
+Hooks.once("init", async () => {
   console.log("ClueBook V14 | Initializing...");
+
+  await loadTemplates([
+    "modules/ClueBook/templates/partials/tab-settings.hbs",
+    "modules/ClueBook/templates/partials/tab-workspaces.hbs",
+    "modules/ClueBook/templates/partials/tab-board.hbs",
+    "modules/ClueBook/templates/partials/entry-card.hbs"
+  ]);
 
   game.settings.register("ClueBook", "calendarData", {
     scope: "world",

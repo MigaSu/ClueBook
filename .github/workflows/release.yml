@@ -1,58 +1,176 @@
-name: Release Module
+name: Build and publish release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version from module.json, for example 1.0 or 1.0.1
+        required: true
+        default: "1.0"
+        type: string
+      publish_to_foundry:
+        description: Add this version to the Foundry package library
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    env:
+      MODULE_ID: ClueBook
+      RELEASE_VERSION: ${{ inputs.version }}
+      REPOSITORY_URL: https://github.com/MigaSu/ClueBook
+
     steps:
-      - name: Checkout
+      - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Get Version
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+      - name: Validate manifest
+        shell: bash
+        run: |
+          set -euo pipefail
 
-      - name: Substitute variables in module.json
-        uses: microsoft/variable-substitution@v1
-        with:
-          files: 'module.json'
+          manifest_id="$(jq -r '.id' module.json)"
+          manifest_version="$(jq -r '.version' module.json)"
+          manifest_url="$(jq -r '.manifest' module.json)"
+          download_url="$(jq -r '.download' module.json)"
+
+          expected_manifest_url="${REPOSITORY_URL}/releases/latest/download/module.json"
+          expected_download_url="${REPOSITORY_URL}/releases/download/v${RELEASE_VERSION}/${MODULE_ID}.zip"
+
+          test "${manifest_id}" = "${MODULE_ID}" || {
+            echo "module.json id is ${manifest_id}, expected ${MODULE_ID}"
+            exit 1
+          }
+
+          test "${manifest_version}" = "${RELEASE_VERSION}" || {
+            echo "module.json version is ${manifest_version}, workflow input is ${RELEASE_VERSION}"
+            exit 1
+          }
+
+          test "${manifest_url}" = "${expected_manifest_url}" || {
+            echo "Unexpected manifest URL: ${manifest_url}"
+            echo "Expected: ${expected_manifest_url}"
+            exit 1
+          }
+
+          test "${download_url}" = "${expected_download_url}" || {
+            echo "Unexpected download URL: ${download_url}"
+            echo "Expected: ${expected_download_url}"
+            exit 1
+          }
+
+          jq empty module.json
+          jq empty lang/en.json
+          jq empty lang/ru.json
+
+          while IFS= read -r file; do
+            node --check "${file}"
+          done < <(find scripts -type f -name '*.js' | sort)
+
+      - name: Build Foundry package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf dist
+          mkdir -p "dist/package"
+
+          rsync -a ./ "dist/package/" \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.gitignore' \
+            --exclude='.gitattributes' \
+            --exclude='dist/' \
+            --exclude='*.zip'
+
+          (
+            cd dist/package
+            zip -r "../${MODULE_ID}.zip" .
+          )
+
+          cp module.json dist/module.json
+
+          awk -v version="${RELEASE_VERSION}" '
+            $0 == "## [" version "]" { capture=1; next }
+            capture && /^## \[/ { exit }
+            capture { print }
+          ' CHANGELOG.md > dist/release-notes.md
+
+          if [ ! -s dist/release-notes.md ]; then
+            printf 'Release %s\n' "${RELEASE_VERSION}" > dist/release-notes.md
+          fi
+
+      - name: Create GitHub release
         env:
-          version: ${{ env.VERSION }}
-          download: https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/module.zip
-
-      - name: Zip files
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          zip -r module.zip module.json scripts styles templates lang "Скрин"
+          set -euo pipefail
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            module.json
-            module.zip
-          name: Release ${{ env.VERSION }}
-          generate_release_notes: true
+          gh release create "v${RELEASE_VERSION}" \
+            "dist/${MODULE_ID}.zip" \
+            "dist/module.json" \
+            --target "${GITHUB_SHA}" \
+            --title "ClueBook ${RELEASE_VERSION}" \
+            --notes-file dist/release-notes.md \
+            --latest
 
-      - name: Publish to Foundry VTT Website
+      - name: Publish version to Foundry package library
+        if: ${{ inputs.publish_to_foundry }}
+        env:
+          FOUNDRY_RELEASE_TOKEN: ${{ secrets.FOUNDRY_RELEASE_TOKEN }}
+        shell: bash
         run: |
-          curl -X POST "https://api.foundryvtt.com/_api/packages/release_version/" \
-          -H "Content-Type: application/json" \
-          -H "Authorization: ${{ secrets.FOUNDRY_RELEASE_TOKEN }}" \
-          -d '{
-            "id": "ClueBook",
-            "release": {
-              "version": "'"${{ env.VERSION }}"'",
-              "manifest": "https://github.com/${{ github.repository }}/releases/latest/download/module.json",
-              "notes": "https://github.com/${{ github.repository }}/releases/tag/${{ env.VERSION }}",
-              "compatibility": {
-                "minimum": "12",
-                "verified": "14"
+          set -euo pipefail
+
+          if [ -z "${FOUNDRY_RELEASE_TOKEN}" ]; then
+            echo "Repository secret FOUNDRY_RELEASE_TOKEN is not configured."
+            exit 1
+          fi
+
+          minimum="$(jq -r '.compatibility.minimum' module.json)"
+          verified="$(jq -r '.compatibility.verified' module.json)"
+          release_manifest="${REPOSITORY_URL}/releases/download/v${RELEASE_VERSION}/module.json"
+          release_notes="${REPOSITORY_URL}/releases/tag/v${RELEASE_VERSION}"
+
+          jq -n \
+            --arg id "${MODULE_ID}" \
+            --arg version "${RELEASE_VERSION}" \
+            --arg manifest "${release_manifest}" \
+            --arg notes "${release_notes}" \
+            --arg minimum "${minimum}" \
+            --arg verified "${verified}" \
+            '{
+              id: $id,
+              release: {
+                version: $version,
+                manifest: $manifest,
+                notes: $notes,
+                compatibility: {
+                  minimum: $minimum,
+                  verified: $verified
+                }
               }
-            }
-          }'
+            }' > dist/foundry-release.json
+
+          jq '. + {"dry-run": true}' dist/foundry-release.json > dist/foundry-release-dry-run.json
+
+          echo "Validating Foundry release request..."
+          curl --fail-with-body --silent --show-error \
+            -H 'Content-Type: application/json' \
+            -H "Authorization: ${FOUNDRY_RELEASE_TOKEN}" \
+            --data @dist/foundry-release-dry-run.json \
+            https://foundryvtt.com/_api/packages/release_version/
+
+          echo
+          echo "Publishing Foundry release..."
+          curl --fail-with-body --silent --show-error \
+            -H 'Content-Type: application/json' \
+            -H "Authorization: ${FOUNDRY_RELEASE_TOKEN}" \
+            --data @dist/foundry-release.json \
+            https://foundryvtt.com/_api/packages/release_version/
