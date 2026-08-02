@@ -1,6 +1,7 @@
 import { ClueBookSocket } from "./socket.js";
 import { ClueBookDatePicker } from "./date-picker.js";
 import { ClueBookEditDialog } from "./edit-dialog.js";
+import { TimeService } from "./services/time-service.js";
 import { ClueBookDataMixin } from "./app-data.js";
 import { ClueBookBoardMixin } from "./app-board.js";
 import { ClueBookTagManager } from "./tag-manager.js";
@@ -59,6 +60,7 @@ export class ClueBookApp extends BaseApp {
     actions: {
       toggleZenMode: ClueBookApp._onToggleZenMode,
       toggleEdit: ClueBookApp._onToggleEdit,
+      toggleTrack: ClueBookApp._onToggleTrack,
       togglePin: ClueBookApp._onTogglePin,
       toggleVisibility: ClueBookApp._onToggleVisibility,
       shareOverlay: ClueBookApp._onShareOverlay,
@@ -90,14 +92,11 @@ export class ClueBookApp extends BaseApp {
   }
 
   static _formatSCTimestamp(timestamp) {
-    if (!window.SimpleCalendar?.api) return { date: "", time: "", full: "" };
-    const dt = window.SimpleCalendar.api.timestampToDate(timestamp);
-    if (!dt) return { date: "", time: "", full: "" };
-    const formatted = window.SimpleCalendar.api.formatDateTime(dt);
+    const formatted = TimeService.formatTimestamp(timestamp);
     return {
       date: formatted.date,
       time: formatted.time,
-      full: `${formatted.date} ${formatted.time}`
+      full: formatted.fullStr !== "—" ? formatted.fullStr : ""
     };
   }
 
@@ -158,8 +157,6 @@ export class ClueBookApp extends BaseApp {
       linkColor: "#ff5252",
       linkStyle: "6,4",
       showHotkeys: true,
-      showCalendarWidget: true,
-      showQuickWidget: true,
       snapToGrid: false,
       hoverHighlight: true,
       hoverDelay: 1000,
@@ -262,6 +259,10 @@ export class ClueBookApp extends BaseApp {
     context.isBoardView = this.state.activeTab === "board";
     context.editingEntryId = this.state.editingEntryId;
     context.highlightedEntryId = this.state.highlightedEntryId;
+    
+    // Add enableTracker to context based on user settings
+    const userSettings = game.user?.getFlag("ClueBook", "settings") || {};
+    context.enableTracker = userSettings.features?.enableTracker !== false;
 
     return context;
   }
@@ -366,7 +367,6 @@ export class ClueBookApp extends BaseApp {
     context.isWorkspaces = this.state.activeTab === "workspaces";
     context.settings = this.getSettings();
     context.isGM = game.user.isGM;
-    context.globalTimeWidget = game.settings.get("ClueBook", "enableTimeWidget");
     this.state.isReadOnly = this.state.isZenMode || (context.isShared && context.settings.readOnly && !context.isGM);
     context.isReadOnly = this.state.isReadOnly;
   }
@@ -374,6 +374,14 @@ export class ClueBookApp extends BaseApp {
   async _prepareEntriesForTab(context, data) {
     const entries = [];
     const skipHidden = context.isShared && !context.isGM;
+    const trackedIds = game.user.getFlag("ClueBook", "trackedEvents") || [];
+
+    const isEntryVisible = (entry) => {
+      if (!skipHidden) return true;
+      if (entry.isHidden) return false;
+      if (entry.visibleTo && entry.visibleTo.length > 0 && !entry.visibleTo.includes(game.user.id)) return false;
+      return true;
+    };
 
     if (this.state.activeTab === "search") {
       const q = this.state.searchQuery.toLowerCase();
@@ -382,7 +390,7 @@ export class ClueBookApp extends BaseApp {
         for (const [tabKey, tabData] of Object.entries(data)) {
           if (tabKey === "links" || tabKey === "board" || tabKey === "search") continue;
           for (const [id, entry] of Object.entries(tabData || {})) {
-            if (!entry || (skipHidden && entry.isHidden)) continue;
+            if (!entry || !isEntryVisible(entry)) continue;
             
             let matchText = !q;
             let matchTags = tagsFilter.length === 0;
@@ -402,7 +410,7 @@ export class ClueBookApp extends BaseApp {
 
             if (matchText && matchTags) {
               const enriched = await this._enrichEntry(entry);
-              entries.push({ id, sourceTab: tabKey, ...entry, enriched });
+              entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, enriched });
             }
           }
         }
@@ -412,10 +420,10 @@ export class ClueBookApp extends BaseApp {
       for (const [tabKey, tabData] of Object.entries(data)) {
         if (tabKey === "board" || tabKey === "links" || tabKey === "search") continue;
         for (const [id, entry] of Object.entries(tabData || {})) {
-          if (!entry || (skipHidden && entry.isHidden)) continue;
+          if (!entry || !isEntryVisible(entry)) continue;
           if (entry.onBoard) {
             const enriched = await this._enrichEntry(entry);
-            entries.push({ id, sourceTab: tabKey, ...entry, enriched });
+            entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, enriched });
           }
         }
       }
@@ -433,9 +441,9 @@ export class ClueBookApp extends BaseApp {
         sortedEntries = Object.entries(tabData).sort((a, b) => (a[1].sort || 0) - (b[1].sort || 0));
       }
       for (const [id, entry] of sortedEntries) {
-        if (!entry || (skipHidden && entry.isHidden)) continue;
+        if (!entry || !isEntryVisible(entry)) continue;
         const enriched = await this._enrichEntry(entry);
-        entries.push({ id, sourceTab: this.state.activeTab, ...entry, enriched });
+        entries.push({ id, sourceTab: this.state.activeTab, isTracked: trackedIds.includes(id), ...entry, enriched });
       }
     }
     return entries;
@@ -512,17 +520,26 @@ export class ClueBookApp extends BaseApp {
   }
 
   _processDates(context, entries) {
-    context.isSimpleCalendarActive = !!window.SimpleCalendar;
-    if (!context.isSimpleCalendarActive || !window.SimpleCalendar?.api) return;
+    context.isSimpleCalendarActive = TimeService.isActive();
+    const isTimeActive = TimeService.isActive();
     
-    const scApi = window.SimpleCalendar.api;
     for (const entry of entries) {
+      // Independent logic: Translate quest status (must run even without SC)
+      if (entry.sourceTab === "quests" && entry.status) {
+        if (entry.status === "active") entry.translatedStatus = game.i18n.localize("CLUEBOOK.Quest.Active");
+        else if (entry.status === "completed") entry.translatedStatus = game.i18n.localize("CLUEBOOK.Quest.Completed");
+        else entry.translatedStatus = entry.status;
+      }
+
+      // Stop calendar-specific logic if Simple Calendar is missing
+      if (!isTimeActive) continue;
+
       if (entry.sourceTab === "quests" && entry.deadlineTimestamp) {
         const dl = entry.deadlineTimestamp;
         const curr = game.time.worldTime;
         const diff = dl - curr;
         
-        const fmt = ClueBookApp._formatSCTimestamp(entry.deadline);
+        const fmt = ClueBookApp._formatSCTimestamp(entry.deadlineTimestamp);
         entry.formattedDeadline = fmt.full;
         entry.formattedDeadlineDate = fmt.date;
         entry.formattedDeadlineTime = fmt.time;
@@ -547,15 +564,9 @@ export class ClueBookApp extends BaseApp {
         }
       }
 
-      if (entry.sourceTab === "quests" && entry.status) {
-        if (entry.status === "active") entry.translatedStatus = game.i18n.localize("CLUEBOOK.Quest.Active");
-        else if (entry.status === "completed") entry.translatedStatus = game.i18n.localize("CLUEBOOK.Quest.Completed");
-        else entry.translatedStatus = entry.status;
-      }
-
       if (entry.sourceTab === "timeline") {
-        if (entry.startTimestamp && scApi) {
-          const dt = scApi.timestampToDate(entry.startTimestamp);
+        if (entry.startTimestamp) {
+          const dt = TimeService.timestampToDate(entry.startTimestamp);
           if (dt) {
             const fmt = ClueBookApp._formatSCTimestamp(entry.startTimestamp);
             entry.formattedStart = fmt.full;
@@ -563,8 +574,8 @@ export class ClueBookApp extends BaseApp {
             entry.formattedStartTime = fmt.time;
           }
         }
-        if (entry.endTimestamp && scApi) {
-          const dt = scApi.timestampToDate(entry.endTimestamp);
+        if (entry.endTimestamp) {
+          const dt = TimeService.timestampToDate(entry.endTimestamp);
           if (dt) {
             const fmt = ClueBookApp._formatSCTimestamp(entry.endTimestamp);
             entry.formattedEnd = fmt.full;
@@ -1353,38 +1364,10 @@ export class ClueBookApp extends BaseApp {
         const targetId = link.dataset.mentionId;
         if (!targetId) return;
         // Jump to linked entry (reuse existing jumpToLinked logic)
-        let data = {};
-        if (this.state.activeWorkspace !== 'personal') {
-          const j = this._getWorkspaceJournal();
-          if (j) data = j.getFlag('ClueBook', 'data') || {};
-        } else {
-          data = game.user.getFlag('ClueBook', 'data') || {};
+        const api = game.modules.get("ClueBook")?.api;
+        if (api) {
+           await api.openApp({ focusId: targetId });
         }
-        let targetTab = null;
-        for (const [tab, tabData] of Object.entries(data)) {
-          if (tab === 'links' || tab === 'board' || tab === 'search') continue;
-          if (tabData && tabData[targetId]) { targetTab = tab; break; }
-        }
-        if (!targetTab) { ui.notifications.warn(game.i18n.localize("CLUEBOOK.App.EntryNotFound")); return; }
-        await game.user.setFlag('ClueBook', 'lastTab', targetTab);
-        this.state.activeTab = targetTab;
-        this.state.highlightedEntryId = targetId;
-        // Full render so the tabs nav also updates to the new active tab
-        await this.render();
-        // Scroll highlighted card into view after DOM update
-        setTimeout(() => {
-          const el = this.element?.querySelector(`.cluebook-entry[data-entry-id="${targetId}"]`);
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 80);
-        const settings = this.getSettings();
-        const durationMs = (settings.theme.highlightDuration || 2) * 1000;
-        setTimeout(() => {
-          if (this.state.highlightedEntryId === targetId) {
-            this.state.highlightedEntryId = null;
-            const el = this.element?.querySelector(`.cluebook-entry[data-entry-id="${targetId}"]`);
-            if (el) el.classList.remove('is-highlighted');
-          }
-        }, durationMs);
       });
     });
   }

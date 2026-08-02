@@ -22,8 +22,9 @@ export class ClueBookEntryModel extends foundry.abstract.DataModel {
       boardW: new NumberField({ nullable: true, initial: null }),
       boardH: new NumberField({ nullable: true, initial: null }),
 
-      // Скрытие
+      // Скрытие и Видимость
       isHidden: new BooleanField({ initial: false }),
+      visibleTo: new ArrayField(new StringField(), { initial: [] }),
 
       // РЎРїРµС†РёС„РёС‡РЅС‹Рµ С‚РµРєСЃС‚РѕРІС‹Рµ Рё HTML РїРѕР»СЏ
       text: new HTMLField({ initial: "" }), // Р”Р»СЏ Р—Р°РјРµС‚РѕРє (notes) Рё РљРІРµСЃС‚РѕРІ (quests)

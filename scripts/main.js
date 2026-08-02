@@ -1,14 +1,202 @@
 import { ClueBookApp } from "./app.js";
-import { CalendarWidget } from "./calendar.js";
 import { ClueBookSocket } from "./socket.js";
 import { ClueBookOverlay } from "./overlay.js";
+import { TrackerWidget } from "./tracker.js";
+import { TimeService } from "./services/time-service.js";
 
-// Global reference to the app instance
+// Global reference to the app instances
 let clueBookApp = null;
-let calendarWidgetApp = null;
+let trackerWidgetApp = null;
+let injectWidget = null;
 
 Hooks.once("init", async () => {
   console.log("ClueBook V14 | Initializing...");
+
+  Hooks.on("getSceneControlButtons", (...args) => {
+    const settings = game.user?.getFlag("ClueBook", "settings") || {};
+    let controlsDict = args[0];
+
+    if (settings.theme?.uiMode !== "controls") {
+      // Foundry V14 crash prevention:
+      // If the user previously had 'cluebook' as their active control, but then changed uiMode to 'widget',
+      // Foundry V14 will crash on load because it tries to read tools from the missing control.
+      // We provide a dummy control to prevent the crash and asynchronously switch back to 'tokens'.
+      if (ui.controls && (ui.controls.control === "cluebook" || ui.controls.activeControl === "cluebook")) {
+        controlsDict["cluebook"] = {
+          name: "cluebook",
+          title: "ClueBook",
+          layer: "cluebook",
+          order: 100,
+          icon: "fas fa-book-open",
+          visible: true,
+          activeTool: "dummy",
+          tools: {
+            dummy: {
+              name: "dummy",
+              title: "ClueBook",
+              icon: "fas fa-book"
+            }
+          }
+        };
+        setTimeout(() => {
+          if (ui.controls) ui.controls.control = "tokens";
+        }, 100);
+      }
+      return;
+    }
+
+    // Foundry V14 changed the hook signature to pass a dictionary of controls: { tokens: {...}, notes: {...} }
+    if (!controlsDict || typeof controlsDict !== "object") {
+       console.error("ClueBook | getSceneControlButtons: Could not find controls dictionary in hook arguments:", args);
+       return;
+    }
+
+    const controlGroup = {
+      name: "cluebook",
+      title: "ClueBook",
+      layer: "cluebook",
+      order: 100,
+      icon: "fas fa-book-open",
+      visible: true,
+      activeTool: "menu",
+      tools: {
+        menu: {
+          name: "menu",
+          title: "ClueBook",
+          icon: "fas fa-book",
+          visible: false
+        },
+        openApp: {
+          name: "openApp",
+          title: game.i18n.localize("CLUEBOOK.Main.OpenApp"),
+          icon: "fas fa-book-open",
+          onClick: () => game.modules.get("ClueBook").api.openApp({}),
+          button: true
+        },
+        ...(settings.widget?.buttons?.notes !== false ? {
+          addNote: {
+            name: "addNote",
+            title: game.i18n.localize("CLUEBOOK.Main.AddNote"),
+            icon: "fas fa-sticky-note",
+            onClick: () => ClueBookApp.showQuickAddDialog("notes"),
+            button: true
+          }
+        } : {}),
+        ...(settings.widget?.buttons?.npc !== false ? {
+          addNpc: {
+            name: "addNpc",
+            title: game.i18n.localize("CLUEBOOK.Main.AddNPC"),
+            icon: "fas fa-user",
+            onClick: () => ClueBookApp.showQuickAddDialog("npc"),
+            button: true
+          }
+        } : {}),
+        ...(settings.widget?.buttons?.locations !== false ? {
+          addLocation: {
+            name: "addLocation",
+            title: game.i18n.localize("CLUEBOOK.Main.AddLocation"),
+            icon: "fas fa-map-marked-alt",
+            onClick: () => ClueBookApp.showQuickAddDialog("locations"),
+            button: true
+          }
+        } : {}),
+        ...(settings.widget?.buttons?.quests !== false ? {
+          addQuest: {
+            name: "addQuest",
+            title: game.i18n.localize("CLUEBOOK.Main.AddQuest"),
+            icon: "fas fa-scroll",
+            onClick: () => ClueBookApp.showQuickAddDialog("quests"),
+            button: true
+          }
+        } : {}),
+        ...(settings.widget?.buttons?.timeline !== false ? {
+          addTimeline: {
+            name: "addTimeline",
+            title: game.i18n.localize("CLUEBOOK.Main.AddEvent"),
+            icon: "fas fa-clock",
+            onClick: () => ClueBookApp.showQuickAddDialog("timeline"),
+            button: true
+          }
+        } : {}),
+        ...(settings.widget?.buttons?.tracker !== false && settings.features?.enableTracker !== false ? {
+          toggleTracker: {
+            name: "toggleTracker",
+            title: game.i18n.localize("CLUEBOOK.Tracker.Title"),
+            icon: "fas fa-tasks",
+            onClick: () => game.modules.get("ClueBook").api.toggleTracker(),
+            button: true
+          }
+        } : {})
+      }
+    };
+
+    // Add our group to the dictionary
+    controlsDict["cluebook"] = controlGroup;
+  });
+
+  game.modules.get("ClueBook").api = {
+    openApp: async (options) => {
+      if (!clueBookApp) {
+        clueBookApp = new ClueBookApp();
+      }
+      if (!options.tab && options.focusId) {
+         const wsId = options.workspace || clueBookApp.state.activeWorkspace;
+         let data = {};
+         if (wsId === "personal" || wsId.startsWith("personal_")) {
+            if (wsId === "personal") {
+               data = game.user.getFlag("ClueBook", "data") || {};
+            } else {
+               const userId = wsId.split("_")[1];
+               const user = game.users.get(userId);
+               if (user) data = user.getFlag("ClueBook", "data") || {};
+            }
+         } else {
+            const j = game.journal.get(wsId);
+            if (j) data = j.getFlag("ClueBook", "data") || {};
+         }
+         for (const [t, tabData] of Object.entries(data)) {
+           if (t === 'links' || t === 'board' || t === 'search') continue;
+           if (tabData && tabData[options.focusId]) { options.tab = t; break; }
+         }
+         if (!options.tab) {
+            ui.notifications.warn(game.i18n.localize("CLUEBOOK.App.EntryNotFound"));
+            return;
+         }
+      }
+
+      if (options.workspace) clueBookApp.state.activeWorkspace = options.workspace;
+      if (options.tab) clueBookApp.state.activeTab = options.tab;
+      
+      // Delay to ensure it renders before focusing
+      clueBookApp.render(true).then(() => {
+        if (options.focusId) {
+          setTimeout(() => {
+            const el = clueBookApp.element.querySelector(`[data-entry-id="${options.focusId}"]`);
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              el.classList.add("is-highlighted");
+              setTimeout(() => el.classList.remove("is-highlighted"), 3000);
+            }
+          }, 300);
+        }
+      });
+    },
+    toggleTracker: () => {
+      if (!trackerWidgetApp) trackerWidgetApp = new TrackerWidget();
+      if (trackerWidgetApp.rendered) {
+        trackerWidgetApp.close({ animate: false });
+        trackerWidgetApp = null;
+      } else {
+        trackerWidgetApp.render({ force: true });
+      }
+    },
+    closeTracker: () => {
+      if (trackerWidgetApp) {
+        trackerWidgetApp.close({ animate: false });
+        trackerWidgetApp = null;
+      }
+    }
+  };
 
   await loadTemplates([
     "modules/ClueBook/templates/partials/tab-settings.hbs",
@@ -17,51 +205,14 @@ Hooks.once("init", async () => {
     "modules/ClueBook/templates/partials/entry-card.hbs"
   ]);
 
-  game.settings.register("ClueBook", "calendarData", {
-    scope: "world",
-    config: false,
-    type: Object,
-    default: {},
-    onChange: () => {
-      if (calendarWidgetApp && calendarWidgetApp.rendered) {
-        calendarWidgetApp.render({ force: true });
-      }
-    }
-  });
-
-  game.settings.register("ClueBook", "enableTimeWidget", {
-    name: "CLUEBOOK.Settings.EnableTimeWidget",
-    hint: "CLUEBOOK.Settings.EnableTimeWidgetHint",
-    scope: "world",
-    config: false,
-    type: Boolean,
-    default: true,
-    onChange: (value) => {
-      const settings = game.user.getFlag("ClueBook", "settings") || {};
-      if (value && settings.theme?.showCalendarWidget !== false) {
-        if (!calendarWidgetApp) {
-          calendarWidgetApp = new CalendarWidget();
-          calendarWidgetApp.render({ force: true });
-        }
-      } else {
-        if (calendarWidgetApp) {
-          calendarWidgetApp.close();
-          calendarWidgetApp = null;
-        }
-      }
-      if (clueBookApp && clueBookApp.rendered) {
-        clueBookApp.render({ parts: ["content"] });
-      }
-    }
-  });
-
-  // Re-render widget whenever world time changes (Simple Calendar fires this too)
+  // Settings for enableTimeWidget are removed since the widget is deleted
+  // Hooks for updateWorldTime keep updating cluebook and tracker
   Hooks.on("updateWorldTime", () => {
-    if (calendarWidgetApp && calendarWidgetApp.rendered) {
-      calendarWidgetApp.render({ force: true });
-    }
     if (clueBookApp && clueBookApp.rendered && !clueBookApp.state.editingEntryId) {
       clueBookApp.render({ parts: ["content"] });
+    }
+    if (trackerWidgetApp && trackerWidgetApp.rendered) {
+      trackerWidgetApp.render({ force: true });
     }
   });
 });
@@ -73,27 +224,20 @@ Hooks.once("ready", async () => {
 
   const settings = game.user.getFlag("ClueBook", "settings") || {};
   
-  const globalEnableTimeWidget = game.settings.get("ClueBook", "enableTimeWidget");
-  if (globalEnableTimeWidget && settings.theme?.showCalendarWidget !== false) {
-    calendarWidgetApp = new CalendarWidget();
-    calendarWidgetApp.render({ force: true });
-  }
-
-  // Register Simple Calendar's dedicated hook for date/time changes
-  if (window.SimpleCalendar?.Hooks?.DateTimeChange) {
-    Hooks.on(window.SimpleCalendar.Hooks.DateTimeChange, () => {
-      if (calendarWidgetApp && calendarWidgetApp.rendered) {
-        calendarWidgetApp.render({ force: true });
-      }
-      if (clueBookApp && clueBookApp.rendered && !clueBookApp.state.editingEntryId) {
-        clueBookApp.render({ parts: ["content"] });
-      }
-    });
-  }
+  TimeService.registerHook(() => {
+    if (clueBookApp && clueBookApp.rendered && !clueBookApp.state.editingEntryId) {
+      clueBookApp.render({ parts: ["content"] });
+    }
+    if (trackerWidgetApp && trackerWidgetApp.rendered) {
+      trackerWidgetApp.render({ force: true });
+    }
+  });
 
   // Inject floating widget on ready
-  const injectWidget = () => {
+  injectWidget = () => {
     if (document.getElementById("cluebook-widget")) return;
+    const settings = game.user.getFlag("ClueBook", "settings") || {};
+    if (settings.theme?.uiMode === "controls") return;
 
     const pos = game.user.getFlag("ClueBook", "widgetPos") || { left: 20, bottom: 80 };
     
@@ -116,7 +260,7 @@ Hooks.once("ready", async () => {
       styleStr += ` bottom: ${bottom}px; top: auto;`;
     }
 
-    const settings = game.user.getFlag("ClueBook", "settings") || {};
+
     const widgetColor = settings.theme?.widgetColor || settings.theme?.accent || "#7b61ff";
     const widgetColor2 = settings.theme?.widgetColor2 || "#4527a0";
 
@@ -131,11 +275,12 @@ Hooks.once("ready", async () => {
         <i class="fas fa-book-open"></i>
       </div>
       <div class="cb-fab-menu">
-        <a class="cb-fab-btn" data-type="notes" title="${game.i18n.localize("CLUEBOOK.Main.AddNote")}"><i class="fas fa-sticky-note"></i></a>
-        <a class="cb-fab-btn" data-type="npc" title="${game.i18n.localize("CLUEBOOK.Main.AddNPC")}"><i class="fas fa-user"></i></a>
-        <a class="cb-fab-btn" data-type="locations" title="${game.i18n.localize("CLUEBOOK.Main.AddLocation")}"><i class="fas fa-map-marked-alt"></i></a>
-        <a class="cb-fab-btn" data-type="quests" title="${game.i18n.localize("CLUEBOOK.Main.AddQuest")}"><i class="fas fa-scroll"></i></a>
-        <a class="cb-fab-btn" data-type="timeline" title="${game.i18n.localize("CLUEBOOK.Main.AddEvent")}"><i class="fas fa-clock"></i></a>
+        ${settings.widget?.buttons?.notes !== false ? `<a class="cb-fab-btn" data-type="notes" title="${game.i18n.localize("CLUEBOOK.Main.AddNote")}"><i class="fas fa-sticky-note"></i></a>` : ''}
+        ${settings.widget?.buttons?.npc !== false ? `<a class="cb-fab-btn" data-type="npc" title="${game.i18n.localize("CLUEBOOK.Main.AddNPC")}"><i class="fas fa-user"></i></a>` : ''}
+        ${settings.widget?.buttons?.locations !== false ? `<a class="cb-fab-btn" data-type="locations" title="${game.i18n.localize("CLUEBOOK.Main.AddLocation")}"><i class="fas fa-map-marked-alt"></i></a>` : ''}
+        ${settings.widget?.buttons?.quests !== false ? `<a class="cb-fab-btn" data-type="quests" title="${game.i18n.localize("CLUEBOOK.Main.AddQuest")}"><i class="fas fa-scroll"></i></a>` : ''}
+        ${settings.widget?.buttons?.timeline !== false ? `<a class="cb-fab-btn" data-type="timeline" title="${game.i18n.localize("CLUEBOOK.Main.AddEvent")}"><i class="fas fa-clock"></i></a>` : ''}
+        ${(settings.widget?.buttons?.tracker !== false && settings.features?.enableTracker !== false) ? `<a class="cb-fab-btn" data-type="tracker" title="${game.i18n.localize("CLUEBOOK.Tracker.Title")}"><i class="fas fa-tasks"></i></a>` : ''}
       </div>
     `;
 
@@ -147,7 +292,6 @@ Hooks.once("ready", async () => {
       clearTimeout(hoverTimeout);
       
       const currentSettings = game.user.getFlag("ClueBook", "settings") || {};
-      if (currentSettings.theme?.showQuickWidget === false) return;
 
       if (!widget.classList.contains("cb-menu-active")) {
         widget.classList.add("cb-menu-active");
@@ -168,7 +312,11 @@ Hooks.once("ready", async () => {
       const btn = ev.target.closest('.cb-fab-btn');
       if (btn) {
         ev.stopPropagation();
-        ClueBookApp.showQuickAddDialog(btn.dataset.type);
+        if (btn.dataset.type === "tracker") {
+          game.modules.get("ClueBook").api.toggleTracker();
+        } else {
+          ClueBookApp.showQuickAddDialog(btn.dataset.type);
+        }
         return;
       }
       
@@ -240,46 +388,90 @@ Hooks.once("ready", async () => {
 Hooks.on("updateUser", (user, updateData) => {
   if (user.id !== game.user.id) return;
   
-  const settings = foundry.utils.getProperty(updateData, "flags.ClueBook.settings.theme");
+  // React to tracked events changes
+  const trackedEvents = foundry.utils.getProperty(updateData, "flags.ClueBook.trackedEvents");
+  if (trackedEvents !== undefined) {
+    if (trackerWidgetApp && trackerWidgetApp.rendered) {
+      trackerWidgetApp.render({ force: true });
+    }
+    if (clueBookApp && clueBookApp.rendered && !clueBookApp.state.editingEntryId) {
+      clueBookApp.render({ parts: ["content"] });
+    }
+  }
+
+  const settings = foundry.utils.getProperty(updateData, "flags.ClueBook.settings");
   if (!settings) return;
 
-  if (settings.showQuickWidget !== undefined) {
-    if (!settings.showQuickWidget) {
-      // Just hide the bubbles (menu) if it's currently open, do not hide the widget
-      const widget = document.getElementById("cluebook-widget");
-      if (widget) widget.classList.remove("cb-menu-active");
+  const themeSettings = settings.theme;
+  const widgetSettings = settings.widget;
+  const featureSettings = settings.features;
+
+  // If UI mode or button settings changed, update Scene Controls and Widget
+  if (themeSettings?.uiMode !== undefined || widgetSettings?.buttons !== undefined || featureSettings?.enableTracker !== undefined) {
+    const currentSettings = game.user.getFlag("ClueBook", "settings") || {};
+    
+    if (ui.controls && (themeSettings?.uiMode !== undefined || (currentSettings.theme?.uiMode === "controls" && widgetSettings?.buttons !== undefined))) {
+       // Rebuilding Foundry V14 Scene Controls manually causes crashes in older modules like SWADE or game-prep-toolkit.
+       // The safest way to apply changes is to ask the user to reload the UI.
+       SettingsConfig.reloadConfirm({world: false});
+    }
+    
+    if (themeSettings?.uiMode !== undefined) {
+      if (themeSettings.uiMode === "controls") {
+        const widget = document.getElementById("cluebook-widget");
+        if (widget) widget.remove();
+      } else {
+        injectWidget();
+      }
     }
   }
 
-  if (settings.showCalendarWidget !== undefined) {
-    const globalEnableTimeWidget = game.settings.get("ClueBook", "enableTimeWidget");
-    if (settings.showCalendarWidget && globalEnableTimeWidget) {
-      if (!calendarWidgetApp) {
-        calendarWidgetApp = new CalendarWidget();
-        calendarWidgetApp.render({ force: true });
-      }
-    } else {
-      if (calendarWidgetApp) {
-        calendarWidgetApp.close();
-        calendarWidgetApp = null;
+
+
+  // Update FAB menu HTML dynamically when buttons or tracker setting changes
+  if ((widgetSettings && widgetSettings.buttons) || (featureSettings && featureSettings.enableTracker !== undefined)) {
+    const widget = document.getElementById("cluebook-widget");
+    if (widget) {
+      const menu = widget.querySelector(".cb-fab-menu");
+      if (menu) {
+        const currentSettings = game.user.getFlag("ClueBook", "settings") || {};
+        menu.innerHTML = `
+          ${currentSettings.widget?.buttons?.notes !== false ? `<a class="cb-fab-btn" data-type="notes" title="${game.i18n.localize("CLUEBOOK.Main.AddNote")}"><i class="fas fa-sticky-note"></i></a>` : ''}
+          ${currentSettings.widget?.buttons?.npc !== false ? `<a class="cb-fab-btn" data-type="npc" title="${game.i18n.localize("CLUEBOOK.Main.AddNPC")}"><i class="fas fa-user"></i></a>` : ''}
+          ${currentSettings.widget?.buttons?.locations !== false ? `<a class="cb-fab-btn" data-type="locations" title="${game.i18n.localize("CLUEBOOK.Main.AddLocation")}"><i class="fas fa-map-marked-alt"></i></a>` : ''}
+          ${currentSettings.widget?.buttons?.quests !== false ? `<a class="cb-fab-btn" data-type="quests" title="${game.i18n.localize("CLUEBOOK.Main.AddQuest")}"><i class="fas fa-scroll"></i></a>` : ''}
+          ${currentSettings.widget?.buttons?.timeline !== false ? `<a class="cb-fab-btn" data-type="timeline" title="${game.i18n.localize("CLUEBOOK.Main.AddEvent")}"><i class="fas fa-clock"></i></a>` : ''}
+          ${(currentSettings.widget?.buttons?.tracker !== false && currentSettings.features?.enableTracker !== false) ? `<a class="cb-fab-btn" data-type="tracker" title="${game.i18n.localize("CLUEBOOK.Tracker.Title")}"><i class="fas fa-tasks"></i></a>` : ''}
+        `;
       }
     }
   }
+
+  if (featureSettings?.enableTracker === false) {
+    if (trackerWidgetApp) {
+      trackerWidgetApp.close({ animate: false });
+      trackerWidgetApp = null;
+    }
+  }
+
+
 });
 
 // Live Sync
 Hooks.on("updateJournalEntry", (journal, data, options, userId) => {
-  if (!clueBookApp?.rendered) return;
-  if (journal.id === clueBookApp.state.activeWorkspace) {
-    if (userId === game.user.id || clueBookApp.state.editingEntryId) return;
-
-    // Do not re-render if user is actively typing in an input field to prevent losing focus/input
-    const activeEl = document.activeElement;
-    if (activeEl && clueBookApp.element?.contains(activeEl) && ["INPUT", "TEXTAREA", "SELECT"].includes(activeEl.tagName)) {
-      return;
+  // If the active workspace journal is updated, re-render the app
+  if (clueBookApp && clueBookApp.rendered && journal.id === clueBookApp.state.activeWorkspace) {
+    if (userId !== game.user.id && !clueBookApp.state.editingEntryId) {
+      const activeEl = document.activeElement;
+      if (!(activeEl && clueBookApp.element?.contains(activeEl) && ["INPUT", "TEXTAREA", "SELECT"].includes(activeEl.tagName))) {
+        clueBookApp.render();
+      }
     }
-
-    clueBookApp.render();
+  }
+  
+  // Re-render tracker in case quest details (status, deadline) changed
+  if (trackerWidgetApp && trackerWidgetApp.rendered) {
+    trackerWidgetApp.render({ force: true });
   }
 });
 

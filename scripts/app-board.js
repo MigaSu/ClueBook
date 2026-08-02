@@ -616,6 +616,9 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       <div class="cb-menu-separator"></div>
       <div class="cb-menu-item" data-action="distribute-vertical"><i class="fas fa-arrows-alt-v"></i> ${game.i18n.localize("CLUEBOOK.Board.DistributeVertical")}</div>
       <div class="cb-menu-separator"></div>
+      <div class="cb-menu-item" data-action="pin-group"><i class="fas fa-thumbtack"></i> ${game.i18n.localize("CLUEBOOK.Board.PinGroup")}</div>
+      <div class="cb-menu-item" data-action="unpin-group"><i class="fas fa-unlock"></i> ${game.i18n.localize("CLUEBOOK.Board.UnpinGroup")}</div>
+      <div class="cb-menu-separator"></div>
       <div class="cb-menu-item danger" data-action="remove-board"><i class="fas fa-times"></i> ${game.i18n.localize("CLUEBOOK.Entry.RemoveFromBoard")}</div>
     `;
 
@@ -693,6 +696,14 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         el.style.top = `${currentY}px`;
         updates[`flags.ClueBook.data.${el.dataset.sourceTab}.${el.dataset.entryId}.boardY`] = currentY;
         currentY += (el.offsetHeight || 200) + gap;
+      });
+    } else if (action === 'pin-group') {
+      elements.forEach(el => {
+        updates[`flags.ClueBook.data.${el.dataset.sourceTab}.${el.dataset.entryId}.pinned`] = true;
+      });
+    } else if (action === 'unpin-group') {
+      elements.forEach(el => {
+        updates[`flags.ClueBook.data.${el.dataset.sourceTab}.${el.dataset.entryId}.pinned`] = false;
       });
     } else if (action === 'remove-board') {
       const nonPinnedElements = elements.filter(el => el.dataset.pinned !== "true");

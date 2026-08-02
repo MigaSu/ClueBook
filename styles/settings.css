@@ -54,7 +54,8 @@
   max-width: 50%;
 }
 .setting-row.flex-checkbox {
-  justify-content: flex-start;
+  justify-content: space-between;
+  align-items: center;
   gap: 10px;
 }
 .setting-row.flex-checkbox .setting-input {
@@ -65,6 +66,8 @@
 }
 .setting-row.flex-checkbox label {
   cursor: pointer;
+  margin: 0;
+  line-height: 1.2;
 }
 
 @keyframes jump-highlight {
@@ -268,8 +271,8 @@
 /* Toggle Switch */
 .cb-toggle {
   position: relative;
-  width: 40px;
-  height: 20px;
+  width: 32px;
+  height: 18px;
   flex: 0 0 auto;
 }
 .cb-toggle input {
@@ -292,8 +295,8 @@
 .cb-toggle label:before {
   position: absolute;
   content: "";
-  height: 14px;
-  width: 14px;
+  height: 12px;
+  width: 12px;
   left: 2px;
   bottom: 2px;
   background-color: white;
@@ -305,7 +308,7 @@
   border-color: var(--cb-accent);
 }
 .cb-toggle input:checked + label:before {
-  transform: translateX(20px);
+  transform: translateX(14px);
 }
 
 

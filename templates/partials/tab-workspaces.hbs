@@ -17,7 +17,7 @@
           <i class="fas fa-cog"></i>
         </button>
 
-        {{#if (and isGM (ne activeWorkspace "personal"))}}
+        {{#if (or (and isGM (ne activeWorkspace "personal")) (eq activeWorkspace "personal"))}}
         <button type="button" data-action="deleteWorkspace" title="{{localize "CLUEBOOK.Settings.DeleteWorkspace"}}" style="flex: 0 0 auto; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.5); color: #ff5252; border-radius: 6px;">
           <i class="fas fa-trash"></i>
         </button>

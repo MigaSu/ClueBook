@@ -1,0 +1,48 @@
+<div class="cb-tracker-container">
+  <div class="cb-tracker-header">
+    <i class="fas fa-tasks"></i> {{localize "CLUEBOOK.Tracker.Title"}}
+    <div style="flex: 1;"></div>
+    <a data-action="openApp" class="cb-tracker-close" style="margin-right: 10px;" title="{{localize "CLUEBOOK.Main.WidgetTitle"}}"><i class="fas fa-book-open"></i></a>
+    <a data-action="closeWidget" class="cb-tracker-close" title="{{localize "CLUEBOOK.AppActions.Close"}}"><i class="fas fa-times"></i></a>
+  </div>
+  
+  <div class="cb-tracker-body">
+    {{#if hasEvents}}
+      <ul class="cb-tracker-list">
+        {{#each events}}
+          <li class="cb-tracker-item {{#if this.isOverdue}}is-overdue{{/if}}" data-id="{{this.id}}" data-workspace="{{this.workspaceId}}" data-tab="{{this.tab}}" {{#unless @root.isSimpleCalendarActive}}draggable="true"{{/unless}}>
+            <div class="cb-tracker-item-main">
+              <div class="cb-tracker-item-icon" style="color: {{this.color}};" data-action="jumpToEntry" title="{{localize "CLUEBOOK.Tracker.JumpToEntry"}}">
+                {{#if (eq this.tab "quests")}}<i class="fas fa-scroll"></i>{{else}}<i class="fas fa-clock"></i>{{/if}}
+              </div>
+              <div class="cb-tracker-item-content" data-action="expandText" title="Развернуть текст">
+                <div class="cb-tracker-item-title">{{{this.name}}}</div>
+                <div class="cb-tracker-item-meta">
+                  <span class="cb-tracker-item-ws"><i class="fas fa-book"></i> {{this.workspaceName}}</span>
+                  {{#if @root.isSimpleCalendarActive}}
+                    <span class="cb-tracker-item-time">
+                      <i class="fas fa-hourglass-half"></i> 
+                      {{#if this.isOverdue}}
+                        <span class="cb-text-danger">{{localize "CLUEBOOK.Tracker.Overdue"}} ({{this.diffStr}})</span>
+                      {{else}}
+                        {{this.diffStr}}
+                      {{/if}}
+                    </span>
+                  {{/if}}
+                </div>
+              </div>
+            </div>
+            <a data-action="untrackEntry" class="cb-tracker-untrack" title="{{localize "CLUEBOOK.Tracker.Untrack"}}">
+              <i class="fas fa-star-half-alt"></i>
+            </a>
+          </li>
+        {{/each}}
+      </ul>
+    {{else}}
+      <div class="cb-tracker-empty">
+        <i class="fas fa-star" style="font-size: 24px; opacity: 0.5; margin-bottom: 10px;"></i>
+        <p>{{localize "CLUEBOOK.Tracker.NoEvents"}}</p>
+      </div>
+    {{/if}}
+  </div>
+</div>

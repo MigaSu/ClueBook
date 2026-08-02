@@ -266,7 +266,7 @@ select.cluebook-input {
   transform: translateY(-3px) scale(1.02);
 }
 
-.flexrow {
+.cluebook-window .flexrow {
   display: flex;
   gap: 8px;
 }

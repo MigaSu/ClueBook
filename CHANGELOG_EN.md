@@ -2,6 +2,31 @@
 
 All notable changes, refactoring, and bug fixes are documented in this file.
 
+## [1.1.0] - 2026-08-02
+* **Accessibility:** Completely overhauled the card hiding system. Replaced the simple "Hide" toggle with an advanced "Visibility" menu allowing you to select individual players who can see the card.
+
+### ✨ New Features
+* **Settings Reorganization:** Completely overhauled the settings window for better clarity, splitting options into distinct categories (Appearance, Quick Access, Time Widget, Tracker Widget).
+* **FAB Customization:** Added the ability to choose which specific buttons appear in the Quick Access (FAB) menu. You can also now completely disable the Tracker feature.
+* **Upcoming Events Tracker:** Added a new floating widget to track upcoming events and quests with deadlines.
+  * The tracker is accessed via a new button in the FAB (Quick Add) menu.
+  * Players can individually choose which events to track by clicking the new "star" button on Entry Cards (Quests & Timeline).
+  * Tracker settings are personalized for each user, including an option to show or hide overdue deadlines.
+  * Mentions and UUID links inside the Tracker widget are now fully clickable and automatically open the target entry.
+* **Personal Board:** Added the ability to completely delete/clear the Personal Workspace from the Workspaces settings tab.
+* **Board:** Added the ability to mass pin or unpin a selected group of cards via the Right-Click Context Menu.
+* **Integration:** Added full support for the `Calendaria` module (alongside Simple Calendar), including weather and time synchronization.
+* **Localization:** Added German (de) and French (fr) translations.
+* **UI/UX:** Completely removed ClueBook's internal time widget and its settings to prevent feature duplication with dedicated calendar modules.
+* **Architecture:** Abstracted `TimeService` and `TrackerService` for encapsulated and independent date handling and event tracking.
+* **Architecture:** DRY refactored `api.openApp` to unify and centralize internal navigation and tab detection.
+### 🐛 Bug Fixes
+* **JSON Import:** 
+  * Fixed a bug where the UI would hang indefinitely during import. The dialog now correctly closes and passes the data using native `DialogV2.wait`.
+  * Importing an entry with an ID that already exists in the board now correctly overwrites the old entry instead of duplicating it or ignoring it.
+* **UUID Parsing:** Fixed a bug that prevented inner UUIDs for `JournalEntryPage` and `Item` from parsing correctly when pasted into entry texts.
+* **AI Prompt:** Updated the AI JSON generator prompt to mention generic calendar modules instead of hard-coded Simple Calendar.
+
 ## [1.0.3] - 2026-07-31
 
 ### 🏗 Refactoring & Architecture

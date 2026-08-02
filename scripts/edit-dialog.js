@@ -1,3 +1,5 @@
+import { TimeService } from "./services/time-service.js";
+import { ClueBookDatePicker } from "./date-picker.js";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -42,7 +44,7 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
     context.sourceTab = this.sourceTab;
     context.isMassEdit = this.options.isMassEdit;
     context.entriesCount = this.options.entriesCount;
-    context.isSimpleCalendarActive = !!window.SimpleCalendar?.api;
+    context.isSimpleCalendarActive = TimeService.isActive();
     context.isGM = game.user.isGM;
 
     if (context.entry.sceneUuid) {
@@ -85,17 +87,16 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
     }
 
     if (context.isSimpleCalendarActive) {
-      const scApi = window.SimpleCalendar.api;
       const currentTimestamp = game.time.worldTime;
-      const allMonths = scApi.getCurrentCalendar().months || [];
+      const allMonths = TimeService.getMonths();
 
       const buildDateContext = (timestamp, prefix) => {
         const targetTs = (timestamp !== null && timestamp !== undefined && timestamp !== "") ? timestamp : currentTimestamp;
-        const scDate = scApi.timestampToDate(targetTs) || scApi.timestampToDate(currentTimestamp);
+        const scDate = TimeService.timestampToDate(targetTs) || TimeService.timestampToDate(currentTimestamp);
         
         const monthsData = allMonths.map((m, i) => ({
           index: i,
-          name: m.name,
+          name: m.name || m,
           selected: i === scDate.month
         }));
 
@@ -751,8 +752,6 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
       updateData.tags = data.tags.split(',').map(s => s.trim()).filter(s => s);
     }
 
-    const scApi = window.SimpleCalendar?.api;
-
     if (instance.sourceTab === "notes") {
       updateData.name = data.name;
       updateData.text = data.text;
@@ -771,9 +770,9 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
       updateData.text = data.text;
       updateData.timeMode = data.timeMode || "by";
       
-      if (scApi) {
+      if (TimeService.isActive()) {
         if (data.hasDeadline) {
-          updateData.deadlineTimestamp = scApi.dateToTimestamp({
+          updateData.deadlineTimestamp = TimeService.dateToTimestamp({
             year: Number(data.deadline_year) || 0,
             month: Number(data.deadline_month) || 0,
             day: Math.max(0, (Number(data.deadline_day) || 1) - 1),
@@ -795,8 +794,8 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
     } else if (instance.sourceTab === "timeline") {
       updateData.event = data.event;
       
-      if (scApi) {
-        updateData.startTimestamp = scApi.dateToTimestamp({
+      if (TimeService.isActive()) {
+        updateData.startTimestamp = TimeService.dateToTimestamp({
           year: Number(data.start_year) || 0,
           month: Number(data.start_month) || 0,
           day: Math.max(0, (Number(data.start_day) || 1) - 1),
@@ -805,7 +804,7 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
         });
 
         if (data.endMode === "time") {
-          updateData.endTimestamp = scApi.dateToTimestamp({
+          updateData.endTimestamp = TimeService.dateToTimestamp({
             year: Number(data.end_year) || 0,
             month: Number(data.end_month) || 0,
             day: Math.max(0, (Number(data.end_day) || 1) - 1),

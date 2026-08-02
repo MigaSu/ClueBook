@@ -2,6 +2,7 @@ import { ClueBookEditDialog } from "../edit-dialog.js";
 import { ClueBookSocket } from "../socket.js";
 import { ClueBookTagManager } from "../tag-manager.js";
 
+import { TimeService } from "../services/time-service.js";
 export const ClueBookEntryActionsMixin = (Base) => class extends Base {
   static async _onManageTags(event, target) {
     let journal = null;
@@ -85,6 +86,25 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     this.render({ parts: ["content"] });
   }
 
+  static async _onToggleTrack(event, target) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const entryEl = target.closest('.cluebook-entry');
+    if (!entryEl) return;
+    const entryId = entryEl.dataset.entryId;
+    if (!entryId) return;
+
+    let tracked = Array.from(game.user.getFlag("ClueBook", "trackedEvents") || []);
+    if (tracked.includes(entryId)) {
+      tracked = tracked.filter(id => id !== entryId);
+    } else {
+      tracked.push(entryId);
+    }
+    await game.user.setFlag("ClueBook", "trackedEvents", tracked);
+  }
+
   static async _onAddTime(event, target) {
     const minsToAdd = parseInt(target.dataset.mins) || 0;
     if (minsToAdd === 0) return;
@@ -133,18 +153,109 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
 
   static async _onToggleVisibility(event, target) {
     event.stopPropagation();
-    const entry = target.closest('.cluebook-entry, .cluebook-folder');
-    if (!entry) return;
-    const entryId = entry.dataset.entryId;
-    const sourceTab = entry.dataset.sourceTab || this.state.activeTab;
-    
-    let data = this._getWorkspaceData();
-    
-    const currentEntry = data[sourceTab]?.[entryId];
-    if (!currentEntry) return;
-    
-    await this._saveDataRaw(sourceTab, entryId, "isHidden", !currentEntry.isHidden);
-    this.render({ parts: ["content"] });
+    try {
+      const entry = target.closest('.cluebook-entry, .cluebook-folder') || target.closest('.cluebook-board-node');
+      if (!entry) return;
+      const entryId = entry.dataset.entryId;
+      const sourceTab = entry.dataset.sourceTab || this.state.activeTab;
+      
+      let data = this._getWorkspaceData();
+      const currentEntry = data[sourceTab]?.[entryId];
+      if (!currentEntry) return;
+      
+      if (event.shiftKey) {
+        const shouldHide = !currentEntry.isHidden;
+        await this._updateWorkspaceData({
+          [`flags.ClueBook.data.${sourceTab}.${entryId}.isHidden`]: shouldHide,
+          [`flags.ClueBook.data.${sourceTab}.${entryId}.visibleTo`]: []
+        });
+        this.render({ parts: ["content"] });
+        return;
+      }
+
+      const allUsers = game.users.filter(u => !u.isGM);
+      const visibleTo = currentEntry.visibleTo || [];
+      const isVisibleToAll = !currentEntry.isHidden && (visibleTo.length === 0 || visibleTo.length === allUsers.length);
+      
+      let userCheckboxes = allUsers.map(u => {
+        const isChecked = isVisibleToAll || visibleTo.includes(u.id);
+        return `
+          <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer;">
+            <input type="checkbox" name="visibleTo" value="${u.id}" ${isChecked ? 'checked' : ''}>
+            <span style="font-weight: 500;">${u.name}</span>
+          </label>
+        `;
+      }).join('');
+
+      const content = `
+        <form id="cluebook-visibility-form" style="display: flex; flex-direction: column; gap: 12px; padding: 10px;">
+          <div style="display: flex; gap: 8px;">
+            <button type="button" id="btn-visible-all" style="flex: 1; padding: 6px 10px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(255,255,255,0.08); border: 1px solid var(--color-border-light-2); border-radius: 4px; color: var(--color-text-light-highlight);">
+              <i class="fas fa-eye"></i> ${game.i18n.localize("CLUEBOOK.Entry.VisibleToAll")}
+            </button>
+            <button type="button" id="btn-hide-all" style="flex: 1; padding: 6px 10px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(255,255,255,0.08); border: 1px solid var(--color-border-light-2); border-radius: 4px; color: var(--color-text-light-highlight);">
+              <i class="fas fa-eye-slash"></i> ${game.i18n.localize("CLUEBOOK.Entry.HideFromAll")}
+            </button>
+          </div>
+          <p class="hint" style="margin: 0; font-size: 12px; opacity: 0.8;">${game.i18n.localize("CLUEBOOK.Entry.SelectPlayers")}</p>
+          <div style="display: flex; flex-direction: column; max-height: 200px; overflow-y: auto; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 5px; border: 1px solid var(--color-border-light-1);">
+            ${userCheckboxes}
+          </div>
+        </form>
+      `;
+
+      const result = await foundry.applications.api.DialogV2.wait({
+        window: { title: game.i18n.localize("CLUEBOOK.Entry.VisibilityTitle") },
+        content: content,
+        render: (event) => {
+          const root = event.target?.element || event.target || document;
+          const btnVisibleAll = root.querySelector("#btn-visible-all");
+          const btnHideAll = root.querySelector("#btn-hide-all");
+          const playerCbs = root.querySelectorAll('input[name="visibleTo"]');
+
+          if (btnVisibleAll) {
+            btnVisibleAll.addEventListener("click", (e) => {
+              e.preventDefault();
+              playerCbs.forEach(cb => cb.checked = true);
+            });
+          }
+          if (btnHideAll) {
+            btnHideAll.addEventListener("click", (e) => {
+              e.preventDefault();
+              playerCbs.forEach(cb => cb.checked = false);
+            });
+          }
+        },
+        buttons: [{
+          action: "save",
+          label: game.i18n.localize("CLUEBOOK.Entry.Save"),
+          icon: "fas fa-save",
+          callback: (event, button, dialog) => {
+            const form = dialog.element.querySelector("form");
+            const selected = Array.from(form.querySelectorAll('input[name="visibleTo"]:checked')).map(cb => cb.value);
+
+            if (selected.length === allUsers.length) {
+              return { isHidden: false, visibleTo: [] };
+            } else if (selected.length === 0) {
+              return { isHidden: true, visibleTo: [] };
+            } else {
+              return { isHidden: false, visibleTo: selected };
+            }
+          }
+        }],
+        rejectClose: false
+      });
+
+      if (result) {
+        await this._updateWorkspaceData({
+          [`flags.ClueBook.data.${sourceTab}.${entryId}.isHidden`]: result.isHidden,
+          [`flags.ClueBook.data.${sourceTab}.${entryId}.visibleTo`]: result.visibleTo
+        });
+        this.render({ parts: ["content"] });
+      }
+    } catch (error) {
+      console.error("ClueBook | Error in _onToggleVisibility:", error);
+    }
   }
 
   static async _onSelectColor(event, target) {
@@ -220,8 +331,8 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     
     // Assign highest sort order
     let maxSort = 0;
-    const document = this._getWorkspaceJournal() || game.user;
-    const currentData = document.getFlag("ClueBook", "data")?.[activeTab] || {};
+    const targetDoc = this._getWorkspaceJournal() || game.user;
+    const currentData = targetDoc.getFlag("ClueBook", "data")?.[activeTab] || {};
     Object.values(currentData).forEach(e => {
       if (e && e.sort !== undefined && e.sort > maxSort) maxSort = e.sort;
     });
@@ -735,11 +846,11 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     const defaultColor = settings.defaultColors?.[type] || "yellow";
 
     let maxSort = 0;
-    let document = game.user;
+    let targetDoc = game.user;
     if (activeWorkspace !== "personal") {
-      document = game.journal.get(activeWorkspace) || game.user;
+      targetDoc = game.journal.get(activeWorkspace) || game.user;
     }
-    const currentData = document.getFlag("ClueBook", "data")?.[type] || {};
+    const currentData = targetDoc.getFlag("ClueBook", "data")?.[type] || {};
     Object.values(currentData).forEach(e => {
       if (e && e.sort !== undefined && e.sort > maxSort) maxSort = e.sort;
     });
@@ -815,9 +926,8 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
         await app._saveDataRaw(tab, entryId, field, timestamp);
 
         // Instant UI update
-        const scApi = window.SimpleCalendar?.api;
-        if (scApi) {
-          const formatted = this._formatSCTimestamp(timestamp).full;
+        if (TimeService.isActive()) {
+          const formatted = TimeService.formatTimestamp(timestamp).fullStr;
           
           const pickBtn = entry.querySelector(`button[data-action="pickDate"][data-field="${field}"]`);
           if (pickBtn) {

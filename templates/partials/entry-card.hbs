@@ -10,7 +10,7 @@
     <a data-action="openActor" data-actor-id="{{this.actorUuid}}" class="btn-actor" title="Открыть персонажа"><i class="fas fa-id-card"></i></a>
     {{/if}}
     {{#unless @root.settings.hideGMVisibilityBtn}}
-    <a data-action="toggleVisibility" class="btn-visibility" title="{{#if this.isHidden}}{{localize "CLUEBOOK.Entry.ShowToPlayers"}}{{else}}{{localize "CLUEBOOK.Entry.HideFromPlayers"}}{{/if}}"><i class="fas {{#if this.isHidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+    <a data-action="toggleVisibility" class="btn-visibility" title="{{localize "CLUEBOOK.Entry.Visibility"}}"><i class="fas {{#if this.isHidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
     {{/unless}}
     {{#unless @root.settings.hideGMOverlayBtn}}
     <a data-action="shareOverlay" class="btn-share" title="Показать на экранах игроков (Оверлей)"><i class="fas fa-bullhorn"></i></a>
@@ -20,6 +20,10 @@
     {{#unless @root.settings.features.hideEditBtn}}
     <a data-action="toggleEdit" class="btn-edit" title="{{localize "CLUEBOOK.Entry.Edit"}}"><i class="fas fa-pencil-alt"></i></a>
     {{/unless}}
+
+    {{#if (and @root.enableTracker (or (eq this.sourceTab "quests") (eq this.sourceTab "timeline")))}}
+    <a data-action="toggleTrack" class="btn-track {{#if this.isTracked}}active{{/if}}" title="{{localize "CLUEBOOK.Tracker.ToggleTrack"}}"><i class="fas fa-star"></i></a>
+    {{/if}}
 
     {{#if @root.isBoardView}}
     <a class="btn-link" title="{{localize "CLUEBOOK.Entry.LinkWithThread"}}"><i class="fas fa-link"></i></a>

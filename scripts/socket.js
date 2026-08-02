@@ -1,3 +1,4 @@
+import { TimeService } from "./services/time-service.js";
 export class ClueBookSocket {
   static #isWorkspace(journal) {
     return journal && journal.getFlag("ClueBook", "isWorkspace");
@@ -130,22 +131,10 @@ export class ClueBookSocket {
 
   static async #handleAddScNote({ userId, title, content, startDate, endDate }) {
     try {
-      if (!window.SimpleCalendar?.api) return;
-
-      const permissions = { default: 0 };
-      game.users.forEach(u => permissions[u.id] = 2);
-      if (userId && game.users.has(userId)) permissions[userId] = 3;
-
-      const scNote = await window.SimpleCalendar.api.addNote(
-        title || "Note",
-        content || "",
-        startDate,
-        endDate,
-        true,  // allDay
-        false, // repeats
-        {},    // categories
-        permissions
-      );
+      if (!TimeService.isActive()) return;
+      
+      const ts = startDate ? TimeService.dateToTimestamp(startDate) : game.time.worldTime;
+      const scNote = await TimeService.addNote(title, content, ts);
 
       if (scNote) {
         game.socket.emit("module.ClueBook", {

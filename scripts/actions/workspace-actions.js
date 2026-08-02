@@ -2,6 +2,7 @@ import { ClueBookEditDialog } from "../edit-dialog.js";
 import { ClueBookSocket } from "../socket.js";
 import { ClueBookTagManager } from "../tag-manager.js";
 
+import { TimeService } from "../services/time-service.js";
 export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
   static async _onExportJSON(event, target) {
     let data = {};
@@ -335,12 +336,23 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
   }
 
   static async _onDeleteWorkspace(event, target) {
-    if (!game.user.isGM) {
-      ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.OnlyGMCanDeleteBoards"));
+    if (this.state.activeWorkspace === "personal" || this.state.activeWorkspace.startsWith("personal_")) {
+      const confirmed = await foundry.applications.api.DialogV2.confirm({
+        window: { title: game.i18n.localize("CLUEBOOK.AppActions.DeleteBoardTitle") },
+        content: game.i18n.localize("CLUEBOOK.AppActions.DeletePersonalPrompt") || game.i18n.format("CLUEBOOK.AppActions.DeleteBoardPrompt", { name: game.i18n.localize("CLUEBOOK.Workspace.Personal") }),
+        rejectClose: false
+      });
+      if (!confirmed) return;
+      
+      await game.user.unsetFlag("ClueBook", "data");
+      await game.user.unsetFlag("ClueBook", "settings");
+      this.state.activeWorkspace = "personal";
+      this.render({ parts: ["content"] });
       return;
     }
-    if (this.state.activeWorkspace === "personal" || this.state.activeWorkspace.startsWith("personal_")) {
-      ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.CannotDeletePersonal"));
+
+    if (!game.user.isGM) {
+      ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.OnlyGMCanDeleteBoards"));
       return;
     }
 
@@ -370,40 +382,38 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
       <textarea id="cb-import-text" style="width: 100%; height: 200px; font-family: monospace;"></textarea>
     `;
 
-    const jsonStr = await new Promise((resolve) => {
-      new foundry.applications.api.DialogV2({
-        window: { title: game.i18n.localize("CLUEBOOK.AppActions.ImportAITitle"), resizable: true },
-        position: { width: 600, height: "auto" },
-        content: content,
-        buttons: [
-          {
-            action: "import",
-            label: game.i18n.localize("CLUEBOOK.AppActions.ImportBtn"),
-            icon: "fas fa-file-import",
-            callback: async (event, button, dialog) => {
-              const fileInput = document.getElementById("cb-import-file");
-              const textInput = document.getElementById("cb-import-text");
-              
-              if (fileInput && fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                const text = await file.text();
-                resolve(text);
-              } else if (textInput && textInput.value.trim() !== "") {
-                resolve(textInput.value);
-              } else {
-                resolve(null);
-              }
+    const jsonStr = await foundry.applications.api.DialogV2.wait({
+      window: { title: game.i18n.localize("CLUEBOOK.AppActions.ImportAITitle"), resizable: true },
+      position: { width: 600, height: "auto" },
+      content: content,
+      buttons: [
+        {
+          action: "import",
+          label: game.i18n.localize("CLUEBOOK.AppActions.ImportBtn"),
+          icon: "fas fa-file-import",
+          callback: async (event, button, dialog) => {
+            const fileInput = (dialog.element || document).querySelector("#cb-import-file");
+            const textInput = (dialog.element || document).querySelector("#cb-import-text");
+            
+            if (fileInput && fileInput.files.length > 0) {
+              const file = fileInput.files[0];
+              const text = await file.text();
+              return text;
+            } else if (textInput && textInput.value.trim() !== "") {
+              return textInput.value;
+            } else {
+              return null;
             }
-          },
-          {
-            action: "cancel",
-            label: game.i18n.localize("CLUEBOOK.AppActions.Cancel"),
-            icon: "fas fa-times",
-            callback: () => resolve(null)
           }
-        ],
-        close: () => resolve(null)
-      }).render(true);
+        },
+        {
+          action: "cancel",
+          label: game.i18n.localize("CLUEBOOK.AppActions.Cancel"),
+          icon: "fas fa-times",
+          callback: () => null
+        }
+      ],
+      rejectClose: false
     });
 
     if (!jsonStr) return;
@@ -527,12 +537,9 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
             if (this.state.selectedEntryId === tempId) this.state.selectedEntryId = null;
             this.state.selectedEntries.delete(tempId);
           } else {
-            // Update the card
+            // Overwrite the card completely
             const targetTab = entry.tab || existingTab;
-            const updatedEntry = {
-              ...existingEntry,
-              ...entry
-            };
+            const updatedEntry = { ...entry };
             delete updatedEntry.id;
             delete updatedEntry.tab;
             delete updatedEntry.action;
@@ -555,8 +562,8 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
             continue; // Skip deleting non-existing entry
           }
 
-          // Create new entry
-          const realId = foundry.utils.randomID();
+          // Create new entry using imported ID or generate one
+          const realId = tempId || foundry.utils.randomID();
           if (tempId) idMap[tempId] = realId;
 
           const tab = entry.tab || "notes";
@@ -648,10 +655,9 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
 
   static async _onCopyDataFormat(event, target) {
     let calendarInfo = "";
-    if (window.SimpleCalendar?.api) {
-      const scApi = window.SimpleCalendar.api;
+    if (TimeService.isActive()) {
       const currentTs = game.time.worldTime;
-      const fmt = ClueBookApp._formatSCTimestamp(game.time.worldTime);
+      const fmt = TimeService.formatTimestamp(game.time.worldTime);
       calendarInfo = game.i18n.format("CLUEBOOK.AppActions.AIPromptCalendarActive", {
         date: fmt.date,
         time: fmt.time,
@@ -668,7 +674,7 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
       gmNotesFieldText: gmNotesFieldText
     });
     try {
-      await navigator.clipboard.writeText(formatText);
+      game.clipboard.copyPlainText(formatText);
       ui.notifications.info(game.i18n.localize("CLUEBOOK.AppActions.FormatCopied"));
     } catch (err) {
       console.error(err);

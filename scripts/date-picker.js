@@ -1,3 +1,4 @@
+import { TimeService } from "./services/time-service.js";
 export class ClueBookDatePicker {
   /**
    * Open the custom date picker dialog.
@@ -7,32 +8,28 @@ export class ClueBookDatePicker {
    */
   static async prompt(initialTimestamp = null, title = null) {
     if (!title) title = game.i18n.localize("CLUEBOOK.DatePicker.Title");
-    if (!window.SimpleCalendar || !window.SimpleCalendar.api) {
+    if (!TimeService.isActive()) {
       ui.notifications.warn(game.i18n.localize("CLUEBOOK.DatePicker.NoSimpleCalendar"));
       return null;
     }
 
-    const scApi = window.SimpleCalendar.api;
     const currentTimestamp = game.time.worldTime;
     const targetTimestamp = (initialTimestamp !== null && initialTimestamp !== undefined && initialTimestamp !== "") ? initialTimestamp : currentTimestamp;
 
     // Convert timestamp to DateData
-    const scDate = scApi.timestampToDate(targetTimestamp) || scApi.timestampToDate(currentTimestamp);
+    const scDate = TimeService.timestampToDate(targetTimestamp) || TimeService.timestampToDate(currentTimestamp);
     if (!scDate) return null;
 
     // Get all months in current calendar
-    let allMonths = [];
-    try {
-      allMonths = scApi.getCurrentCalendar().months || [];
-    } catch (e) {
-      console.warn("ClueBook | Could not get calendar months", e);
+    let allMonths = TimeService.getMonths();
+    if (!allMonths || allMonths.length === 0) {
       // Fallback
       allMonths = Array.from({length: 12}, (_, i) => ({ name: `${game.i18n.localize("CLUEBOOK.DatePicker.Month")} ${i+1}` }));
     }
     
     const monthsData = allMonths.map((m, i) => ({
       index: i,
-      name: m.name,
+      name: m.name || m,
       selected: i === scDate.month
     }));
 
@@ -71,7 +68,7 @@ export class ClueBookDatePicker {
               const hour = Number(form.elements.hour?.value) || 0;
               const minute = Number(form.elements.minute?.value) || 0;
 
-              const newTimestamp = scApi.dateToTimestamp({ year, month, day, hour, minute });
+              const newTimestamp = TimeService.dateToTimestamp({ year, month, day, hour, minute });
               resolve(newTimestamp);
             }
           },

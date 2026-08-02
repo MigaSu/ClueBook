@@ -9,13 +9,7 @@
         <h3><i class="fas fa-paint-brush"></i> {{localize "CLUEBOOK.Settings.CategoryWindow"}}</h3>
         <div class="setting-row">
           <label>{{localize "CLUEBOOK.Settings.AccentColor"}}</label>
-          <select class="setting-input cluebook-input" data-key="theme.accent">
-            <option value="#7b61ff" {{#if (eq settings.theme.accent "#7b61ff")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Purple"}}</option>
-            <option value="#ff5252" {{#if (eq settings.theme.accent "#ff5252")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Red"}}</option>
-            <option value="#4caf50" {{#if (eq settings.theme.accent "#4caf50")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Green"}}</option>
-            <option value="#2196f3" {{#if (eq settings.theme.accent "#2196f3")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Blue"}}</option>
-            <option value="#ff9800" {{#if (eq settings.theme.accent "#ff9800")}}selected{{/if}}>{{localize "CLUEBOOK.Colors.Orange"}}</option>
-          </select>
+          <input type="color" class="setting-input" data-key="theme.accent" value="{{settings.theme.accent}}">
         </div>
         <div class="setting-row">
           <label>{{localize "CLUEBOOK.Settings.Opacity"}}</label>
@@ -24,7 +18,15 @@
       </div>
 
       <div class="settings-card">
-        <h3><i class="fas fa-bolt"></i> {{localize "CLUEBOOK.Settings.CategoryWidgets"}}</h3>
+        <h3><i class="fas fa-magic"></i> {{localize "CLUEBOOK.Settings.CategoryFAB"}}</h3>
+
+        <div class="setting-row">
+          <label>{{localize "CLUEBOOK.Settings.UIMode"}}</label>
+          <select class="setting-input cluebook-input" data-key="theme.uiMode">
+            <option value="widget" {{#if (ne settings.theme.uiMode "controls")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.UIModeWidget"}}</option>
+            <option value="controls" {{#if (eq settings.theme.uiMode "controls")}}selected{{/if}}>{{localize "CLUEBOOK.Settings.UIModeControls"}}</option>
+          </select>
+        </div>
         <div class="setting-row">
           <label>{{localize "CLUEBOOK.Settings.Direction"}}</label>
           <select class="setting-input cluebook-input" data-key="widget.direction">
@@ -42,23 +44,70 @@
           <label>{{localize "CLUEBOOK.Settings.WidgetColor2"}}</label>
           <input type="color" class="setting-input" data-key="theme.widgetColor2" value="{{settings.theme.widgetColor2}}">
         </div>
-        <div class="setting-row flex-checkbox">
-          <label>{{localize "CLUEBOOK.Settings.ShowQuickWidget"}}</label>
-          <div class="cb-toggle">
-            <input type="checkbox" class="setting-input" id="cb-sw-quick" data-key="theme.showQuickWidget" {{#if (ne settings.theme.showQuickWidget false)}}checked{{/if}}>
-            <label for="cb-sw-quick"></label>
+        <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+          <label style="margin-bottom: 5px;"><strong>Кнопки меню / Menu Buttons:</strong></label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;">
+            <div class="setting-row flex-checkbox" style="padding: 0;">
+              <label style="font-size: 11px;"><i class="fas fa-sticky-note"></i> {{localize "CLUEBOOK.Settings.ShowBtnNotes"}}</label>
+              <div class="cb-toggle cb-toggle-small">
+                <input type="checkbox" class="setting-input" id="cb-sw-btn-notes" data-key="widget.buttons.notes" {{#if (ne settings.widget.buttons.notes false)}}checked{{/if}}>
+                <label for="cb-sw-btn-notes"></label>
+              </div>
+            </div>
+            <div class="setting-row flex-checkbox" style="padding: 0;">
+              <label style="font-size: 11px;"><i class="fas fa-user"></i> {{localize "CLUEBOOK.Settings.ShowBtnNPC"}}</label>
+              <div class="cb-toggle cb-toggle-small">
+                <input type="checkbox" class="setting-input" id="cb-sw-btn-npc" data-key="widget.buttons.npc" {{#if (ne settings.widget.buttons.npc false)}}checked{{/if}}>
+                <label for="cb-sw-btn-npc"></label>
+              </div>
+            </div>
+            <div class="setting-row flex-checkbox" style="padding: 0;">
+              <label style="font-size: 11px;"><i class="fas fa-map-marked-alt"></i> {{localize "CLUEBOOK.Settings.ShowBtnLocations"}}</label>
+              <div class="cb-toggle cb-toggle-small">
+                <input type="checkbox" class="setting-input" id="cb-sw-btn-loc" data-key="widget.buttons.locations" {{#if (ne settings.widget.buttons.locations false)}}checked{{/if}}>
+                <label for="cb-sw-btn-loc"></label>
+              </div>
+            </div>
+            <div class="setting-row flex-checkbox" style="padding: 0;">
+              <label style="font-size: 11px;"><i class="fas fa-scroll"></i> {{localize "CLUEBOOK.Settings.ShowBtnQuests"}}</label>
+              <div class="cb-toggle cb-toggle-small">
+                <input type="checkbox" class="setting-input" id="cb-sw-btn-quests" data-key="widget.buttons.quests" {{#if (ne settings.widget.buttons.quests false)}}checked{{/if}}>
+                <label for="cb-sw-btn-quests"></label>
+              </div>
+            </div>
+            <div class="setting-row flex-checkbox" style="padding: 0;">
+              <label style="font-size: 11px;"><i class="fas fa-clock"></i> {{localize "CLUEBOOK.Settings.ShowBtnTimeline"}}</label>
+              <div class="cb-toggle cb-toggle-small">
+                <input type="checkbox" class="setting-input" id="cb-sw-btn-time" data-key="widget.buttons.timeline" {{#if (ne settings.widget.buttons.timeline false)}}checked{{/if}}>
+                <label for="cb-sw-btn-time"></label>
+              </div>
+            </div>
+            <div class="setting-row flex-checkbox" style="padding: 0;">
+              <label style="font-size: 11px;"><i class="fas fa-tasks"></i> {{localize "CLUEBOOK.Settings.ShowBtnTracker"}}</label>
+              <div class="cb-toggle cb-toggle-small">
+                <input type="checkbox" class="setting-input" id="cb-sw-btn-tracker" data-key="widget.buttons.tracker" {{#if (ne settings.widget.buttons.tracker false)}}checked{{/if}}>
+                <label for="cb-sw-btn-tracker"></label>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="setting-row flex-checkbox" style="align-items: center;">
-          <div style="flex: 1; display: flex; flex-direction: column;">
-            <label style="flex: none;">{{localize "CLUEBOOK.Settings.ShowCalendarWidget"}}</label>
-            {{#unless globalTimeWidget}}
-            <span class="setting-disabled" style="opacity: 0.6; font-style: italic; font-size: 11px; margin-top: 2px;">{{localize "CLUEBOOK.Settings.DisabledByGM"}}</span>
-            {{/unless}}
+      </div>
+
+
+      <div class="settings-card">
+        <h3><i class="fas fa-tasks"></i> {{localize "CLUEBOOK.Settings.CategoryTrackerWidget"}}</h3>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.EnableTracker"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-enable-tracker" data-key="features.enableTracker" {{#if (ne settings.features.enableTracker false)}}checked{{/if}}>
+            <label for="cb-sw-enable-tracker"></label>
           </div>
-          <div class="cb-toggle" {{#unless globalTimeWidget}}style="opacity: 0.5; pointer-events: none;"{{/unless}}>
-            <input type="checkbox" class="setting-input" id="cb-sw-calendar" data-key="theme.showCalendarWidget" {{#if (ne settings.theme.showCalendarWidget false)}}checked{{/if}} {{#unless globalTimeWidget}}disabled{{/unless}}>
-            <label for="cb-sw-calendar"></label>
+        </div>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Tracker.ShowOverdue"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-overdue" data-key="features.showOverdueInTracker" {{#if (ne settings.features.showOverdueInTracker false)}}checked{{/if}}>
+            <label for="cb-sw-overdue"></label>
           </div>
         </div>
       </div>
@@ -102,19 +151,7 @@
         </div>
       </div>
       
-      {{#if isGM}}
-      <div class="settings-card">
-        <h3><i class="fas fa-globe"></i> {{localize "CLUEBOOK.Settings.CategoryGlobal"}}</h3>
-        <p class="settings-hint" style="margin-top: -10px; margin-bottom: 15px; font-size: 11px;">{{localize "CLUEBOOK.Settings.GlobalHint"}}</p>
-        <div class="setting-row flex-checkbox">
-          <label>{{localize "CLUEBOOK.Settings.EnableTimeWidget"}}</label>
-          <div class="cb-toggle">
-            <input type="checkbox" class="setting-input" id="cb-sw-global-calendar" data-key="global.enableTimeWidget" {{#if globalTimeWidget}}checked{{/if}}>
-            <label for="cb-sw-global-calendar"></label>
-          </div>
-        </div>
-      </div>
-      {{/if}}
+
     </div>
 
   </div>

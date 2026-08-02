@@ -69,28 +69,32 @@
 
 /* Directions */
 .cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(1) { opacity: 1; transform: translate(90px, 0); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(2) { opacity: 1; transform: translate(83px, -34px); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(3) { opacity: 1; transform: translate(64px, -64px); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(4) { opacity: 1; transform: translate(34px, -83px); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(5) { opacity: 1; transform: translate(0, -90px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(2) { opacity: 1; transform: translate(86px, -28px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(3) { opacity: 1; transform: translate(73px, -53px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(4) { opacity: 1; transform: translate(53px, -73px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(5) { opacity: 1; transform: translate(28px, -86px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-right"] .cb-fab-btn:nth-child(6) { opacity: 1; transform: translate(0, -90px); }
 
 .cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(1) { opacity: 1; transform: translate(-90px, 0); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(2) { opacity: 1; transform: translate(-83px, -34px); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(3) { opacity: 1; transform: translate(-64px, -64px); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(4) { opacity: 1; transform: translate(-34px, -83px); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(5) { opacity: 1; transform: translate(0, -90px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(2) { opacity: 1; transform: translate(-86px, -28px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(3) { opacity: 1; transform: translate(-73px, -53px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(4) { opacity: 1; transform: translate(-53px, -73px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(5) { opacity: 1; transform: translate(-28px, -86px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="up-left"] .cb-fab-btn:nth-child(6) { opacity: 1; transform: translate(0, -90px); }
 
 .cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(1) { opacity: 1; transform: translate(90px, 0); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(2) { opacity: 1; transform: translate(83px, 34px); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(3) { opacity: 1; transform: translate(64px, 64px); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(4) { opacity: 1; transform: translate(34px, 83px); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(5) { opacity: 1; transform: translate(0, 90px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(2) { opacity: 1; transform: translate(86px, 28px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(3) { opacity: 1; transform: translate(73px, 53px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(4) { opacity: 1; transform: translate(53px, 73px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(5) { opacity: 1; transform: translate(28px, 86px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-right"] .cb-fab-btn:nth-child(6) { opacity: 1; transform: translate(0, 90px); }
 
 .cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(1) { opacity: 1; transform: translate(-90px, 0); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(2) { opacity: 1; transform: translate(-83px, 34px); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(3) { opacity: 1; transform: translate(-64px, 64px); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(4) { opacity: 1; transform: translate(-34px, 83px); }
-.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(5) { opacity: 1; transform: translate(0, 90px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(2) { opacity: 1; transform: translate(-86px, 28px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(3) { opacity: 1; transform: translate(-73px, 53px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(4) { opacity: 1; transform: translate(-53px, 73px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(5) { opacity: 1; transform: translate(-28px, 86px); }
+.cluebook-widget.cb-menu-active .cb-fab-menu[data-direction="down-left"] .cb-fab-btn:nth-child(6) { opacity: 1; transform: translate(0, 90px); }
 
 
 
@@ -121,8 +125,7 @@
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-/* The Pin */
-.sticky-pin {
+.cluebook-window .sticky-pin {
   position: absolute;
   top: 5px;
   left: 50%;
@@ -135,7 +138,7 @@
   z-index: 5;
 }
 
-.sticky-pin::before {
+.cluebook-window .sticky-pin::before {
   content: "";
   position: absolute;
   top: 40%;

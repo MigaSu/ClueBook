@@ -2,9 +2,9 @@
   "id": "ClueBook",
   "title": "ClueBook",
   "description": "Модуль для создания заметок, управления квестами и связи улик на доске детектива.",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "compatibility": {
-    "minimum": "14",
+    "minimum": "12",
     "verified": "14"
   },
   "authors": [
@@ -26,7 +26,8 @@
     "styles/board.css",
     "styles/settings.css",
     "styles/components.css",
-    "styles/calendar.css"
+    "styles/calendar.css",
+    "styles/tracker.css"
   ],
   "languages": [
     {
@@ -38,6 +39,16 @@
       "lang": "ru",
       "name": "Russian",
       "path": "lang/ru.json"
+    },
+    {
+      "lang": "de",
+      "name": "German",
+      "path": "lang/de.json"
+    },
+    {
+      "lang": "fr",
+      "name": "French",
+      "path": "lang/fr.json"
     }
   ]
 }

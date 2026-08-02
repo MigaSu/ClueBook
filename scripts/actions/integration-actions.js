@@ -1,6 +1,7 @@
 import { ClueBookEditDialog } from "../edit-dialog.js";
 import { ClueBookSocket } from "../socket.js";
 import { ClueBookTagManager } from "../tag-manager.js";
+import { TimeService } from "../services/time-service.js";
 
 export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
   static async _onShareOverlay(event, target) {
@@ -34,9 +35,9 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
     const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
     const processUUIDs = (text) => {
       if (!text) return text;
-      const uuidRegex = /(?<!@UUID\[)\b(?:Actor|Item|JournalEntry|JournalEntryPage|Scene|RollTable|Cards|Macro|Playlist|User)(?:\.[a-zA-Z0-9_-]+)+\b/g;
+      const uuidRegex = /(?<!@UUID\[)(?<!\.)\b(?:Actor|Item|JournalEntry|JournalEntryPage|Scene|RollTable|Cards|Macro|Playlist|User)(?:\.[a-zA-Z0-9_-]+)+\b/g;
       let newText = text.replace(uuidRegex, match => `@UUID[${match}]`);
-      const compendiumRegex = /(?<!@UUID\[)\bCompendium\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+\b/g;
+      const compendiumRegex = /(?<!@UUID\[)(?<!\.)\bCompendium\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+\b/g;
       newText = newText.replace(compendiumRegex, match => `@UUID[${match}]`);
       // Parse qnmention
       newText = newText.replace(/\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g, (match, id, name, customText) => {
@@ -68,7 +69,7 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
       const statusIcon = entry.status === "completed" ? "fa-check-circle" : (entry.status === "failed" ? "fa-times-circle" : "fa-clock");
       contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-scroll"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Quest")} <i class="fas ${statusIcon} cb-status-${entry.status}"></i></h3>`;
       
-      if (entry.deadlineTimestamp && window.SimpleCalendar?.api) {
+      if (entry.deadlineTimestamp && TimeService.isActive()) {
         const formatted = this._formatSCTimestamp(entry.deadlineTimestamp).full;
         if (entry.timeMode === "at") contentHTML += `<p><strong><i class="fas fa-clock"></i> ${game.i18n.localize("CLUEBOOK.AppActions.StrictlyAt")}:</strong> ${formatted}</p>`;
         else contentHTML += `<p><strong><i class="fas fa-hourglass-end"></i> ${game.i18n.localize("CLUEBOOK.AppActions.DoBy")}:</strong> ${formatted}</p>`;

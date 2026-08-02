@@ -106,9 +106,9 @@ export const ClueBookDataMixin = (Base) => class extends Base {
 
     const processUUIDs = (text) => {
       if (!text) return text;
-      const uuidRegex = /(?<!@UUID\[)\b(?:Actor|Item|JournalEntry|JournalEntryPage|Scene|RollTable|Cards|Macro|Playlist|User)(?:\.[a-zA-Z0-9_-]+)+\b/g;
+      const uuidRegex = /(?<!@UUID\[)(?<!\.)\b(?:Actor|Item|JournalEntry|JournalEntryPage|Scene|RollTable|Cards|Macro|Playlist|User)(?:\.[a-zA-Z0-9_-]+)+\b/g;
       let newText = text.replace(uuidRegex, match => `@UUID[${match}]`);
-      const compendiumRegex = /(?<!@UUID\[)\bCompendium\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+\b/g;
+      const compendiumRegex = /(?<!@UUID\[)(?<!\.)\bCompendium\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+\b/g;
       newText = newText.replace(compendiumRegex, match => `@UUID[${match}]`);
       return newText;
     };
