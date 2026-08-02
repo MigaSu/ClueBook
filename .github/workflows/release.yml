@@ -99,7 +99,7 @@ jobs:
             $0 == "## [" version "]" { capture=1; next }
             capture && /^## \[/ { exit }
             capture { print }
-          ' CHANGELOG.md > dist/release-notes.md
+          ' CHANGELOG_EN.md > dist/release-notes.md
 
           if [ ! -s dist/release-notes.md ]; then
             printf 'Release %s\n' "${RELEASE_VERSION}" > dist/release-notes.md

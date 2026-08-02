@@ -4,7 +4,7 @@
   "description": "Модуль для создания заметок, управления квестами и связи улик на доске детектива.",
   "version": "1.1.0",
   "compatibility": {
-    "minimum": "12",
+    "minimum": "13",
     "verified": "14"
   },
   "authors": [
