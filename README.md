@@ -8,10 +8,13 @@
 ClueBook is a handy module for Foundry VTT that helps you take notes, manage quests, and link clues on an interactive detective board.
 
 ## Key Features
-* Floating widget for quickly creating notes, NPCs, locations, quests, and timeline events.
-* Detective Board for visually establishing connections.
-* In-game calendar integration (tracking time and deadlines), supports Simple Calendar Reborn and Ginzzzu's Portraits & NPC Dock.
-* Built-in tag system for convenient sorting.
+* **Foundry V14 Ready**: Fully adapted to the latest Foundry V14 architecture (ApplicationV2) for maximum performance and stability.
+* **Floating widget** for quickly creating notes, NPCs, locations, quests, and timeline events.
+* **Event Tracker widget**: A dedicated on-screen widget for tracking quest deadlines and timeline events.
+* **Detective Board** for visually establishing connections.
+* **Advanced Visibility**: Granular control to share individual cards with specific players or hide them from everyone.
+* **In-game calendar integration** (tracking time and deadlines), supports Simple Calendar Reborn, **Calendaria**, and Ginzzzu's Portraits & NPC Dock.
+* **Built-in tag system** for convenient sorting.
 
 ## Screenshots
 
