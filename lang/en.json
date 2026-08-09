@@ -210,6 +210,7 @@
       "Scheduled": "SCHEDULED",
       "Deadline": "DEADLINE",
       "Passed": "PASSED",
+      "Failed": "FAILED",
       "Overdue": "OVERDUE",
       "In": "IN",
       "Left": "LEFT",

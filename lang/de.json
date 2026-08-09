@@ -204,6 +204,7 @@
       "Scheduled": "GEPLANT",
       "Deadline": "FRIST",
       "Passed": "VERGANGEN",
+      "Failed": "GESCHEITERT",
       "Overdue": "ÜBERFÄLLIG",
       "In": "IN",
       "Left": "VERBLEIBEND",
