@@ -10,9 +10,11 @@ let trackerWidgetApp = null;
 let injectWidget = null;
 
 Hooks.once("init", async () => {
+  try {
   console.log("ClueBook V14 | Initializing...");
 
   Hooks.on("getSceneControlButtons", (...args) => {
+    try {
     const settings = game.user?.getFlag("ClueBook", "settings") || {};
     let controlsDict = args[0];
 
@@ -21,27 +23,30 @@ Hooks.once("init", async () => {
       // If the user previously had 'cluebook' as their active control, but then changed uiMode to 'widget',
       // Foundry V14 will crash on load because it tries to read tools from the missing control.
       // We provide a dummy control to prevent the crash and asynchronously switch back to 'tokens'.
-      if (ui.controls && (ui.controls.control === "cluebook" || ui.controls.activeControl === "cluebook")) {
-        controlsDict["cluebook"] = {
-          name: "cluebook",
-          title: "ClueBook",
-          layer: "cluebook",
-          order: 100,
-          icon: "fas fa-book-open",
-          visible: true,
-          activeTool: "dummy",
-          tools: {
-            dummy: {
-              name: "dummy",
-              title: "ClueBook",
-              icon: "fas fa-book"
-            }
+      controlsDict["cluebook"] = {
+        name: "cluebook",
+        title: "ClueBook",
+        layer: "cluebook",
+        order: 100,
+        icon: "fas fa-book-open",
+        visible: false,
+        activeTool: "dummy",
+        tools: {
+          dummy: {
+            name: "dummy",
+            title: "ClueBook",
+            icon: "fas fa-book"
           }
-        };
-        setTimeout(() => {
-          if (ui.controls) ui.controls.control = "tokens";
-        }, 100);
-      }
+        }
+      };
+      
+      setTimeout(() => {
+        try {
+          if (ui.controls && (ui.controls.control === "cluebook" || ui.controls.activeControl === "cluebook")) {
+            ui.controls.control = "tokens";
+          }
+        } catch(e) {}
+      }, 500);
       return;
     }
 
@@ -132,6 +137,9 @@ Hooks.once("init", async () => {
 
     // Add our group to the dictionary
     controlsDict["cluebook"] = controlGroup;
+    } catch (err) {
+      console.error("ClueBook | getSceneControlButtons hook error:", err);
+    }
   });
 
   game.modules.get("ClueBook").api = {
@@ -208,16 +216,24 @@ Hooks.once("init", async () => {
   // Settings for enableTimeWidget are removed since the widget is deleted
   // Hooks for updateWorldTime keep updating cluebook and tracker
   Hooks.on("updateWorldTime", () => {
-    if (clueBookApp && clueBookApp.rendered && !clueBookApp.state.editingEntryId) {
-      clueBookApp.render({ parts: ["content"] });
-    }
-    if (trackerWidgetApp && trackerWidgetApp.rendered) {
-      trackerWidgetApp.render({ force: true });
+    try {
+      if (clueBookApp && clueBookApp.rendered && !clueBookApp.state.editingEntryId) {
+        clueBookApp.render({ parts: ["content"] });
+      }
+      if (trackerWidgetApp && trackerWidgetApp.rendered) {
+        trackerWidgetApp.render({ force: true });
+      }
+    } catch (err) {
+      console.error("ClueBook | updateWorldTime hook error:", err);
     }
   });
+  } catch (err) {
+    console.error("ClueBook | init hook error:", err);
+  }
 });
 
 Hooks.once("ready", async () => {
+  try {
   console.log("ClueBook | Ready hook fired! Registering socket.");
   ClueBookSocket.init();
   ClueBookOverlay.init();
@@ -269,22 +285,58 @@ Hooks.once("ready", async () => {
     widget.className = "cluebook-widget";
     widget.style.cssText = styleStr + `; --cb-widget-color: ${widgetColor}; --cb-widget-color2: ${widgetColor2};`;
     
-    // Р—Р°СЂР°РЅРµРµ РіРµРЅРµСЂРёСЂСѓРµРј HTML РґР»СЏ РјРµРЅСЋ (ADD-05: Р±РµР· РїРµСЂРµСЂРёСЃРѕРІРєРё РЅР° РєР°Р¶РґС‹Р№ hover)
-    widget.innerHTML = `
-      <div class="cb-widget-main" title="${game.i18n.localize("CLUEBOOK.Main.WidgetTitle")}">
-        <i class="fas fa-book-open"></i>
-      </div>
-      <div class="cb-fab-menu">
-        ${settings.widget?.buttons?.notes !== false ? `<a class="cb-fab-btn" data-type="notes" title="${game.i18n.localize("CLUEBOOK.Main.AddNote")}"><i class="fas fa-sticky-note"></i></a>` : ''}
-        ${settings.widget?.buttons?.npc !== false ? `<a class="cb-fab-btn" data-type="npc" title="${game.i18n.localize("CLUEBOOK.Main.AddNPC")}"><i class="fas fa-user"></i></a>` : ''}
-        ${settings.widget?.buttons?.locations !== false ? `<a class="cb-fab-btn" data-type="locations" title="${game.i18n.localize("CLUEBOOK.Main.AddLocation")}"><i class="fas fa-map-marked-alt"></i></a>` : ''}
-        ${settings.widget?.buttons?.quests !== false ? `<a class="cb-fab-btn" data-type="quests" title="${game.i18n.localize("CLUEBOOK.Main.AddQuest")}"><i class="fas fa-scroll"></i></a>` : ''}
-        ${settings.widget?.buttons?.timeline !== false ? `<a class="cb-fab-btn" data-type="timeline" title="${game.i18n.localize("CLUEBOOK.Main.AddEvent")}"><i class="fas fa-clock"></i></a>` : ''}
-        ${(settings.widget?.buttons?.tracker !== false && settings.features?.enableTracker !== false) ? `<a class="cb-fab-btn" data-type="tracker" title="${game.i18n.localize("CLUEBOOK.Tracker.Title")}"><i class="fas fa-tasks"></i></a>` : ''}
-      </div>
-    `;
+    // Create main button
+    const mainDiv = document.createElement("div");
+    mainDiv.className = "cb-widget-main";
+    mainDiv.title = game.i18n.localize("CLUEBOOK.Main.WidgetTitle");
+    const mainIcon = document.createElement("i");
+    mainIcon.className = "fas fa-book-open";
+    mainDiv.appendChild(mainIcon);
+    widget.appendChild(mainDiv);
 
-    const menu = widget.querySelector('.cb-fab-menu');
+    // Helper to build menu items safely
+    const buildMenu = (currentSettings, container) => {
+      container.replaceChildren();
+      const buttons = [
+        { key: "notes", type: "notes", title: "CLUEBOOK.Main.AddNote", icon: "fas fa-sticky-note" },
+        { key: "npc", type: "npc", title: "CLUEBOOK.Main.AddNPC", icon: "fas fa-user" },
+        { key: "locations", type: "locations", title: "CLUEBOOK.Main.AddLocation", icon: "fas fa-map-marked-alt" },
+        { key: "quests", type: "quests", title: "CLUEBOOK.Main.AddQuest", icon: "fas fa-scroll" },
+        { key: "timeline", type: "timeline", title: "CLUEBOOK.Main.AddEvent", icon: "fas fa-clock" }
+      ];
+      
+      for (const b of buttons) {
+        if (currentSettings.widget?.buttons?.[b.key] !== false) {
+          const a = document.createElement("a");
+          a.className = "cb-fab-btn";
+          a.dataset.type = b.type;
+          a.title = game.i18n.localize(b.title);
+          const i = document.createElement("i");
+          i.className = b.icon;
+          a.appendChild(i);
+          container.appendChild(a);
+        }
+      }
+      
+      if (currentSettings.widget?.buttons?.tracker !== false && currentSettings.features?.enableTracker !== false) {
+        const a = document.createElement("a");
+        a.className = "cb-fab-btn";
+        a.dataset.type = "tracker";
+        a.title = game.i18n.localize("CLUEBOOK.Tracker.Title");
+        const i = document.createElement("i");
+        i.className = "fas fa-tasks";
+        a.appendChild(i);
+        container.appendChild(a);
+      }
+    };
+
+    const menu = document.createElement("div");
+    menu.className = "cb-fab-menu";
+    buildMenu(settings, menu);
+    widget.appendChild(menu);
+    // Attach the builder function for later updates
+    widget._buildMenu = buildMenu;
+
     let hoverTimeout;
 
     widget.addEventListener("mouseenter", () => {
@@ -383,9 +435,13 @@ Hooks.once("ready", async () => {
   };
 
   injectWidget();
+  } catch (err) {
+    console.error("ClueBook | ready hook error:", err);
+  }
 });
 
 Hooks.on("updateUser", (user, updateData) => {
+  try {
   if (user.id !== game.user.id) return;
   
   // React to tracked events changes
@@ -431,18 +487,11 @@ Hooks.on("updateUser", (user, updateData) => {
   // Update FAB menu HTML dynamically when buttons or tracker setting changes
   if ((widgetSettings && widgetSettings.buttons) || (featureSettings && featureSettings.enableTracker !== undefined)) {
     const widget = document.getElementById("cluebook-widget");
-    if (widget) {
+    if (widget && widget._buildMenu) {
       const menu = widget.querySelector(".cb-fab-menu");
       if (menu) {
         const currentSettings = game.user.getFlag("ClueBook", "settings") || {};
-        menu.innerHTML = `
-          ${currentSettings.widget?.buttons?.notes !== false ? `<a class="cb-fab-btn" data-type="notes" title="${game.i18n.localize("CLUEBOOK.Main.AddNote")}"><i class="fas fa-sticky-note"></i></a>` : ''}
-          ${currentSettings.widget?.buttons?.npc !== false ? `<a class="cb-fab-btn" data-type="npc" title="${game.i18n.localize("CLUEBOOK.Main.AddNPC")}"><i class="fas fa-user"></i></a>` : ''}
-          ${currentSettings.widget?.buttons?.locations !== false ? `<a class="cb-fab-btn" data-type="locations" title="${game.i18n.localize("CLUEBOOK.Main.AddLocation")}"><i class="fas fa-map-marked-alt"></i></a>` : ''}
-          ${currentSettings.widget?.buttons?.quests !== false ? `<a class="cb-fab-btn" data-type="quests" title="${game.i18n.localize("CLUEBOOK.Main.AddQuest")}"><i class="fas fa-scroll"></i></a>` : ''}
-          ${currentSettings.widget?.buttons?.timeline !== false ? `<a class="cb-fab-btn" data-type="timeline" title="${game.i18n.localize("CLUEBOOK.Main.AddEvent")}"><i class="fas fa-clock"></i></a>` : ''}
-          ${(currentSettings.widget?.buttons?.tracker !== false && currentSettings.features?.enableTracker !== false) ? `<a class="cb-fab-btn" data-type="tracker" title="${game.i18n.localize("CLUEBOOK.Tracker.Title")}"><i class="fas fa-tasks"></i></a>` : ''}
-        `;
+        widget._buildMenu(currentSettings, menu);
       }
     }
   }
@@ -454,11 +503,14 @@ Hooks.on("updateUser", (user, updateData) => {
     }
   }
 
-
+  } catch (err) {
+    console.error("ClueBook | updateUser hook error:", err);
+  }
 });
 
 // Live Sync
 Hooks.on("updateJournalEntry", (journal, data, options, userId) => {
+  try {
   // If the active workspace journal is updated, re-render the app
   if (clueBookApp && clueBookApp.rendered && journal.id === clueBookApp.state.activeWorkspace) {
     if (userId !== game.user.id && !clueBookApp.state.editingEntryId) {
@@ -472,6 +524,9 @@ Hooks.on("updateJournalEntry", (journal, data, options, userId) => {
   // Re-render tracker in case quest details (status, deadline) changed
   if (trackerWidgetApp && trackerWidgetApp.rendered) {
     trackerWidgetApp.render({ force: true });
+  }
+  } catch (err) {
+    console.error("ClueBook | updateJournalEntry hook error:", err);
   }
 });
 

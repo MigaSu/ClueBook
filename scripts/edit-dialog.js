@@ -190,7 +190,10 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
           span.className = `cb-tag ${tag.isSecret ? 'cb-tag-secret' : ''}`;
           span.style.background = tag.color || '#7b61ff';
           span.dataset.tagId = tag.id;
-          span.innerHTML = `${tag.name} <i class="fas fa-times cb-tag-remove"></i>`;
+          span.textContent = tag.name + ' ';
+          const i = document.createElement('i');
+          i.className = 'fas fa-times cb-tag-remove';
+          span.appendChild(i);
           tagsWrapper.insertBefore(span, tagInput);
         }
       });
@@ -262,7 +265,15 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
 
         const matches = Object.values(availableTagsObj).filter(t => t.name.toLowerCase().includes(val) && !currentTags.includes(t.id));
         if (matches.length > 0) {
-          autocompleteDropdown.innerHTML = matches.map(t => `<div class="cb-tag-autocomplete-item" data-id="${t.id}" style="padding: 5px 10px; cursor: pointer; color: #fff;">${t.name}</div>`).join('');
+          autocompleteDropdown.replaceChildren();
+          for (const t of matches) {
+            const div = document.createElement('div');
+            div.className = 'cb-tag-autocomplete-item';
+            div.dataset.id = t.id;
+            div.style.cssText = 'padding: 5px 10px; cursor: pointer; color: #fff;';
+            div.textContent = t.name;
+            autocompleteDropdown.appendChild(div);
+          }
           autocompleteDropdown.style.display = 'block';
         } else {
           autocompleteDropdown.style.display = 'none';
@@ -436,7 +447,16 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
                    badge.onclick = () => { input.value = ""; badge.remove(); if (placeholder) placeholder.style.display = 'inline'; };
                    badgesContainer.appendChild(badge);
                  }
-                 if (badge) badge.innerHTML = `<i class="fas fa-user-ninja"></i> ${name} <i class="fas fa-times"></i>`;
+                 if (badge) {
+                   badge.replaceChildren();
+                   const icon1 = document.createElement('i');
+                   icon1.className = 'fas fa-user-ninja';
+                   badge.appendChild(icon1);
+                   badge.appendChild(document.createTextNode(' ' + name + ' '));
+                   const icon2 = document.createElement('i');
+                   icon2.className = 'fas fa-times';
+                   badge.appendChild(icon2);
+                 }
                  
                  ui.notifications.info(game.i18n.format("CLUEBOOK.EditDialog.DropActorSuccess", { name })); 
                }
@@ -463,7 +483,16 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
                    badge.onclick = () => { input.value = ""; badge.remove(); if (placeholder) placeholder.style.display = 'inline'; };
                    badgesContainer.appendChild(badge);
                  }
-                 if (badge) badge.innerHTML = `<i class="fas fa-map"></i> ${name} <i class="fas fa-times"></i>`;
+                 if (badge) {
+                   badge.replaceChildren();
+                   const icon1 = document.createElement('i');
+                   icon1.className = 'fas fa-map';
+                   badge.appendChild(icon1);
+                   badge.appendChild(document.createTextNode(' ' + name + ' '));
+                   const icon2 = document.createElement('i');
+                   icon2.className = 'fas fa-times';
+                   badge.appendChild(icon2);
+                 }
                  
                  ui.notifications.info(game.i18n.format("CLUEBOOK.EditDialog.DropSceneSuccess", { name })); 
                }
@@ -534,11 +563,19 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
 
     const renderAutocompleteItems = () => {
       if (!autocompleteBox) return;
-      autocompleteBox.innerHTML = '';
+      autocompleteBox.replaceChildren();
       currentMatches.forEach((match, idx) => {
         const item = document.createElement('div');
         item.style.cssText = `padding: 5px 8px; cursor: pointer; border-radius: 4px; font-size: 13px; display: flex; align-items: flex-start; gap: 8px; transition: background 0.1s; background: ${idx === autocompleteIndex ? 'var(--cb-accent)' : 'transparent'};`;
-        item.innerHTML = `<i class="fas fa-file-alt" style="opacity:0.5; margin-top: 2px; flex-shrink: 0;"></i> <span style="white-space: normal; line-height: 1.2; word-wrap: break-word;">${match.name}</span>`;
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-file-alt';
+        icon.style.cssText = 'opacity:0.5; margin-top: 2px; flex-shrink: 0;';
+        item.appendChild(icon);
+        const span = document.createElement('span');
+        span.style.cssText = 'white-space: normal; line-height: 1.2; word-wrap: break-word;';
+        span.textContent = match.name;
+        item.appendChild(document.createTextNode(' '));
+        item.appendChild(span);
         item.onmousedown = (e) => {
            e.preventDefault(); // prevent blur
            autocompleteIndex = idx;
@@ -597,9 +634,8 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
         for (const [id, entry] of Object.entries(tabData)) {
           let name = entry.name;
           if (!name && entry.text) {
-             const div = document.createElement('div');
-             div.innerHTML = entry.text;
-             name = div.textContent.substring(0, 30).trim() || game.i18n.localize("CLUEBOOK.EntryDetails.Untitled");
+             const doc = new DOMParser().parseFromString(entry.text, "text/html");
+             name = doc.body.textContent.substring(0, 30).trim() || game.i18n.localize("CLUEBOOK.EntryDetails.Untitled");
           }
           if (!name) name = entry.event || game.i18n.localize("CLUEBOOK.EntryDetails.DefaultEntry");
           
@@ -834,12 +870,16 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
       instance.close();
     } else {
       // Visual feedback
-      const originalText = target.innerHTML;
-      target.innerHTML = `<i class="fas fa-check"></i> ${game.i18n.localize("CLUEBOOK.EditDialog.Saved")}`;
+      const originalChildren = Array.from(target.childNodes);
+      target.replaceChildren();
+      const checkIcon = document.createElement('i');
+      checkIcon.className = 'fas fa-check';
+      target.appendChild(checkIcon);
+      target.appendChild(document.createTextNode(' ' + game.i18n.localize("CLUEBOOK.EditDialog.Saved")));
       target.style.background = "#4caf50";
       target.style.borderColor = "#4caf50";
       setTimeout(() => {
-        target.innerHTML = originalText;
+        target.replaceChildren(...originalChildren);
         target.style.background = "rgba(255,255,255,0.1)";
         target.style.borderColor = "var(--cb-accent)";
       }, 1500);

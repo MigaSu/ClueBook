@@ -609,7 +609,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
 
     const menu = document.createElement('div');
     menu.className = 'cb-context-menu';
-    menu.innerHTML = `
+    const rawHTML = `
       <div class="cb-menu-item" data-action="align-left"><i class="fas fa-align-left"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignLeft")}</div>
       <div class="cb-menu-item" data-action="align-center"><i class="fas fa-align-center"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignCenter")}</div>
       <div class="cb-menu-item" data-action="align-right"><i class="fas fa-align-right"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignRight")}</div>
@@ -621,6 +621,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       <div class="cb-menu-separator"></div>
       <div class="cb-menu-item danger" data-action="remove-board"><i class="fas fa-times"></i> ${game.i18n.localize("CLUEBOOK.Entry.RemoveFromBoard")}</div>
     `;
+    menu.replaceChildren(...new DOMParser().parseFromString(rawHTML, "text/html").body.childNodes);
 
     document.body.appendChild(menu);
 
@@ -739,13 +740,14 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
 
     const menu = document.createElement('div');
     menu.className = 'cb-context-menu';
-    menu.innerHTML = `
+    const rawHTML = `
       <div class="cb-menu-item" data-tab="notes"><i class="fas fa-sticky-note"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateNote")}</div>
       <div class="cb-menu-item" data-tab="npc"><i class="fas fa-user"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateNPC")}</div>
       <div class="cb-menu-item" data-tab="locations"><i class="fas fa-map-marker-alt"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateLocation")}</div>
       <div class="cb-menu-item" data-tab="quests"><i class="fas fa-tasks"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateQuest")}</div>
       <div class="cb-menu-item" data-tab="timeline"><i class="fas fa-history"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateTimeline")}</div>
     `;
+    menu.replaceChildren(...new DOMParser().parseFromString(rawHTML, "text/html").body.childNodes);
 
     document.body.appendChild(menu);
 

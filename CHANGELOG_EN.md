@@ -2,6 +2,19 @@
 
 All notable changes, refactoring, and bug fixes are documented in this file.
 
+## [1.1.1] - 2026-08-09
+
+### ✨ New Features
+* **Native Calendar Fallback:** Added a built-in Gregorian calendar fallback. The advanced date picker widgets and timeline synchronization will now work perfectly even if no external calendar modules (like SimpleCalendar or Calendaria) are installed.
+
+### 🏗 Refactoring & Architecture
+* **Strict DOM Safety:** Completely removed all legacy DOM mutations (`innerHTML`) and jQuery dependencies. Replaced them with safe native ESNext DOM APIs (`document.createElement`, `DOMParser`) to guarantee XSS protection and strict compliance with Foundry V14 architecture standards.
+* **Error Boundaries:** Wrapped all global `Hooks` callbacks in `try/catch` statements to ensure that an isolated module failure will never crash the core Foundry canvas.
+
+### 🐛 Bug Fixes
+* **V14 UI Controls Crash:** Fixed a crash during the `getSceneControlButtons` hook initialization (`Cannot read properties of undefined (reading 'tokens')`) by safely delaying the active control lookup in Foundry V14.
+* **Edit Dialog UI:** Fixed an issue in the Edit Dialog where textareas wouldn't expand. They now dynamically stretch to fill the available vertical space, eliminating empty gaps at the bottom.
+
 ## [1.1.0] - 2026-08-02
 * **Accessibility:** Completely overhauled the card hiding system. Replaced the simple "Hide" toggle with an advanced "Visibility" menu allowing you to select individual players who can see the card.
 

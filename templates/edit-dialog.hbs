@@ -1,4 +1,4 @@
-<div class="cb-edit-dialog-form" style="padding: 10px; display: flex; flex-direction: column; gap: 10px;">
+<div class="cb-edit-dialog-form" style="padding: 10px; display: flex; flex-direction: column; gap: 10px; height: 100%; box-sizing: border-box;">
   
   {{#if isGM}}
     <input type="hidden" name="sceneUuid" value="{{entry.sceneUuid}}">
@@ -46,31 +46,6 @@
     </div>
   </div>
 
-  <!-- Tags Input Row -->
-  {{#if showTags}}
-  <div class="form-group cb-tags-input-group" style="position: relative;">
-    <div style="display: flex; gap: 8px; align-items: center;">
-      <i class="fas fa-tags" style="color: rgba(255,255,255,0.4); margin-left: 5px;"></i>
-      <div class="cb-tags-wrapper" style="flex: 1; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; background: rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 4px; min-height: 32px;">
-        {{#each entry.resolvedTags}}
-          <span class="cb-tag {{#if this.isSecret}}cb-tag-secret{{/if}}" data-tag-id="{{this.id}}" style="background: {{this.color}};">
-            {{this.name}}
-            <i class="fas fa-times cb-tag-remove"></i>
-          </span>
-        {{/each}}
-        <input type="text" class="cb-tag-input" placeholder="{{localize 'CLUEBOOK.Tags.InputPlaceholder'}}" style="border: none; background: transparent; color: #fff; outline: none; flex: 1; min-width: 100px;">
-      </div>
-    </div>
-    <!-- Autocomplete Dropdown -->
-    <div class="cb-tags-autocomplete" style="display: none; position: absolute; top: 100%; left: 30px; right: 0; background: #1a1a24; border: 1px solid rgba(123, 97, 255, 0.5); border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 10;">
-      <!-- populated dynamically -->
-    </div>
-    <!-- Hidden input to store actual tags array for form submission -->
-    <input type="hidden" name="tags" value="">
-  </div>
-  {{else}}
-    <input type="hidden" name="tags" value="">
-  {{/if}}
 
   {{#unless isMassEdit}}
 
@@ -263,6 +238,32 @@
     {{/if}}
   </div>
   {{/unless}}
+
+  <!-- Tags Input Row -->
+  {{#if showTags}}
+  <div class="form-group cb-tags-input-group" style="position: relative;">
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <i class="fas fa-tags" style="color: rgba(255,255,255,0.4); margin-left: 5px;"></i>
+      <div class="cb-tags-wrapper" style="flex: 1; display: flex; flex-wrap: wrap; gap: 5px; align-items: center; background: rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 4px; min-height: 32px;">
+        {{#each entry.resolvedTags}}
+          <span class="cb-tag {{#if this.isSecret}}cb-tag-secret{{/if}}" data-tag-id="{{this.id}}" style="background: {{this.color}};">
+            {{this.name}}
+            <i class="fas fa-times cb-tag-remove"></i>
+          </span>
+        {{/each}}
+        <input type="text" class="cb-tag-input" placeholder="{{localize 'CLUEBOOK.Tags.InputPlaceholder'}}" style="border: none; background: transparent; color: #fff; outline: none; flex: 1; min-width: 100px;">
+      </div>
+    </div>
+    <!-- Autocomplete Dropdown -->
+    <div class="cb-tags-autocomplete" style="display: none; position: absolute; bottom: 100%; left: 30px; right: 0; background: #1a1a24; border: 1px solid rgba(123, 97, 255, 0.5); border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 10; margin-bottom: 5px;">
+      <!-- populated dynamically -->
+    </div>
+    <!-- Hidden input to store actual tags array for form submission -->
+    <input type="hidden" name="tags" value="">
+  </div>
+  {{else}}
+    <input type="hidden" name="tags" value="">
+  {{/if}}
 
   <div style="margin-top: 5px; display: flex; gap: 10px; justify-content: center;">
     <button type="button" data-action="saveDialog" class="cluebook-btn" style="flex: 1; padding: 8px; font-size: 14px; font-weight: bold; background: rgba(255,255,255,0.1); border: 1px solid var(--cb-accent); color: #fff; border-radius: 4px; cursor: pointer;">

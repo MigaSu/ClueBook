@@ -7,7 +7,7 @@ export class TimeService {
   static getProvider() {
     if (window.SimpleCalendar?.api) return "simple-calendar";
     if (window.CALENDARIA?.api) return "calendaria";
-    return "none";
+    return "native";
   }
 
   /**
@@ -23,12 +23,19 @@ export class TimeService {
    * @param {Function} callback 
    */
   static registerHook(callback) {
+    const safeCallback = (...args) => {
+      try {
+        callback(...args);
+      } catch (e) {
+        console.error("ClueBook | TimeService Hook Error:", e);
+      }
+    };
     const provider = this.getProvider();
     if (provider === "simple-calendar" && window.SimpleCalendar?.Hooks?.DateTimeChange) {
-      Hooks.on(window.SimpleCalendar.Hooks.DateTimeChange, callback);
+      Hooks.on(window.SimpleCalendar.Hooks.DateTimeChange, safeCallback);
     }
     // Fallback: listen to default Foundry time changes
-    Hooks.on("updateWorldTime", callback);
+    Hooks.on("updateWorldTime", safeCallback);
   }
 
   /**
@@ -76,6 +83,33 @@ export class TimeService {
         weekday: "",
         fullStr: fullStr
       };
+    } else if (provider === "native") {
+      const ts = game.time.worldTime;
+      const d = new Date(ts * 1000);
+      const year = d.getUTCFullYear();
+      const month = d.getUTCMonth();
+      const day = d.getUTCDate();
+      
+      const h = String(d.getUTCHours()).padStart(2, "0");
+      const m = String(d.getUTCMinutes()).padStart(2, "0");
+      const timeStr = `${h}:${m}`;
+      
+      const lang = game.i18n.lang || navigator.language || "en";
+      const formatter = new Intl.DateTimeFormat(lang, { month: 'long' });
+      const monthName = formatter.format(d);
+      const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+      
+      const dateStr = `${day} ${capitalizedMonth}, ${year}`;
+      const weekdayStr = new Intl.DateTimeFormat(lang, { weekday: 'long' }).format(d);
+      const capitalizedWeekday = weekdayStr.charAt(0).toUpperCase() + weekdayStr.slice(1);
+
+      return {
+        timestamp: ts,
+        date: dateStr,
+        time: timeStr,
+        weekday: capitalizedWeekday,
+        fullStr: `${dateStr} ${timeStr}`
+      };
     }
     return null;
   }
@@ -104,6 +138,14 @@ export class TimeService {
         }
       } catch (e) {}
       return Array.from({length: 12}, (_, i) => ({ name: `${i+1}` }));
+    } else if (provider === "native") {
+      const lang = game.i18n.lang || navigator.language || "en";
+      const formatter = new Intl.DateTimeFormat(lang, { month: 'long' });
+      return Array.from({length: 12}, (_, i) => {
+        const date = new Date(Date.UTC(2000, i, 1));
+        const name = formatter.format(date);
+        return { name: name.charAt(0).toUpperCase() + name.slice(1) };
+      });
     }
     return [];
   }
@@ -142,6 +184,28 @@ export class TimeService {
         time: timeStr,
         fullStr: fullStr
       };
+    } else if (provider === "native") {
+      if (timestamp === null || timestamp === undefined) return { date: "", time: "", fullStr: "—" };
+      const d = new Date(timestamp * 1000);
+      const year = d.getUTCFullYear();
+      const day = d.getUTCDate();
+      
+      const h = String(d.getUTCHours()).padStart(2, "0");
+      const m = String(d.getUTCMinutes()).padStart(2, "0");
+      const timeStr = `${h}:${m}`;
+      
+      const lang = game.i18n.lang || navigator.language || "en";
+      const formatter = new Intl.DateTimeFormat(lang, { month: 'long' });
+      const monthName = formatter.format(d);
+      const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+      
+      const dateStr = `${day} ${capitalizedMonth}, ${year}`;
+      
+      return {
+        date: dateStr,
+        time: timeStr,
+        fullStr: `${dateStr} ${timeStr}`
+      };
     }
     return { date: "", time: "", fullStr: "—" };
   }
@@ -160,6 +224,16 @@ export class TimeService {
           day: (dt.day ?? 1) - 1      // Calendaria is 1-indexed, ClueBook UI expects 0-indexed
         };
       }
+    } else if (provider === "native") {
+      if (timestamp === null || timestamp === undefined) return null;
+      const d = new Date(timestamp * 1000);
+      return {
+        year: d.getUTCFullYear(),
+        month: d.getUTCMonth(),
+        day: d.getUTCDate() - 1, // UI expects 0-indexed day
+        hour: d.getUTCHours(),
+        minute: d.getUTCMinutes()
+      };
     }
     return null;
   }
@@ -175,6 +249,16 @@ export class TimeService {
         month: (dateObj.month ?? 0) + 1, // Convert 0-indexed back to 1-indexed
         day: (dateObj.day ?? 0) + 1      // Convert 0-indexed back to 1-indexed
       });
+    } else if (provider === "native") {
+      if (!dateObj) return null;
+      const d = new Date(Date.UTC(
+        dateObj.year ?? 1970,
+        dateObj.month ?? 0,
+        (dateObj.day ?? 0) + 1,
+        dateObj.hour ?? 0,
+        dateObj.minute ?? 0
+      ));
+      return Math.floor(d.getTime() / 1000);
     }
     return null;
   }

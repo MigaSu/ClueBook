@@ -783,6 +783,7 @@ select.cluebook-input {
 .cb-tabs-container {
   display: flex;
   flex-direction: column;
+  flex: 1;
   background: rgba(0,0,0,0.1);
   border-radius: 6px;
   border: 1px solid rgba(255,255,255,0.05);
@@ -824,10 +825,12 @@ select.cluebook-input {
 .cb-tab-content {
   display: none;
   padding: 8px;
+  flex-direction: column;
 }
 
 .cb-tab-content.active {
-  display: block;
+  display: flex;
+  flex: 1;
 }
 
 .cb-tab-content textarea {
@@ -835,6 +838,8 @@ select.cluebook-input {
   background: transparent !important;
   padding: 0 !important;
   box-shadow: none !important;
+  flex: 1;
+  resize: none;
 }
 
 .cb-tab-content textarea:focus {

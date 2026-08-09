@@ -60,7 +60,11 @@ export class ClueBookTagManager extends HandlebarsApplicationMixin(ApplicationV2
         deleteBtn.closest('.cb-tm-row').remove();
         if (html.querySelectorAll('.cb-tm-row').length === 0) {
           const list = html.querySelector('.cb-tm-list');
-          list.innerHTML = `<p class="cb-tm-empty">${game.i18n.localize("CLUEBOOK.Tags.NoTags")}</p>`;
+          list.replaceChildren();
+          const p = document.createElement("p");
+          p.className = "cb-tm-empty";
+          p.textContent = game.i18n.localize("CLUEBOOK.Tags.NoTags");
+          list.appendChild(p);
         }
       }
     });
@@ -106,21 +110,49 @@ export class ClueBookTagManager extends HandlebarsApplicationMixin(ApplicationV2
     const newId = foundry.utils.randomID();
     const defaultColor = "#7b61ff";
     
-    const rowHtml = `
-      <div class="cb-tm-row" data-tag-id="${newId}">
-        <input type="color" class="cb-tm-color" value="${defaultColor}" title="${game.i18n.localize('CLUEBOOK.Tags.Color')}">
-        <input type="text" class="cb-tm-name cluebook-input" value="" placeholder="${game.i18n.localize('CLUEBOOK.Tags.TagName')}" autofocus>
-        <label class="cb-tm-secret" title="${game.i18n.localize('CLUEBOOK.Tags.SecretHint')}">
-          <i class="fas fa-eye"></i>
-          <input type="checkbox" class="cb-tm-secret-cb" style="display:none;">
-        </label>
-        <button type="button" class="cb-tm-delete" title="${game.i18n.localize('CLUEBOOK.Tags.Delete')}"><i class="fas fa-trash"></i></button>
-      </div>
-    `;
-    
-    list.insertAdjacentHTML('beforeend', rowHtml);
-    const newRow = list.lastElementChild;
-    newRow.querySelector('.cb-tm-name').focus();
+    const row = document.createElement("div");
+    row.className = "cb-tm-row";
+    row.dataset.tagId = newId;
+
+    const colorInput = document.createElement("input");
+    colorInput.type = "color";
+    colorInput.className = "cb-tm-color";
+    colorInput.value = defaultColor;
+    colorInput.title = game.i18n.localize('CLUEBOOK.Tags.Color');
+    row.appendChild(colorInput);
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.className = "cb-tm-name cluebook-input";
+    nameInput.value = "";
+    nameInput.placeholder = game.i18n.localize('CLUEBOOK.Tags.TagName');
+    nameInput.autofocus = true;
+    row.appendChild(nameInput);
+
+    const label = document.createElement("label");
+    label.className = "cb-tm-secret";
+    label.title = game.i18n.localize('CLUEBOOK.Tags.SecretHint');
+    const eyeIcon = document.createElement("i");
+    eyeIcon.className = "fas fa-eye";
+    label.appendChild(eyeIcon);
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.className = "cb-tm-secret-cb";
+    cb.style.display = "none";
+    label.appendChild(cb);
+    row.appendChild(label);
+
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "cb-tm-delete";
+    delBtn.title = game.i18n.localize('CLUEBOOK.Tags.Delete');
+    const delIcon = document.createElement("i");
+    delIcon.className = "fas fa-trash";
+    delBtn.appendChild(delIcon);
+    row.appendChild(delBtn);
+
+    list.appendChild(row);
+    nameInput.focus();
   }
 
   static async _onSaveTags(event, target) {

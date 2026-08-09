@@ -156,10 +156,11 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
 
     const menu = document.createElement('div');
     menu.className = 'cb-context-menu';
-    menu.innerHTML = `
+    const rawHTML = `
       <div class="cb-menu-item" data-action="open-sheet"><i class="fas fa-id-card"></i> ${game.i18n.localize("CLUEBOOK.AppActions.OpenActorSheet")}</div>
       <div class="cb-menu-item" data-action="show-portrait"><i class="fas fa-user-circle"></i> ${game.i18n.localize("CLUEBOOK.AppActions.ShowPortraitGinzzu")}</div>
     `;
+    menu.replaceChildren(...new DOMParser().parseFromString(rawHTML, "text/html").body.childNodes);
 
     document.body.appendChild(menu);
     menu.style.left = `${event.clientX}px`;

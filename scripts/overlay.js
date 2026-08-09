@@ -27,12 +27,14 @@ export class ClueBookOverlay {
     // Create the card
     const card = document.createElement('div');
     card.className = 'cb-overlay-card app window-app cb-epic-overlay';
-    card.innerHTML = contentHTML;
+    card.insertAdjacentHTML('beforeend', contentHTML);
 
     // Create Close Button
     const closeBtn = document.createElement('div');
     closeBtn.className = 'cb-overlay-close';
-    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    const closeIcon = document.createElement('i');
+    closeIcon.className = 'fas fa-times';
+    closeBtn.appendChild(closeIcon);
     closeBtn.onclick = (e) => {
       e.stopPropagation();
       this.hide(backdrop);
@@ -46,7 +48,10 @@ export class ClueBookOverlay {
       
       const addBtn = document.createElement('button');
       addBtn.className = 'cb-overlay-add-btn';
-      addBtn.innerHTML = `<i class="fas fa-plus"></i> ${game.i18n.localize("CLUEBOOK.Overlay.AddClue")}`;
+      const addIcon = document.createElement('i');
+      addIcon.className = 'fas fa-plus';
+      addBtn.appendChild(addIcon);
+      addBtn.appendChild(document.createTextNode(" " + game.i18n.localize("CLUEBOOK.Overlay.AddClue")));
       
       const dropdown = document.createElement('div');
       dropdown.className = 'cb-overlay-workspaces hidden';
@@ -100,10 +105,7 @@ export class ClueBookOverlay {
       try {
         TE.activateListeners(card); // Pass vanilla element
       } catch(e) {
-        // Fallback for older Foundry versions if they strictly expect jQuery
-        if (window.jQuery) {
-           try { TE.activateListeners(window.jQuery(card)); } catch(e2) {}
-        }
+        console.warn("ClueBook | Failed to activate TextEditor listeners on overlay:", e);
       }
     }
 

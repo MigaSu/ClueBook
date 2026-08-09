@@ -1011,7 +1011,7 @@ export class ClueBookApp extends BaseApp {
           }
           
           _replaceHTML(result, content, options) {
-            content.innerHTML = result;
+            content.replaceChildren(...new DOMParser().parseFromString(result, "text/html").body.childNodes);
           }
           
           _onRender(context, options) {
@@ -1190,7 +1190,13 @@ export class ClueBookApp extends BaseApp {
           
           tooltipEl = document.createElement('div');
           tooltipEl.className = 'cb-custom-tooltip';
-          tooltipEl.innerHTML = `<strong>${name}</strong><div style="margin-top: 4px; opacity: 0.9;">${preview}</div>`;
+          const strong = document.createElement('strong');
+          strong.textContent = name;
+          tooltipEl.appendChild(strong);
+          const previewDiv = document.createElement('div');
+          previewDiv.style.cssText = 'margin-top: 4px; opacity: 0.9;';
+          previewDiv.textContent = preview;
+          tooltipEl.appendChild(previewDiv);
           document.body.appendChild(tooltipEl);
 
           const rect = chip.getBoundingClientRect();
@@ -1238,7 +1244,7 @@ export class ClueBookApp extends BaseApp {
 
     const closeDropdown = () => {
       dropdown.style.display = 'none';
-      dropdown.innerHTML = '';
+      dropdown.replaceChildren();
       atStartPos = -1;
     };
 
@@ -1279,7 +1285,7 @@ export class ClueBookApp extends BaseApp {
       const entries = getEntries().filter(e => e.name.toLowerCase().includes(query.toLowerCase())).slice(0, 10);
       if (!entries.length) { closeDropdown(); return; }
 
-      dropdown.innerHTML = '';
+      dropdown.replaceChildren();
       entries.forEach(entry => {
         const item = document.createElement('div');
         item.className = 'cb-mention-item';
@@ -1287,7 +1293,11 @@ export class ClueBookApp extends BaseApp {
           padding: 6px 12px; cursor: pointer; font-size: 13px;
           color: #e0e0e0; transition: background 0.15s;
         `;
-        item.innerHTML = `<i class="fas fa-tag" style="color:#7b61ff;margin-right:6px;font-size:11px;"></i>${entry.name}`;
+        const icon = document.createElement('i');
+        icon.className = 'fas fa-tag';
+        icon.style.cssText = 'color:#7b61ff;margin-right:6px;font-size:11px;';
+        item.appendChild(icon);
+        item.appendChild(document.createTextNode(entry.name));
         item.addEventListener('mousedown', (e) => {
           e.preventDefault();
           insertMention(textarea, entry);
@@ -1349,13 +1359,16 @@ export class ClueBookApp extends BaseApp {
 
     // Render mention links in view mode (already-saved mentions)
     html.querySelectorAll('.display-text, .display-gm-notes, .timeline-event, .cb-smart-badge').forEach(el => {
-      el.innerHTML = el.innerHTML.replace(
+      const replacedHTML = el.innerHTML.replace(
         /\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g,
         (_, id, name, customText) => {
           const displayText = customText || name;
           return `<a class="cb-mention-link" data-mention-id="${id}" title="${game.i18n.format("CLUEBOOK.App.GoToEntry", { name: name })}">${displayText}</a>`;
         }
       );
+      if (replacedHTML !== el.innerHTML) {
+         el.replaceChildren(...new DOMParser().parseFromString(replacedHTML, "text/html").body.childNodes);
+      }
     });
 
     html.querySelectorAll('.cb-mention-link').forEach(link => {
@@ -1446,7 +1459,7 @@ export class ClueBookApp extends BaseApp {
         statusBadge = `<div class="cb-popover-badge" style="background: rgba(255,255,255,0.1); color: #eee;"><i class="fas fa-heartbeat"></i> ${lifeText}</div>`;
       }
 
-      popover.innerHTML = `
+      const rawHTML = `
         <div class="cb-popover-header" style="border-left: 3px solid ${targetEntry.color || tabInfo.color};">
           <div class="cb-popover-type"><i class="fas ${tabInfo.icon}"></i> ${tabInfo.label}</div>
           <div class="cb-popover-title">${titleText}</div>
@@ -1454,6 +1467,7 @@ export class ClueBookApp extends BaseApp {
         ${statusBadge}
         ${rawText && rawText !== titleText ? `<div class="cb-popover-body">${rawText}</div>` : ''}
       `;
+      popover.replaceChildren(...new DOMParser().parseFromString(rawHTML, "text/html").body.childNodes);
 
       const rect = targetEl.getBoundingClientRect();
       let left = rect.left + window.scrollX;

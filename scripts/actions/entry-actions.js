@@ -20,10 +20,14 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     this.state.isZenMode = !this.state.isZenMode;
     if (this.state.isZenMode) {
       this.element.classList.add("zen-mode");
-      target.innerHTML = `<i class="fas fa-compress"></i>`;
+      const icon = document.createElement("i");
+      icon.className = "fas fa-compress";
+      target.replaceChildren(icon);
     } else {
       this.element.classList.remove("zen-mode");
-      target.innerHTML = `<i class="fas fa-expand"></i>`;
+      const icon = document.createElement("i");
+      icon.className = "fas fa-expand";
+      target.replaceChildren(icon);
     }
     this.render({ parts: ["content"] });
   }
@@ -410,7 +414,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
 
     const menu = document.createElement('div');
     menu.className = 'cb-context-menu';
-    menu.innerHTML = `
+    const rawHTML = `
       <div class="cb-menu-item" data-action="mass-edit"><i class="fas fa-pencil-alt"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Edit")}</div>
       <div class="cb-menu-separator"></div>
       <div class="cb-menu-item" data-action="toggle-visibility"><i class="fas fa-eye-slash"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Visibility")}</div>
@@ -418,6 +422,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
       <div class="cb-menu-separator"></div>
       <div class="cb-menu-item danger" data-action="delete"><i class="fas fa-trash"></i> ${game.i18n.localize("CLUEBOOK.Entry.Delete")} [Del]</div>
     `;
+    menu.replaceChildren(...new DOMParser().parseFromString(rawHTML, "text/html").body.childNodes);
 
     document.body.appendChild(menu);
 
@@ -935,7 +940,10 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
             let color = "#fff";
             if (field === "startTimestamp") { icon = "fas fa-play"; color = "#4caf50"; }
             if (field === "endTimestamp") { icon = "fas fa-stop"; color = "#ff5252"; }
-            pickBtn.innerHTML = `<i class="${icon}" style="color: ${color};"></i> ${formatted}`;
+            const i = document.createElement("i");
+            i.className = icon;
+            i.style.color = color;
+            pickBtn.replaceChildren(i, " " + formatted);
             
             let trashBtn = entry.querySelector(`button[data-action="clearDate"][data-field="${field}"]`);
             if (!trashBtn) {
@@ -946,7 +954,9 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
               trashBtn.title = "РЈРґР°Р»РёС‚СЊ РґР°С‚Сѓ";
               trashBtn.style.cssText = "flex: 0 0 30px; padding: 2px; background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.5); border-radius: 4px; color: #ff5252;";
               if (field === "deadlineTimestamp") trashBtn.style.height = "30px";
-              trashBtn.innerHTML = `<i class="fas fa-trash"></i>`;
+              const i = document.createElement("i");
+              i.className = "fas fa-trash";
+              trashBtn.replaceChildren(i);
               pickBtn.parentElement.appendChild(trashBtn);
             } else {
               trashBtn.style.display = "";
@@ -984,7 +994,10 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
         if (field === "startTimestamp") { icon = "fas fa-play"; color = "#4caf50"; }
         if (field === "endTimestamp") { icon = "fas fa-stop"; color = "#ff5252"; }
         
-        pickBtn.innerHTML = `<i class="${icon}" style="color: ${color};"></i> ${defaultText}`;
+        const i = document.createElement("i");
+        i.className = icon;
+        i.style.color = color;
+        pickBtn.replaceChildren(i, " " + defaultText);
       }
       
       const trashBtn = entry.querySelector(`button[data-action="clearDate"][data-field="${field}"]`);
