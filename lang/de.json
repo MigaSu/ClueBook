@@ -1,5 +1,10 @@
 {
   "CLUEBOOK": {
+    "Welcome": {
+      "Title": "Willkommen bei ClueBook!",
+      "Message": "<p>Danke, dass Sie das Modul nutzen! Wenn Sie Fragen oder Ideen haben oder die Entwicklung unterstützen möchten, besuchen Sie die untenstehenden Links.</p>",
+      "DontShowAgain": "Nicht mehr anzeigen"
+    },
     "Calendar": {
       "Date": "Datum",
       "Weekday": "Wochentag",

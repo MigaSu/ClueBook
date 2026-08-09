@@ -13,8 +13,33 @@ Hooks.once("init", async () => {
   try {
   console.log("ClueBook V14 | Initializing...");
 
+  Hooks.on("renderChatMessage", (message, html) => {
+    const btn = html[0]?.querySelector('.cluebook-welcome-dismiss');
+    if (btn) {
+      btn.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        await game.settings.set("ClueBook", "hideWelcomeMessage112", true);
+        btn.innerHTML = `<i class="fas fa-check"></i> ${game.i18n.localize("CLUEBOOK.EditDialog.Saved")}`;
+        btn.style.background = "rgba(46, 204, 113, 0.4)";
+        btn.style.pointerEvents = "none";
+      });
+    }
+  });
+
   Hooks.on("getSceneControlButtons", (...args) => {
     try {
+    
+    // Register Welcome Message Setting
+    try {
+      game.settings.register("ClueBook", "hideWelcomeMessage112", {
+        name: "Hide Welcome Message",
+        scope: "world",
+        config: false,
+        type: Boolean,
+        default: false
+      });
+    } catch(e) {}
+
     const settings = game.user?.getFlag("ClueBook", "settings") || {};
     let controlsDict = args[0];
 
@@ -213,20 +238,7 @@ Hooks.once("init", async () => {
     "modules/ClueBook/templates/partials/entry-card.hbs"
   ]);
 
-  // Settings for enableTimeWidget are removed since the widget is deleted
-  // Hooks for updateWorldTime keep updating cluebook and tracker
-  Hooks.on("updateWorldTime", () => {
-    try {
-      if (clueBookApp && clueBookApp.rendered && !clueBookApp.state.editingEntryId) {
-        clueBookApp.render({ parts: ["content"] });
-      }
-      if (trackerWidgetApp && trackerWidgetApp.rendered) {
-        trackerWidgetApp.render({ force: true });
-      }
-    } catch (err) {
-      console.error("ClueBook | updateWorldTime hook error:", err);
-    }
-  });
+  // Removed redundant updateWorldTime hook here, it will be handled by TimeService.registerHook in ready
   } catch (err) {
     console.error("ClueBook | init hook error:", err);
   }
@@ -237,15 +249,55 @@ Hooks.once("ready", async () => {
   console.log("ClueBook | Ready hook fired! Registering socket.");
   ClueBookSocket.init();
   ClueBookOverlay.init();
+  
+  if (game.user.isGM && !game.settings.get("ClueBook", "hideWelcomeMessage112")) {
+    const content = `
+      <div class="cluebook-welcome-message" style="text-align: center; padding: 10px; background: rgba(0,0,0,0.2); border: 1px solid rgba(123,97,255,0.3); border-radius: 8px;">
+        <i class="fas fa-user-astronaut" style="font-size: 48px; color: #7b61ff; margin-bottom: 10px; drop-shadow: 0 0 10px rgba(123,97,255,0.5);"></i>
+        <h3 style="margin-bottom: 5px; color: var(--cb-accent, #7b61ff);">${game.i18n.localize("CLUEBOOK.Welcome.Title")}</h3>
+        <div style="margin-bottom: 15px; font-size: 14px;">${game.i18n.localize("CLUEBOOK.Welcome.Message")}</div>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 15px;">
+          <a href="https://github.com/MigaSu/ClueBook/discussions" target="_blank" class="cluebook-btn" style="text-decoration: none; padding: 6px 12px; font-size: 13px; font-weight: bold; background: rgba(123, 97, 255, 0.15); border: 1px solid rgba(123, 97, 255, 0.4); color: inherit; border-radius: 4px; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-comments"></i> ${game.i18n.localize("CLUEBOOK.Settings.AboutDiscussionsText")}
+          </a>
+          <a href="https://boosty.to/migasu" target="_blank" class="cluebook-btn" style="text-decoration: none; padding: 6px 12px; font-size: 13px; font-weight: bold; background: linear-gradient(135deg, #f15f2c, #ff3366); border: none; color: #fff; border-radius: 4px; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-heart"></i> ${game.i18n.localize("CLUEBOOK.Settings.AboutBoostyText")}
+          </a>
+        </div>
+        <button class="cluebook-welcome-dismiss" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer;">
+          <i class="fas fa-times"></i> ${game.i18n.localize("CLUEBOOK.Welcome.DontShowAgain")}
+        </button>
+      </div>
+    `;
+    
+    ChatMessage.create({
+      user: game.user.id,
+      speaker: { alias: "ClueBook" },
+      content: content,
+      whisper: [game.user.id]
+    });
+  }
 
   const settings = game.user.getFlag("ClueBook", "settings") || {};
   
+  let lastTimeStr = null;
   TimeService.registerHook(() => {
-    if (clueBookApp && clueBookApp.rendered && !clueBookApp.state.editingEntryId) {
-      clueBookApp.render({ parts: ["content"] });
-    }
-    if (trackerWidgetApp && trackerWidgetApp.rendered) {
-      trackerWidgetApp.render({ force: true });
+    const dt = TimeService.getCurrentDateTime();
+    const newTimeStr = dt ? dt.fullStr : null;
+    
+    // If the displayed game time (down to the minute) hasn't changed, skip render
+    if (lastTimeStr === newTimeStr) return;
+    lastTimeStr = newTimeStr;
+
+    try {
+      if (clueBookApp && clueBookApp.rendered && !clueBookApp.state.editingEntryId) {
+        clueBookApp.render({ parts: ["content"] });
+      }
+      if (trackerWidgetApp && trackerWidgetApp.rendered) {
+        trackerWidgetApp.render({ force: true });
+      }
+    } catch (e) {
+      console.error("ClueBook | Time update render error:", e);
     }
   });
 
@@ -516,7 +568,11 @@ Hooks.on("updateJournalEntry", (journal, data, options, userId) => {
     if (userId !== game.user.id && !clueBookApp.state.editingEntryId) {
       const activeEl = document.activeElement;
       if (!(activeEl && clueBookApp.element?.contains(activeEl) && ["INPUT", "TEXTAREA", "SELECT"].includes(activeEl.tagName))) {
-        clueBookApp.render();
+        if (clueBookApp.state.isBoardInteracting) {
+          clueBookApp.state.pendingRender = true;
+        } else {
+          clueBookApp.render();
+        }
       }
     }
   }

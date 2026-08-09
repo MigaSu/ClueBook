@@ -95,6 +95,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       
       if (ev.button === 2 || ev.button === 1) {
         isPanning = true;
+        this.state.isBoardInteracting = true;
         panStartX = ev.clientX - currentPanX;
         panStartY = ev.clientY - currentPanY;
         ev.preventDefault();
@@ -110,6 +111,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         const rect = entriesList.getBoundingClientRect();
 
         this.isLasso = true;
+        this.state.isBoardInteracting = true;
         this.lassoStartX = (ev.clientX - rect.left) / currentZoom;
         this.lassoStartY = (ev.clientY - rect.top) / currentZoom;
         
@@ -192,16 +194,19 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         if (linkingSource === entry) {
           linkingSource.classList.remove('linking-source');
           linkingSource = null;
+          this.state.isBoardInteracting = false;
           return;
         }
         if (!linkingSource) {
           linkingSource = entry;
+          this.state.isBoardInteracting = true;
           entry.classList.add('linking-source');
         } else {
           const targetId = entry.dataset.entryId;
           const sourceId = linkingSource.dataset.entryId;
           linkingSource.classList.remove('linking-source');
           linkingSource = null;
+          this.state.isBoardInteracting = false;
           if (sourceId !== targetId) {
             this._createLink(sourceId, targetId);
           }
@@ -318,6 +323,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         if (ev.ctrlKey || ev.metaKey) {
           if (linkingSource) return;
           linkingSource = entry;
+          this.state.isBoardInteracting = true;
           entry.classList.add('linking-source');
           
           tempLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -394,6 +400,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         });
 
         draggedEntry = entry;
+        this.state.isBoardInteracting = true;
         startX = ev.clientX;
         startY = ev.clientY;
         
@@ -475,6 +482,12 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     };
 
     this._boardUpHandler = async (ev) => {
+      this.state.isBoardInteracting = false;
+      if (this.state.pendingRender) {
+        this.state.pendingRender = false;
+        this.render();
+      }
+
       if (isPanning) {
         isPanning = false;
         updateCameraState();

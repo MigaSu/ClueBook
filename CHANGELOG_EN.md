@@ -2,6 +2,17 @@
 
 All notable changes, refactoring, and bug fixes are documented in this file.
 
+## [1.1.2] - 2026-08-10
+
+### ✨ New Features & UX Improvements
+* **Collaborative Board Sync:** Implemented smart Live Sync deferral. If you are actively dragging a card, lasso-selecting, panning the camera, or drawing a link, any background updates from other players are gracefully deferred until your action is complete. This completely eliminates the jarring issue of cards "dropping" from your cursor during a drag.
+
+### ⚡ Performance
+* **Calendar Time Rendering:** Optimized UI updates when calendar time is running continuously. The widgets will now only re-render when the actual displayed minute changes, eliminating freezes and high CPU load during fast-forward or real-time seconds ticking.
+
+### 🌐 Localization
+* **i18n Completion:** Finished replacing all remaining hardcoded strings with localization variables. Full multi-language support across the entire interface.
+
 ## [1.1.1] - 2026-08-09
 
 ### ✨ New Features
