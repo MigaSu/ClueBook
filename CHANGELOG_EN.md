@@ -15,6 +15,10 @@ All notable changes, refactoring, and bug fixes are documented in this file.
 * **V14 UI Controls Crash:** Fixed a crash during the `getSceneControlButtons` hook initialization (`Cannot read properties of undefined (reading 'tokens')`) by safely delaying the active control lookup in Foundry V14.
 * **Edit Dialog UI:** Fixed an issue in the Edit Dialog where textareas wouldn't expand. They now dynamically stretch to fill the available vertical space, eliminating empty gaps at the bottom.
 
+### 🎨 UI & UX Improvements
+* **Edit Dialog Tags:** Moved the tags input group to the very bottom of the edit dialog for better accessibility. The autocomplete dropdown now opens upwards.
+* **Module Settings:** Added an "About" footer to the settings menu containing helpful links to the GitHub repository, Discussions board, and Boosty.
+
 ## [1.1.0] - 2026-08-02
 * **Accessibility:** Completely overhauled the card hiding system. Replaced the simple "Hide" toggle with an advanced "Visibility" menu allowing you to select individual players who can see the card.
 
