@@ -249,7 +249,14 @@
       "SelectGrid": "Auswählen / am Raster ausrichten",
       "CreateLink": "Link erstellen",
       "Zoom": "Board zoomen",
-      "Pan": "Ansicht verschieben"
+      "Pan": "Ansicht verschieben",
+      "LeftClickBackground": "Linksklick (auf Hintergrund)",
+      "RightClickBackground": "Rechtsklick (auf Hintergrund)",
+      "RightClickGroup": "Rechtsklick (auf Gruppe)",
+      "ShiftLeftClick": "Shift + Linksklick",
+      "ControlLeftClick": "Ctrl + Linksklick",
+      "MouseWheel": "Mauswheel",
+      "MouseWheelClick": "Mauswheel-Klick"
     },
     "Weather": {
       "Clear": "Klar",

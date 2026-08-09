@@ -15,9 +15,9 @@
       "ClickToEdit": "Нажмите, чтобы изменить"
     },
     "Color": {
-      "Dark": "Темный (по умолчанию)",
-      "Light": "Светлый",
-      "Custom": "Свой цвет"
+        "Custom": "Свой цвет",
+        "Dark": "Темный (по умолчанию)",
+        "Light": "Светлый"
     },
     "Colors": {
       "Yellow": "Желтый",
@@ -165,6 +165,7 @@
       "GMNotesPH": "Скрытые заметки только для Мастера...",
       "Save": "Сохранить",
       "SaveAndClose": "Сохранить и закрыть",
+      "OpenActorSheet": "Открыть персонажа",
       "Visibility": "Видимость (Shift = Переключить скрытие от всех)",
       "VisibilityTitle": "Настройки видимости",
       "VisibleToAll": "Видно всем игрокам",
@@ -191,6 +192,7 @@
       "Failed": "Провалено",
       "Scheduled": "ЗАПЛАНИРОВАНО",
       "Deadline": "ДЕДЛАЙН",
+      "Failed": "Echec",
       "Passed": "ПРОШЛО",
       "Overdue": "ПРОСРОЧЕНО",
       "In": "ЧЕРЕЗ",
@@ -256,7 +258,14 @@
       "SelectGrid": "Выделение / Сетка",
       "CreateLink": "Создать связь",
       "Zoom": "Масштаб доски",
-      "Pan": "Двигать холст"
+      "Pan": "Двигать холст",
+      "LeftClickBackground": "Левый клик (на фоне)",
+      "RightClickBackground": "Правый клик (на фоне)",
+      "RightClickGroup": "Правый клик (на группе)",
+      "ShiftLeftClick": "Shift + Левый клик",
+      "ControlLeftClick": "Ctrl + Левый клик",
+      "MouseWheel": "Колесо мыши",
+      "MouseWheelClick": "Клик колеса мыши"
     },
     "Weather": {
       "Clear": "Ясно",
