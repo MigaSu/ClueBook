@@ -14,6 +14,11 @@
       "Plus1Hour": "+1 heure",
       "ClickToEdit": "Cliquer pour modifier"
     },
+    "Color": {
+      "Dark": "Sombre (par défaut)",
+      "Light": "Clair",
+      "Custom": "Choix personnel"
+    },
     "Colors": {
       "Yellow": "Jaune",
       "Green": "Vert",
@@ -172,6 +177,7 @@
       "GMNotesPH": "Notes cachées (MJ)...",
       "Save": "Enregistrer",
       "SaveAndClose": "Enregistrer & Fermer",
+      "OpenActorSheet": "Ouvrir la feuille du personnage",
       "Visibility": "Visibilité (Shift = Cacher de tous)",
       "VisibilityTitle": "Paramètres de Visibilité",
       "VisibleToAll": "Visible pour tous les joueurs",
@@ -249,7 +255,14 @@
       "SelectGrid": "Sélection / Grille",
       "CreateLink": "Créer un lien",
       "Zoom": "Zoomer",
-      "Pan": "Déplacer"
+      "Pan": "Déplacer",
+      "LeftClickBackground": "Clic gauche (sur le fond)",
+      "RightClickBackground": "Clic droit (sur le fond)",
+      "RightClickGroup": "Clic droit (sur un groupe)",
+      "ShiftLeftClick": "Shift + Clic gauche",
+      "ControlLeftClick": "Ctrl + Clic gauche",
+      "MouseWheel": "Molette de la souris",
+      "MouseWheelClick": "Clic de la molette de la souris"
     },
     "Weather": {
       "Clear": "Dégagé",

@@ -14,6 +14,11 @@
       "Plus1Hour": "+1 hour",
       "ClickToEdit": "Click to edit"
     },
+    "Color": {
+      "Dark": "Dark (default)",
+      "Light": "Light",
+      "Custom": "Custom"
+    },
     "Colors": {
       "Yellow": "Yellow",
       "Green": "Green",
@@ -172,6 +177,7 @@
       "GMNotesPH": "Hidden notes for GM only...",
       "Save": "Save",
       "SaveAndClose": "Save & Close",
+      "OpenActorSheet": "Open Actor Sheet",
       "Visibility": "Visibility (Shift = Toggle hide from all)",
       "VisibilityTitle": "Visibility Settings",
       "VisibleToAll": "Visible to all players",
@@ -249,7 +255,14 @@
       "SelectGrid": "Select / Grid snap",
       "CreateLink": "Create link",
       "Zoom": "Zoom board",
-      "Pan": "Pan canvas"
+      "Pan": "Pan canvas",
+      "LeftClickBackground": "Left-click (on background)",
+      "RightClickBackground": "Right-click (on background)",
+      "RightClickGroup": "Right-click (on group)",
+      "ShiftLeftClick": "Shift + Left-click",
+      "ControlLeftClick": "Ctrl + Left-click",
+      "MouseWheel": "Mouse wheel",
+      "MouseWheelClick": "Mouse wheel click"
     },
     "Weather": {
       "Clear": "Clear",
