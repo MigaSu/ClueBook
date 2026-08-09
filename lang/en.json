@@ -108,7 +108,13 @@
       "ShowBtnLocations": "'Locations' Button",
       "ShowBtnQuests": "'Quests' Button",
       "ShowBtnTimeline": "'Timeline' Button",
-      "ShowBtnTracker": "'Tracker' Button"
+      "ShowBtnTracker": "'Tracker' Button",
+      "MenuButtonsLabel": "Menu Buttons:",
+      "AboutSubtitle": "Modern investigation board & tracking",
+      "AboutDiscussionsTitle": "Questions, Feedback and Bug Reports",
+      "AboutDiscussionsText": "Discussions",
+      "AboutBoostyTitle": "Support on Boosty",
+      "AboutBoostyText": "Support (Boosty)"
     },
     "Tags": {
       "Title": "Tag Manager",

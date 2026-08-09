@@ -108,7 +108,13 @@
       "ShowBtnLocations": "Кнопка 'Локации'",
       "ShowBtnQuests": "Кнопка 'Квесты'",
       "ShowBtnTimeline": "Кнопка 'Хронология'",
-      "ShowBtnTracker": "Кнопка 'Трекер'"
+      "ShowBtnTracker": "Кнопка 'Трекер'",
+      "MenuButtonsLabel": "Кнопки меню:",
+      "AboutSubtitle": "Современная доска расследований и трекер",
+      "AboutDiscussionsTitle": "Вопросы, идеи и багрепорты",
+      "AboutDiscussionsText": "Вопросы и идеи (Discussions)",
+      "AboutBoostyTitle": "Поддержать на Boosty",
+      "AboutBoostyText": "Поддержать (Boosty)"
     },
     "Overlay": {
       "AddClue": "ДОБАВИТЬ УЛИКУ",
