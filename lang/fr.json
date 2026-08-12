@@ -215,6 +215,7 @@
       "Scheduled": "PRÉVU",
       "Deadline": "ÉCHÉANCE",
       "Passed": "PASSÉ",
+      "Failed": "ECHEC",
       "Overdue": "EN RETARD",
       "In": "DANS",
       "Left": "RESTANT",
