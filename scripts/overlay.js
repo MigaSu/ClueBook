@@ -99,15 +99,21 @@ export class ClueBookOverlay {
 
     document.body.appendChild(backdrop);
 
-    // Optional: explicitly activate Foundry's TextEditor link listeners if needed
-    const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
-    if (TE && TE.activateListeners) {
-      try {
-        TE.activateListeners(card); // Pass vanilla element
-      } catch(e) {
-        console.warn("ClueBook | Failed to activate TextEditor listeners on overlay:", e);
-      }
-    }
+    // Activate content link listeners on overlay card
+    card.querySelectorAll('a.content-link').forEach(link => {
+      link.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        const uuid = link.dataset.uuid;
+        if (uuid) {
+          try {
+            const doc = await fromUuid(uuid);
+            if (doc?.sheet) doc.sheet.render(true);
+          } catch(err) {
+            console.warn("ClueBook | Failed to open linked document:", err);
+          }
+        }
+      });
+    });
 
     // Trigger animations in next frame
     requestAnimationFrame(() => {

@@ -13,6 +13,15 @@ Hooks.once("init", async () => {
   try {
   console.log("ClueBook V14 | Initializing...");
 
+  // Register Welcome Message Setting
+  game.settings.register("ClueBook", "hideWelcomeMessage112", {
+    name: "Hide Welcome Message",
+    scope: "world",
+    config: false,
+    type: Boolean,
+    default: false
+  });
+
   Hooks.on("renderChatMessage", (message, html) => {
     const btn = html[0]?.querySelector('.cluebook-welcome-dismiss');
     if (btn) {
@@ -28,18 +37,6 @@ Hooks.once("init", async () => {
 
   Hooks.on("getSceneControlButtons", (...args) => {
     try {
-    
-    // Register Welcome Message Setting
-    try {
-      game.settings.register("ClueBook", "hideWelcomeMessage112", {
-        name: "Hide Welcome Message",
-        scope: "world",
-        config: false,
-        type: Boolean,
-        default: false
-      });
-    } catch(e) {}
-
     const settings = game.user?.getFlag("ClueBook", "settings") || {};
     let controlsDict = args[0];
 
@@ -309,7 +306,7 @@ Hooks.once("ready", async () => {
 
     const pos = game.user.getFlag("ClueBook", "widgetPos") || { left: 20, bottom: 80 };
     
-    // РћРіСЂР°РЅРёС‡РёРІР°РµРј РєРѕРѕСЂРґРёРЅР°С‚С‹ СЂР°Р·РјРµСЂР°РјРё С‚РµРєСѓС‰РµРіРѕ РѕРєРЅР° (С‡С‚РѕР±С‹ РІРёРґР¶РµС‚ РЅРµ СѓР»РµС‚РµР» Р·Р° СЌРєСЂР°РЅ)
+    // Ограничиваем координаты размерами текущего окна (чтобы виджет не улетел за экран)
     let left = pos.left !== undefined ? pos.left : 20;
     if (left > window.innerWidth - 60) left = window.innerWidth - 60;
     if (left < 0) left = 20;

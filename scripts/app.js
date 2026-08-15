@@ -14,6 +14,100 @@ import { ClueBookDragDropMixin } from "./actions/app-dragdrop.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+class SceneActionDialog extends ApplicationV2 {
+  constructor(options = {}) {
+    super(options);
+    this.scene = options.scene;
+  }
+
+  static DEFAULT_OPTIONS = {
+    classes: ["cluebook-window", "cluebook-scene-dialog"],
+    window: { icon: "fas fa-map" },
+    position: { width: 450, height: "auto" }
+  };
+
+  get title() {
+    return this.scene?.name || "";
+  }
+
+  _renderHTML(context, options) {
+    const scene = this.scene;
+    return Promise.resolve(`
+      <div style="padding: 15px; text-align: center; color: #fff; display: flex; flex-direction: column; gap: 15px;">
+        ${game.i18n.format("CLUEBOOK.Scene.ActionPrompt", { name: scene?.name || "" })}
+        <div style="display: flex; justify-content: center; gap: 12px;">
+          <button data-action="view" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer; transition: all 0.2s; height: auto !important; min-height: 75px; line-height: 1.2;">
+            <i class="fas fa-eye" style="font-size: 18px; margin: 0;"></i>
+            <span style="font-size: 13px; font-weight: 500; letter-spacing: 0.5px; white-space: normal;">${game.i18n.localize("CLUEBOOK.Scene.Preview")}</span>
+          </button>
+          <button data-action="activate" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer; transition: all 0.2s; height: auto !important; min-height: 75px; line-height: 1.2;">
+            <i class="fas fa-bullseye" style="font-size: 18px; margin: 0;"></i>
+            <span style="font-size: 13px; font-weight: 500; letter-spacing: 0.5px; white-space: normal;">${game.i18n.localize("CLUEBOOK.Scene.Activate")}</span>
+          </button>
+          <button data-action="config" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer; transition: all 0.2s; height: auto !important; min-height: 75px; line-height: 1.2;">
+            <i class="fas fa-cog" style="font-size: 18px; margin: 0;"></i>
+            <span style="font-size: 13px; font-weight: 500; letter-spacing: 0.5px; white-space: normal;">${game.i18n.localize("CLUEBOOK.Scene.Settings")}</span>
+          </button>
+        </div>
+      </div>
+    `);
+  }
+
+  _replaceHTML(result, content, options) {
+    content.replaceChildren(...new DOMParser().parseFromString(result, "text/html").body.childNodes);
+  }
+
+  _onRender(context, options) {
+    super._onRender(context, options);
+    const html = this.element;
+    const scene = this.scene;
+    if (!scene) return;
+    
+    html.style.background = "rgba(26, 26, 36, 0.95)";
+    html.style.backdropFilter = "blur(12px)";
+    html.style.webkitBackdropFilter = "blur(12px)";
+    html.style.border = "1px solid rgba(255,255,255,0.1)";
+    html.style.boxShadow = "0 10px 30px rgba(0,0,0,0.8)";
+    html.style.color = "#fff";
+    html.style.borderRadius = "8px";
+    
+    const header = html.querySelector('.window-header');
+    if (header) {
+       header.style.background = "rgba(0,0,0,0.3)";
+       header.style.borderBottom = "1px solid rgba(255,255,255,0.1)";
+       header.style.color = "#fff";
+       header.style.borderRadius = "8px 8px 0 0";
+    }
+    
+    const content = html.querySelector('.window-content');
+    if (content) {
+       content.style.background = "transparent";
+       content.style.color = "#fff";
+       content.style.padding = "0";
+    }
+    
+    html.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('mouseenter', () => {
+        btn.style.background = "rgba(123, 97, 255, 0.4)";
+        btn.style.borderColor = "#7b61ff";
+        btn.style.boxShadow = "0 0 10px rgba(123, 97, 255, 0.3)";
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.style.background = "rgba(255,255,255,0.05)";
+        btn.style.borderColor = "rgba(255,255,255,0.2)";
+        btn.style.boxShadow = "none";
+      });
+      btn.addEventListener('click', (ev) => {
+        const action = ev.currentTarget.dataset.action;
+        if (action === "view") scene.view();
+        if (action === "activate") scene.activate();
+        if (action === "config") scene.sheet.render(true);
+        this.close();
+      });
+    });
+  }
+}
+
 const BaseApp = ClueBookDragDropMixin(
   ClueBookEntryActionsMixin(
     ClueBookWorkspaceActionsMixin(
@@ -450,39 +544,61 @@ export class ClueBookApp extends BaseApp {
   }
 
   _processExplicitLinks(context, data, entries) {
-    const allLinks = data.links || [];
-    const allEntities = [];
-    for (const [tabKey, tabData] of Object.entries(data)) {
-      if (tabKey === "links" || tabKey === "search" || tabKey === "board") continue;
-      for (const [id, entry] of Object.entries(tabData || {})) {
-        if (entry) {
-          let previewText = entry.text || entry.note || entry.event || "";
-          previewText = previewText.replace(/\[\[qnmention:[^:]+:([^\]]+)\]\](?:\{([^}]*)\})?/g, (m, name, cText) => cText || name);
-          previewText = previewText.replace(/@UUID\[[^\]]+\](?:\{([^\}]+)\})?/g, (m, p1) => p1 || game.i18n.localize("CLUEBOOK.EntryDetails.Link"));
-          previewText = previewText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').substring(0, 150).trim() + "...";
-          allEntities.push({ id, title: entry.name || entry.event || entry.text || game.i18n.localize("CLUEBOOK.EntryDetails.Untitled"), preview: previewText });
+    const allLinks = Object.values(data.links || {});
+    const isBoard = this.state.activeTab === "board";
+    const showExplicit = isBoard ? context.settings.features?.boardShowExplicitLinks : context.settings.features?.cardsShowExplicitLinks;
+    const PRESET_COLORS = ["yellow", "red", "green", "blue", "purple", "orange", "teal", "pink", "brown"];
+
+    const entityMap = new Map();
+    const linksByCard = new Map();
+
+    if (showExplicit !== false) {
+      // 1. Build O(1) entity lookup map
+      for (const [tabKey, tabData] of Object.entries(data)) {
+        if (tabKey === "links" || tabKey === "search" || tabKey === "board") continue;
+        for (const [id, entry] of Object.entries(tabData || {})) {
+          if (entry) {
+            let previewText = entry.text || entry.note || entry.event || "";
+            if (previewText) {
+              previewText = previewText.replace(/\[\[qnmention:[^:]+:([^\]]+)\]\](?:\{([^}]*)\})?/g, (m, name, cText) => cText || name)
+                                       .replace(/@UUID\[[^\]]+\](?:\{([^\}]+)\})?/g, (m, p1) => p1 || game.i18n.localize("CLUEBOOK.EntryDetails.Link"))
+                                       .replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').substring(0, 150).trim() + "...";
+            }
+            const rawTitle = entry.name || entry.event || entry.text || game.i18n.localize("CLUEBOOK.EntryDetails.Untitled");
+            const cleanTitle = rawTitle.replace(/\[\[qnmention:[^:]+:([^\]]+)\]\](?:\{([^}]*)\})?/g, (m, name, cText) => cText || name)
+                                       .replace(/@UUID\[[^\]]+\](?:\{([^\}]+)\})?/g, (m, p1) => p1 || game.i18n.localize("CLUEBOOK.EntryDetails.Link"))
+                                       .replace(/<[^>]+>/g, '').substring(0, 40).trim();
+            entityMap.set(id, { cleanTitle, preview: previewText });
+          }
         }
+      }
+
+      // 2. Index links by connected cards
+      for (const l of allLinks) {
+        if (!l.source || !l.target) continue;
+        if (!linksByCard.has(l.source)) linksByCard.set(l.source, []);
+        if (!linksByCard.has(l.target)) linksByCard.set(l.target, []);
+        linksByCard.get(l.source).push({ otherId: l.target, label: l.label });
+        linksByCard.get(l.target).push({ otherId: l.source, label: l.label });
       }
     }
 
-    const PRESET_COLORS = ["yellow", "red", "green", "blue", "purple", "orange", "teal", "pink", "brown"];
-    const isBoard = this.state.activeTab === "board";
-    
     for (const entry of entries) {
       entry.isCustomColor = entry.color && !PRESET_COLORS.includes(entry.color);
       entry.explicitLinks = [];
-      const showExplicit = isBoard ? context.settings.features?.boardShowExplicitLinks : context.settings.features?.cardsShowExplicitLinks;
-      
+
       if (showExplicit !== false) {
-        for (const l of Object.values(allLinks)) {
-          if (l.source === entry.id || l.target === entry.id) {
-            const otherId = l.source === entry.id ? l.target : l.source;
-            const otherEntity = allEntities.find(e => e.id === otherId);
-            if (otherEntity) {
-              let cleanName = otherEntity.title.replace(/\[\[qnmention:[^:]+:([^\]]+)\]\](?:\{([^}]*)\})?/g, (m, name, cText) => cText || name);
-              cleanName = cleanName.replace(/@UUID\[[^\]]+\](?:\{([^\}]+)\})?/g, (m, p1) => p1 || game.i18n.localize("CLUEBOOK.EntryDetails.Link"));
-              cleanName = cleanName.replace(/<[^>]+>/g, '').substring(0, 40).trim();
-              entry.explicitLinks.push({ id: otherId, name: cleanName, label: l.label, preview: otherEntity.preview });
+        const connected = linksByCard.get(entry.id);
+        if (connected) {
+          for (const conn of connected) {
+            const other = entityMap.get(conn.otherId);
+            if (other) {
+              entry.explicitLinks.push({
+                id: conn.otherId,
+                name: other.cleanTitle,
+                label: conn.label,
+                preview: other.preview
+              });
             }
           }
         }
@@ -978,92 +1094,7 @@ export class ClueBookApp extends BaseApp {
         const scene = await fromUuid(uuid);
         if (!scene) return;
         
-        const { ApplicationV2 } = foundry.applications.api;
-        
-        class SceneActionDialog extends ApplicationV2 {
-          static DEFAULT_OPTIONS = {
-            id: `scene-dialog-${scene.id}`,
-            classes: ["cluebook-window"],
-            window: { title: scene.name, icon: "fas fa-map" },
-            position: { width: 450, height: "auto" }
-          };
-          
-          _renderHTML(context, options) {
-            return Promise.resolve(`
-              <div style="padding: 15px; text-align: center; color: #fff; display: flex; flex-direction: column; gap: 15px;">
-                ${game.i18n.format("CLUEBOOK.Scene.ActionPrompt", { name: scene.name })}
-                <div style="display: flex; justify-content: center; gap: 12px;">
-                  <button data-action="view" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer; transition: all 0.2s; height: auto !important; min-height: 75px; line-height: 1.2;">
-                    <i class="fas fa-eye" style="font-size: 18px; margin: 0;"></i>
-                    <span style="font-size: 13px; font-weight: 500; letter-spacing: 0.5px; white-space: normal;">${game.i18n.localize("CLUEBOOK.Scene.Preview")}</span>
-                  </button>
-                  <button data-action="activate" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer; transition: all 0.2s; height: auto !important; min-height: 75px; line-height: 1.2;">
-                    <i class="fas fa-bullseye" style="font-size: 18px; margin: 0;"></i>
-                    <span style="font-size: 13px; font-weight: 500; letter-spacing: 0.5px; white-space: normal;">${game.i18n.localize("CLUEBOOK.Scene.Activate")}</span>
-                  </button>
-                  <button data-action="config" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px 5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; cursor: pointer; transition: all 0.2s; height: auto !important; min-height: 75px; line-height: 1.2;">
-                    <i class="fas fa-cog" style="font-size: 18px; margin: 0;"></i>
-                    <span style="font-size: 13px; font-weight: 500; letter-spacing: 0.5px; white-space: normal;">${game.i18n.localize("CLUEBOOK.Scene.Settings")}</span>
-                  </button>
-                </div>
-              </div>
-            `);
-          }
-          
-          _replaceHTML(result, content, options) {
-            content.replaceChildren(...new DOMParser().parseFromString(result, "text/html").body.childNodes);
-          }
-          
-          _onRender(context, options) {
-            super._onRender(context, options);
-            const html = this.element;
-            
-            html.style.background = "rgba(26, 26, 36, 0.95)";
-            html.style.backdropFilter = "blur(12px)";
-            html.style.webkitBackdropFilter = "blur(12px)";
-            html.style.border = "1px solid rgba(255,255,255,0.1)";
-            html.style.boxShadow = "0 10px 30px rgba(0,0,0,0.8)";
-            html.style.color = "#fff";
-            html.style.borderRadius = "8px";
-            
-            const header = html.querySelector('.window-header');
-            if (header) {
-               header.style.background = "rgba(0,0,0,0.3)";
-               header.style.borderBottom = "1px solid rgba(255,255,255,0.1)";
-               header.style.color = "#fff";
-               header.style.borderRadius = "8px 8px 0 0";
-            }
-            
-            const content = html.querySelector('.window-content');
-            if (content) {
-               content.style.background = "transparent";
-               content.style.color = "#fff";
-               content.style.padding = "0";
-            }
-            
-            html.querySelectorAll('button').forEach(btn => {
-              btn.addEventListener('mouseenter', () => {
-                btn.style.background = "rgba(123, 97, 255, 0.4)";
-                btn.style.borderColor = "#7b61ff";
-                btn.style.boxShadow = "0 0 10px rgba(123, 97, 255, 0.3)";
-              });
-              btn.addEventListener('mouseleave', () => {
-                btn.style.background = "rgba(255,255,255,0.05)";
-                btn.style.borderColor = "rgba(255,255,255,0.2)";
-                btn.style.boxShadow = "none";
-              });
-              btn.addEventListener('click', (ev) => {
-                const action = ev.currentTarget.dataset.action;
-                if (action === "view") scene.view();
-                if (action === "activate") scene.activate();
-                if (action === "config") scene.sheet.render(true);
-                this.close();
-              });
-            });
-          }
-        }
-        
-        new SceneActionDialog().render(true);
+        new SceneActionDialog({ scene, id: `scene-dialog-${scene.id}` }).render(true);
       }
     });
 

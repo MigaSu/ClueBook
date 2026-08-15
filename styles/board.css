@@ -1,39 +1,40 @@
-/* --- Board Canvas --- */
-.board-canvas {
+/* --- Board Canvas (Scoped under .cluebook-window) --- */
+.cluebook-window .board-canvas {
   overflow: hidden;
   cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
 }
-.board-canvas:active {
+.cluebook-window .board-canvas:active {
   cursor: grabbing;
 }
-.board-canvas .entries-list {
+.cluebook-window .board-canvas .entries-list {
   display: block;
   position: relative;
   min-height: 2000px;
   min-width: 2000px;
+  user-select: none;
+  -webkit-user-select: none;
   will-change: transform;
 }
-.cluebook-entry .entry-controls .btn-board {
+.cluebook-window .cluebook-entry .entry-controls .btn-board {
   background: rgba(0,0,0,0.4);
 }
-.cluebook-entry .entry-controls .btn-board.active {
+.cluebook-window .cluebook-entry .entry-controls .btn-board.active {
   background: #ff9800; /* Orange highlight when sent to board */
 }
-.cluebook-entry .entry-controls .btn-link {
+.cluebook-window .cluebook-entry .entry-controls .btn-link {
   background: #9c27b0;
 }
-.cluebook-entry .entry-controls .btn-remove-board {
+.cluebook-window .cluebook-entry .entry-controls .btn-remove-board {
   background: var(--cb-danger);
 }
-.cluebook-entry .entry-controls .btn-pin {
+.cluebook-window .cluebook-entry .entry-controls .btn-pin {
   background: rgba(0,0,0,0.4);
 }
-.cluebook-entry .entry-controls .btn-pin.active {
+.cluebook-window .cluebook-entry .entry-controls .btn-pin.active {
   background: #7b61ff; /* Premium violet for lock */
 }
-.cluebook-entry.linking-source {
+.cluebook-window .cluebook-entry.linking-source {
   box-shadow: 0 0 15px #ff5252, inset 0 0 10px rgba(255,0,0,0.2) !important;
-  transform: scale(1.05);
 }
-
-

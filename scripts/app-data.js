@@ -1,4 +1,4 @@
-import { ClueBookEntryModel, ClueBookLinkModel } from "./data-models.js";
+import { ClueBookEntryModel, ClueBookLinkModel, getForcedDeletion } from "./data-models.js";
 
 export const ClueBookDataMixin = (Base) => class extends Base {
   _getWorkspaceData() {
@@ -48,12 +48,12 @@ export const ClueBookDataMixin = (Base) => class extends Base {
       if (!newData[tab]) newData[tab] = {};
       
       for (const [id, entry] of Object.entries(newData[tab])) {
-        // РњРёРіСЂР°С†РёСЏ СЃС‚Р°СЂС‹С… РґР°РЅРЅС‹С… С‡РµСЂРµР· Data Model V14
+        // Миграция старых данных через Data Model V14
         if (!entry.type) entry.type = tab;
         const model = new ClueBookEntryModel(entry);
         const sanitized = model.toObject();
         
-        // Р•СЃР»Рё DataModel РґРѕР±Р°РІРёР»Р° РЅРµРґРѕСЃС‚Р°СЋС‰РёРµ РїРѕР»СЏ, СЃРѕС…СЂР°РЅСЏРµРј РѕР±РЅРѕРІР»РµРЅРёРµ
+        // Если DataModel добавила недостающие поля, сохраняем обновление
         if (JSON.stringify(entry) !== JSON.stringify(sanitized)) {
           newData[tab][id] = sanitized;
           updates[`flags.ClueBook.data.${tab}.${id}`] = sanitized;
@@ -72,7 +72,7 @@ export const ClueBookDataMixin = (Base) => class extends Base {
         
         if (!existingIds.has(linkData.source) || !existingIds.has(linkData.target)) {
           delete newData.links[key];
-          updates[`flags.ClueBook.data.links.-=${key}`] = null;
+          updates[`flags.ClueBook.data.links.${key}`] = getForcedDeletion();
           requiresUpdate = true;
         } else if (JSON.stringify(link) !== JSON.stringify(linkData)) {
            newData.links[key] = linkData;
@@ -81,7 +81,7 @@ export const ClueBookDataMixin = (Base) => class extends Base {
         }
       } catch (e) {
         delete newData.links[key];
-        updates[`flags.ClueBook.data.links.-=${key}`] = null;
+        updates[`flags.ClueBook.data.links.${key}`] = getForcedDeletion();
         requiresUpdate = true;
       }
     }
@@ -97,11 +97,12 @@ export const ClueBookDataMixin = (Base) => class extends Base {
 
     return newData;
   }
+
   async _enrichEntry(entry) {
     const enriched = {};
     const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
     
-    // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј РєСЌС€ РµСЃР»Рё РµРіРѕ РЅРµС‚ (С‡С‚РѕР±С‹ РЅРµ РїРµСЂРµСЃС‡РёС‚С‹РІР°С‚СЊ HTML РїСЂРё РєР°Р¶РґРѕРј СЂРµРЅРґРµСЂРµ)
+    // Инициализируем кэш если его нет (чтобы не пересчитывать HTML при каждом рендере)
     if (!this._enrichCache) this._enrichCache = new Map();
 
     const processUUIDs = (text) => {
@@ -142,6 +143,7 @@ export const ClueBookDataMixin = (Base) => class extends Base {
     
     return enriched;
   }
+
   _getEmptyEntryForTab(tab) {
     const settings = this.getSettings();
     const defaultColor = settings.defaultColors[tab] || "yellow";
@@ -155,46 +157,34 @@ export const ClueBookDataMixin = (Base) => class extends Base {
       default: return { ...base };
     }
   }
+
   _getWorkspaceJournal() {
     if (this.state.activeWorkspace === "personal" || this.state.activeWorkspace.startsWith("personal_")) return null;
     return game.journal.get(this.state.activeWorkspace);
   }
 
   async _updateWorkspaceData(updateData) {
-    let finalData = { ...updateData };
-    let unsetPaths = [];
-
-    for (const key of Object.keys(finalData)) {
-      if (key.includes(".-=")) {
-        const path = key.replace("flags.ClueBook.", "").replace(".-=", ".");
-        unsetPaths.push(path);
-        delete finalData[key];
-      }
-    }
+    if (!updateData || Object.keys(updateData).length === 0) return;
 
     const journal = this._getWorkspaceJournal();
     if (journal) {
       if (journal.isOwner) {
-        for (const path of unsetPaths) await journal.unsetFlag("ClueBook", path);
-        if (Object.keys(finalData).length > 0) await journal.update(finalData);
+        await journal.update(updateData);
       } else {
         game.socket.emit("module.ClueBook", {
           action: "updateBoardData",
           journalId: journal.id,
-          updateData: finalData,
-          unsetPaths: unsetPaths
+          updateData: updateData
         });
       }
     } else if (this.state.activeWorkspace.startsWith("personal_")) {
       const uId = this.state.activeWorkspace.split("_")[1];
       const u = game.users.get(uId);
       if (u && game.user.isGM) {
-        for (const path of unsetPaths) await u.unsetFlag("ClueBook", path);
-        if (Object.keys(finalData).length > 0) await u.update(finalData);
+        await u.update(updateData);
       }
     } else {
-      for (const path of unsetPaths) await game.user.unsetFlag("ClueBook", path);
-      if (Object.keys(finalData).length > 0) await game.user.update(finalData);
+      await game.user.update(updateData);
     }
   }
 
@@ -209,4 +199,3 @@ export const ClueBookDataMixin = (Base) => class extends Base {
     return game.user.getFlag("ClueBook", "data.links") || {};
   }
 };
-

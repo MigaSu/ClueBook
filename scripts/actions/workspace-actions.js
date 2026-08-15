@@ -1,7 +1,7 @@
 import { ClueBookEditDialog } from "../edit-dialog.js";
 import { ClueBookSocket } from "../socket.js";
 import { ClueBookTagManager } from "../tag-manager.js";
-
+import { getForcedDeletion } from "../data-models.js";
 import { TimeService } from "../services/time-service.js";
 export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
   static async _onExportJSON(event, target) {
@@ -529,10 +529,11 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
           }
         }
 
+        const del = getForcedDeletion();
         if (existingEntry) {
           if (action === "delete" || action === "remove") {
             // Delete the card
-            updateData[`flags.ClueBook.data.${existingTab}.-=${tempId}`] = null;
+            updateData[`flags.ClueBook.data.${existingTab}.${tempId}`] = del;
             // Also clean up state if selected
             if (this.state.selectedEntryId === tempId) this.state.selectedEntryId = null;
             this.state.selectedEntries.delete(tempId);
@@ -551,7 +552,7 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
             }
 
             if (targetTab !== existingTab) {
-              updateData[`flags.ClueBook.data.${existingTab}.-=${tempId}`] = null;
+              updateData[`flags.ClueBook.data.${existingTab}.${tempId}`] = del;
             }
             updateData[`flags.ClueBook.data.${targetTab}.${tempId}`] = updatedEntry;
             idMap[tempId] = tempId; // Map to itself
@@ -609,17 +610,18 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
 
       // Clean up links for deleted entries
       let links = this._getWorkspaceLinks();
+      const isDeleted = (v) => v === null || (v && typeof v === "object" && (v instanceof (foundry.data?.operators?.ForcedDeletion ?? Object) || v.__$OPERATOR$__ === "ForcedDeletion"));
       for (const [key, l] of Object.entries(links)) {
-        const sourceDeleted = updateData[`flags.ClueBook.data.notes.-=${l.source}`] === null ||
-                              updateData[`flags.ClueBook.data.npc.-=${l.source}`] === null ||
-                              updateData[`flags.ClueBook.data.quests.-=${l.source}`] === null ||
-                              updateData[`flags.ClueBook.data.timeline.-=${l.source}`] === null;
-        const targetDeleted = updateData[`flags.ClueBook.data.notes.-=${l.target}`] === null ||
-                              updateData[`flags.ClueBook.data.npc.-=${l.target}`] === null ||
-                              updateData[`flags.ClueBook.data.quests.-=${l.target}`] === null ||
-                              updateData[`flags.ClueBook.data.timeline.-=${l.target}`] === null;
+        const sourceDeleted = isDeleted(updateData[`flags.ClueBook.data.notes.${l.source}`]) ||
+                              isDeleted(updateData[`flags.ClueBook.data.npc.${l.source}`]) ||
+                              isDeleted(updateData[`flags.ClueBook.data.quests.${l.source}`]) ||
+                              isDeleted(updateData[`flags.ClueBook.data.timeline.${l.source}`]);
+        const targetDeleted = isDeleted(updateData[`flags.ClueBook.data.notes.${l.target}`]) ||
+                              isDeleted(updateData[`flags.ClueBook.data.npc.${l.target}`]) ||
+                              isDeleted(updateData[`flags.ClueBook.data.quests.${l.target}`]) ||
+                              isDeleted(updateData[`flags.ClueBook.data.timeline.${l.target}`]);
         if (sourceDeleted || targetDeleted) {
-          updateData[`flags.ClueBook.data.links.-=${key}`] = null;
+          updateData[`flags.ClueBook.data.links.${key}`] = getForcedDeletion();
         }
       }
 

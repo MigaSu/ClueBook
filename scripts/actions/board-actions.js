@@ -1,6 +1,7 @@
 import { ClueBookEditDialog } from "../edit-dialog.js";
 import { ClueBookSocket } from "../socket.js";
 import { ClueBookTagManager } from "../tag-manager.js";
+import { getForcedDeletion } from "../data-models.js";
 
 export const ClueBookBoardActionsMixin = (Base) => class extends Base {
   static async _onJumpToBoard(event, target) {
@@ -154,7 +155,7 @@ export const ClueBookBoardActionsMixin = (Base) => class extends Base {
     const key = `${a}_${b}`;
 
     if (links[key]) {
-      await this._updateWorkspaceData({ [`flags.ClueBook.data.links.-=${key}`]: null });
+      await this._updateWorkspaceData({ [`flags.ClueBook.data.links.${key}`]: getForcedDeletion() });
       ui.notifications.info(game.i18n.localize("CLUEBOOK.AppActions.LinkDeleted"));
       this.render({ parts: ["content"] });
     }

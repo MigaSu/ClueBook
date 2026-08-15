@@ -113,7 +113,7 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
 
     const scene = await fromUuid(sceneUuid);
     if (!scene) {
-      ui.notifications.warn("Scene not found.");
+      ui.notifications.warn(game.i18n.localize("CLUEBOOK.Entry.SceneNotFound"));
       return;
     }
 
@@ -139,7 +139,7 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
 
     const actor = await fromUuid(actorUuid);
     if (!actor) {
-      ui.notifications.warn("Actor not found.");
+      ui.notifications.warn(game.i18n.localize("CLUEBOOK.Entry.ActorNotFound"));
       return;
     }
 

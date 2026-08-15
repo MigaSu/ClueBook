@@ -7,7 +7,7 @@ const { StringField, BooleanField, NumberField, HTMLField, ArrayField } = foundr
 export class ClueBookEntryModel extends foundry.abstract.DataModel {
   static defineSchema() {
     return {
-      // РћР±С‰РёРµ РїРѕР»СЏ
+      // Общие поля
       type: new StringField({ initial: "notes" }),
       color: new StringField({ initial: "yellow" }),
       textColor: new StringField({ initial: "dark" }),
@@ -15,7 +15,7 @@ export class ClueBookEntryModel extends foundry.abstract.DataModel {
       sort: new NumberField({ initial: 0 }),
       pinned: new BooleanField({ initial: false }),
       
-      // РџРѕР»СЏ РґР»СЏ РґРѕСЃРєРё (Board)
+      // Поля для доски (Board)
       onBoard: new BooleanField({ initial: false }),
       boardX: new NumberField({ initial: 100 }),
       boardY: new NumberField({ initial: 100 }),
@@ -26,23 +26,23 @@ export class ClueBookEntryModel extends foundry.abstract.DataModel {
       isHidden: new BooleanField({ initial: false }),
       visibleTo: new ArrayField(new StringField(), { initial: [] }),
 
-      // РЎРїРµС†РёС„РёС‡РЅС‹Рµ С‚РµРєСЃС‚РѕРІС‹Рµ Рё HTML РїРѕР»СЏ
-      text: new HTMLField({ initial: "" }), // Р”Р»СЏ Р—Р°РјРµС‚РѕРє (notes) Рё РљРІРµСЃС‚РѕРІ (quests)
-      name: new StringField({ initial: "" }), // Р”Р»СЏ NPC Рё Р›РѕРєР°С†РёР№
+      // Специфичные текстовые и HTML поля
+      text: new HTMLField({ initial: "" }), // Для Заметок (notes) и Квестов (quests)
+      name: new StringField({ initial: "" }), // Для NPC и Локаций
       location: new StringField({ initial: "" }), // Для NPC
       attitude: new StringField({ initial: "" }), // Для NPC
       note: new HTMLField({ initial: "" }), // Для NPC и Локаций
       actorUuid: new StringField({ initial: "" }), // Для NPC
       lifeStatus: new StringField({ initial: "" }), // Для NPC
       isDead: new BooleanField({ initial: false }), // Для NPC (совместимость)
-      status: new StringField({ initial: "active" }), // Р”Р»СЏ РљРІРµСЃС‚РѕРІ (active, completed, failed)
-      deadline: new StringField({ initial: "" }), // Р”Р»СЏ РљРІРµСЃС‚РѕРІ
-      time: new StringField({ initial: "" }), // Р”Р»СЏ РЎРѕР±С‹С‚РёР№ (timeline)
-      event: new HTMLField({ initial: "" }), // Р”Р»СЏ РЎРѕР±С‹С‚РёР№
-      subtitle: new HTMLField({ initial: "" }), // Р”Р»СЏ Р›РѕРєР°С†РёР№
-      sceneUuid: new StringField({ initial: "" }), // Р”Р»СЏ Р›РѕРєР°С†РёР№ (РїСЂРёРІСЏР·Р°РЅРЅР°СЏ СЃС†РµРЅР°)
-      owner: new StringField({ initial: "" }), // Р”Р»СЏ Р›РѕРєР°С†РёР№ (РІР»Р°РґРµР»РµС†/Р°РєС‚РµСЂ)
-      gmNotes: new HTMLField({ initial: "" }), // РЎРµРєСЂРµС‚РЅС‹Рµ Р·Р°РјРµС‚РєРё РјР°СЃС‚РµСЂР° (РґР»СЏ РІСЃРµС… С‚РёРїРѕРІ)
+      status: new StringField({ initial: "active" }), // Для Квестов (active, completed, failed)
+      deadline: new StringField({ initial: "" }), // Для Квестов
+      time: new StringField({ initial: "" }), // Для Событий (timeline)
+      event: new HTMLField({ initial: "" }), // Для Событий
+      subtitle: new HTMLField({ initial: "" }), // Для Локаций
+      sceneUuid: new StringField({ initial: "" }), // Для Локаций (привязанная сцена)
+      owner: new StringField({ initial: "" }), // Для Локаций (владелец/актер)
+      gmNotes: new HTMLField({ initial: "" }), // Секретные заметки мастера (для всех типов)
       
       // Специфичные поля для дат (Timeline & Quests)
       deadlineTimestamp: new NumberField({ nullable: true, initial: null }),
@@ -69,8 +69,18 @@ export class ClueBookLinkModel extends foundry.abstract.DataModel {
       target: new StringField({ required: true, blank: false }),
       label: new StringField({ initial: "" }),
       style: new StringField({ initial: "solid" }), // solid, dashed, dotted
-      color: new StringField({ initial: "" }) // РџСѓСЃС‚Р°СЏ СЃС‚СЂРѕРєР° РѕР·РЅР°С‡Р°РµС‚ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ С†РІРµС‚Р° РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ
+      color: new StringField({ initial: "" }) // Пустая строка означает использование цвета по умолчанию
     };
   }
+}
+
+/**
+ * Returns Foundry v14 ForcedDeletion operator instance for database updates.
+ */
+export function getForcedDeletion() {
+  if (typeof foundry !== "undefined" && foundry.data?.operators?.ForcedDeletion) {
+    return new foundry.data.operators.ForcedDeletion();
+  }
+  return null;
 }
 

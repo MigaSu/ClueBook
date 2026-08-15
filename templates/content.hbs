@@ -15,14 +15,14 @@
       <i class="fas fa-search search-icon"></i>
       <input type="text" id="cluebook-search" class="cluebook-search-input" placeholder="{{localize "CLUEBOOK.Settings.SearchPlaceholder"}}" value="{{searchQuery}}">
       {{#if (or searchQuery searchTags.length)}}
-      <i id="cluebook-search-clear" class="fas fa-times-circle" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: rgba(255,255,255,0.6); font-size: 14px; transition: color 0.2s;" title="Очистить поиск"></i>
+      <i id="cluebook-search-clear" class="fas fa-times-circle" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: rgba(255,255,255,0.6); font-size: 14px; transition: color 0.2s;" title="{{localize 'CLUEBOOK.Settings.ClearSearch'}}"></i>
       {{/if}}
     </div>
     
     {{#if availableSearchTags.length}}
     <div class="cluebook-search-tags" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px;">
       {{#each availableSearchTags}}
-      <span class="cb-tag cb-search-tag {{#if this.isActive}}active{{/if}}" data-tag-id="{{this.id}}" style="cursor: pointer; {{#if this.isActive}}background: {{this.color}}; border-color: #fff; box-shadow: 0 0 5px {{this.color}};{{else}}background: transparent; border-color: {{this.color}}; color: {{this.color}}; opacity: 0.7;{{/if}}" title="{{this.name}}{{#if this.isSecret}} (Секретно){{/if}}">
+      <span class="cb-tag cb-search-tag {{#if this.isActive}}active{{/if}}" data-tag-id="{{this.id}}" style="cursor: pointer; {{#if this.isActive}}background: {{this.color}}; border-color: #fff; box-shadow: 0 0 5px {{this.color}};{{else}}background: transparent; border-color: {{this.color}}; color: {{this.color}}; opacity: 0.7;{{/if}}" title="{{this.name}}{{#if this.isSecret}} ({{localize 'CLUEBOOK.Entry.SecretTag'}}){{/if}}">
         {{#if this.isSecret}}<i class="fas fa-eye-slash" style="opacity:0.6; font-size:10px;"></i>{{/if}}
         {{this.name}}
       </span>

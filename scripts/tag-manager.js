@@ -1,3 +1,5 @@
+import { getForcedDeletion } from "./data-models.js";
+
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 export class ClueBookTagManager extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -188,22 +190,20 @@ export class ClueBookTagManager extends HandlebarsApplicationMixin(ApplicationV2
     const deletedTagIds = Object.keys(oldTags).filter(id => !validIds.has(id));
     
     // Prepare flag updates for tags
-    let settingsUpdates = {};
+    const settingsUpdates = {};
     for (const [id, tag] of Object.entries(newTags)) {
       settingsUpdates[`flags.ClueBook.settings.tags.${id}`] = tag;
     }
     for (const id of deletedTagIds) {
-      if (this.workspace === "personal") {
-        await game.user.unsetFlag("ClueBook", `settings.tags.${id}`);
-      } else if (this.journal) {
-        await this.journal.unsetFlag("ClueBook", `settings.tags.${id}`);
-      }
+      settingsUpdates[`flags.ClueBook.settings.tags.${id}`] = getForcedDeletion();
     }
     
-    if (this.workspace === "personal") {
-      await game.user.update(settingsUpdates);
-    } else if (this.journal) {
-      await this.journal.update(settingsUpdates);
+    if (Object.keys(settingsUpdates).length > 0) {
+      if (this.workspace === "personal") {
+        await game.user.update(settingsUpdates);
+      } else if (this.journal) {
+        await this.journal.update(settingsUpdates);
+      }
     }
 
     // Clean up deleted tags from all entries

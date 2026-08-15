@@ -153,21 +153,21 @@
 }
 
 /* Track Button in Entry Cards */
-.btn-track {
+.cluebook-window .btn-track {
   color: rgba(255,255,255,0.7);
   transition: all 0.2s;
 }
-.btn-track:hover {
+.cluebook-window .btn-track:hover {
   color: #fff;
   transform: scale(1.1);
 }
-.btn-track.active {
+.cluebook-window .btn-track.active {
   color: #fff !important;
   background: rgba(255, 152, 0, 0.9) !important;
   box-shadow: 0 0 10px rgba(255, 152, 0, 0.8) !important;
   border-color: #ff9800 !important;
 }
-.btn-track.active i {
+.cluebook-window .btn-track.active i {
   color: #fff !important;
   text-shadow: 0 0 5px rgba(255,255,255,0.8) !important;
 }

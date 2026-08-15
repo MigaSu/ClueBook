@@ -442,7 +442,7 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
                    badge.className = 'cb-badge cb-badge-actor';
                    badge.dataset.action = 'remove-link';
                    badge.dataset.type = 'actorUuid';
-                   badge.title = 'Remove link';
+                   badge.title = game.i18n.localize("CLUEBOOK.Entry.RemoveLink");
                    badge.style.display = 'inline-flex';
                    badge.onclick = () => { input.value = ""; badge.remove(); if (placeholder) placeholder.style.display = 'inline'; };
                    badgesContainer.appendChild(badge);
@@ -478,7 +478,7 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
                    badge.className = 'cb-badge cb-badge-scene';
                    badge.dataset.action = 'remove-link';
                    badge.dataset.type = 'sceneUuid';
-                   badge.title = 'Remove link';
+                   badge.title = game.i18n.localize("CLUEBOOK.Entry.RemoveLink");
                    badge.style.display = 'inline-flex';
                    badge.onclick = () => { input.value = ""; badge.remove(); if (placeholder) placeholder.style.display = 'inline'; };
                    badgesContainer.appendChild(badge);

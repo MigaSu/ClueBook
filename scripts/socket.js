@@ -1,4 +1,6 @@
 import { TimeService } from "./services/time-service.js";
+import { getForcedDeletion } from "./data-models.js";
+
 export class ClueBookSocket {
   static #isWorkspace(journal) {
     return journal && journal.getFlag("ClueBook", "isWorkspace");
@@ -60,26 +62,33 @@ export class ClueBookSocket {
       const journal = game.journal.get(journalId);
       if (!ClueBookSocket.#isWorkspace(journal)) return;
 
-      // Security: Validate unsetPaths to ensure they only affect ClueBook flags
+      const safeUpdates = {};
+
+      // Convert unsetPaths to ForcedDeletion keys for atomic batch update if provided
       if (Array.isArray(unsetPaths)) {
+        const del = getForcedDeletion();
         for (const path of unsetPaths) {
           if (typeof path === "string" && (path.startsWith("data.") || path.startsWith("settings."))) {
-            await journal.unsetFlag("ClueBook", path);
+            safeUpdates[`flags.ClueBook.${path}`] = del;
           }
         }
       }
 
-      // Security: Validate updateData keys to ensure they only update flags.ClueBook
+      // Validate and include updateData
       if (updateData && typeof updateData === "object") {
-        const safeUpdates = {};
         for (const [key, value] of Object.entries(updateData)) {
           if (key.startsWith("flags.ClueBook.data.") || key.startsWith("flags.ClueBook.settings.")) {
-            safeUpdates[key] = value;
+            if (value && typeof value === "object" && value.__$OPERATOR$__ === "ForcedDeletion") {
+              safeUpdates[key] = getForcedDeletion();
+            } else {
+              safeUpdates[key] = value;
+            }
           }
         }
-        if (Object.keys(safeUpdates).length > 0) {
-          await journal.update(safeUpdates);
-        }
+      }
+
+      if (Object.keys(safeUpdates).length > 0) {
+        await journal.update(safeUpdates);
       }
     } catch (err) {
       console.error("ClueBook | Error updating board data via socket:", err);
@@ -91,7 +100,7 @@ export class ClueBookSocket {
       const requestingUser = game.users.get(userId);
       if (!requestingUser) return;
 
-      const boardName = (typeof name === "string" && name.trim()) ? name.trim() : "РќРѕРІР°СЏ РґРѕСЃРєР°";
+      const boardName = (typeof name === "string" && name.trim()) ? name.trim() : game.i18n.localize("CLUEBOOK.Workspaces.DefaultBoardName");
       ui.notifications.info(game.i18n.format("CLUEBOOK.Socket.BoardCreationRequest", { player: requestingUser.name, board: boardName }));
 
       let folder = game.folders.find(f => f.name === "ClueBook Boards" && f.type === "JournalEntry");
@@ -125,7 +134,7 @@ export class ClueBookSocket {
       }
     } catch (err) {
       console.error("ClueBook | Error creating board:", err);
-      ui.notifications.error(game.i18n.localize("CLUEBOOK.Socket.BoardCreationError"));
+      ui.notifications.error(game.i18n.localize("CLUEBOOK.Socket.BoardCreatedError"));
     }
   }
 
@@ -161,5 +170,3 @@ export class ClueBookSocket {
     }
   }
 }
-
-

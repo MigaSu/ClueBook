@@ -4,7 +4,7 @@
   <div class="entry-controls">
     {{#if @root.isGM}}
     {{#if this.sceneUuid}}
-    <a data-action="activateScene" data-scene-id="{{this.sceneUuid}}" class="btn-scene" title="{{localize "CLUEBOOK.Location.ActivateScene"}} (Shift+Click: Активировать для игроков)"><i class="fas fa-play"></i></a>
+    <a data-action="activateScene" data-scene-id="{{this.sceneUuid}}" class="btn-scene" title="{{localize "CLUEBOOK.Location.ActivateScene"}} ({{localize "CLUEBOOK.Location.ActivateSceneShift"}})"><i class="fas fa-play"></i></a>
     {{/if}}
     {{#if this.actorUuid}}
     <a data-action="openActor" data-actor-id="{{this.actorUuid}}" class="btn-actor" title="{{localize "CLUEBOOK.Entry.OpenActorSheet"}}"><i class="fas fa-id-card"></i></a>
@@ -95,7 +95,7 @@
             {{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>{{/if}}
           </div>
           {{#if this.formattedDeadline}}
-            <div class="cb-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}} {{#if this.isOverdue}}is-overdue{{/if}}" title="{{#if (eq this.timeMode 'at')}}Запланировано{{else}}Осталось времени{{/if}}">
+            <div class="cb-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}} {{#if this.isOverdue}}is-overdue{{/if}}" title="{{#if (eq this.timeMode 'at')}}{{localize 'CLUEBOOK.Quest.Scheduled'}}{{else}}{{localize 'CLUEBOOK.Quest.LeftTime'}}{{/if}}">
               <div class="qtb-icon">
                 {{#if (eq this.timeMode 'at')}}<i class="fas fa-calendar-check"></i>{{else}}<i class="fas fa-hourglass-half"></i>{{/if}}
               </div>
@@ -173,7 +173,7 @@
       {{#if this.resolvedTags.length}}
         <div class="cluebook-tags-container" style="margin-top: auto; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.05);">
           {{#each this.resolvedTags}}
-            <span class="cb-tag {{#if this.isSecret}}cb-tag-secret{{/if}}" data-tag-id="{{this.id}}" style="cursor: pointer; background: {{this.color}};" title="{{this.name}}{{#if this.isSecret}} (Секретно){{/if}}">
+            <span class="cb-tag {{#if this.isSecret}}cb-tag-secret{{/if}}" data-tag-id="{{this.id}}" style="cursor: pointer; background: {{this.color}};" title="{{this.name}}{{#if this.isSecret}} ({{localize 'CLUEBOOK.Entry.SecretTag'}}){{/if}}">
               {{#if this.isSecret}}<i class="fas fa-eye-slash" style="opacity:0.6; font-size:10px;"></i>{{/if}}
               {{this.name}}
             </span>

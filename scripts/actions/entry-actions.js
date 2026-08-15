@@ -1,7 +1,7 @@
 import { ClueBookEditDialog } from "../edit-dialog.js";
 import { ClueBookSocket } from "../socket.js";
 import { ClueBookTagManager } from "../tag-manager.js";
-
+import { getForcedDeletion } from "../data-models.js";
 import { TimeService } from "../services/time-service.js";
 export const ClueBookEntryActionsMixin = (Base) => class extends Base {
   static async _onManageTags(event, target) {
@@ -317,7 +317,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     let linkDeleted = false;
     for (const [key, l] of Object.entries(links)) {
       if (l.source === entryId || l.target === entryId) {
-        updates[`flags.ClueBook.data.links.-=${key}`] = null;
+        updates[`flags.ClueBook.data.links.${key}`] = getForcedDeletion();
         linkDeleted = true;
       }
     }
@@ -387,22 +387,18 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     const entryId = entryEl.dataset.entryId;
     const sourceTab = entryEl.dataset.sourceTab || this.state.activeTab;
     
-    // Also delete any associated links
-    let links = this._getWorkspaceLinks();
+    // Delete entry and any associated links in a single atomic update
+    const links = this._getWorkspaceLinks();
+    const del = getForcedDeletion();
     const updates = {};
     for (const [key, l] of Object.entries(links)) {
       if (l.source === entryId || l.target === entryId) {
-        updates[`flags.ClueBook.data.links.-=${key}`] = null;
+        updates[`flags.ClueBook.data.links.${key}`] = del;
       }
     }
-    if (Object.keys(updates).length > 0) {
-      await this._updateWorkspaceData(updates);
-    }
-
-    await this._updateWorkspaceData({
-      [`flags.ClueBook.data.${sourceTab}.-=${entryId}`]: null
-    });
+    updates[`flags.ClueBook.data.${sourceTab}.${entryId}`] = del;
     
+    await this._updateWorkspaceData(updates);
     this.render({ parts: ["content"] });
   }
 
@@ -632,6 +628,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     const updates = {};
     let links = this._getWorkspaceLinks();
 
+    const del = getForcedDeletion();
     nonPinnedIds.forEach(id => {
       const entryEl = this.element.querySelector(`[data-entry-id="${id}"]`);
       if (entryEl) {
@@ -640,7 +637,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
           if (isBoard) {
             updates[`flags.ClueBook.data.${sourceTab}.${id}.onBoard`] = false;
           } else {
-            updates[`flags.ClueBook.data.${sourceTab}.-=${id}`] = null;
+            updates[`flags.ClueBook.data.${sourceTab}.${id}`] = del;
           }
         }
       }
@@ -649,7 +646,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
       // Actually, removing from board should also delete links attached to it
       for (const [key, l] of Object.entries(links)) {
         if (l.source === id || l.target === id) {
-          updates[`flags.ClueBook.data.links.-=${key}`] = null;
+          updates[`flags.ClueBook.data.links.${key}`] = del;
         }
       }
     });
@@ -922,7 +919,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
       currentVal = dataObj[tab][entryId][field];
     }
 
-    const timestamp = await ClueBookDatePicker.prompt(currentVal, "Р’С‹Р±РѕСЂ РґР°С‚С‹ Рё РІСЂРµРјРµРЅРё");
+    const timestamp = await ClueBookDatePicker.prompt(currentVal, game.i18n.localize("CLUEBOOK.DatePicker.PromptTitle"));
     if (timestamp !== null) {
       const input = entry.querySelector(`input[data-field="${field}"]`);
       if (input) {
@@ -951,7 +948,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
               trashBtn.type = "button";
               trashBtn.dataset.action = "clearDate";
               trashBtn.dataset.field = field;
-              trashBtn.title = "РЈРґР°Р»РёС‚СЊ РґР°С‚Сѓ";
+              trashBtn.title = game.i18n.localize("CLUEBOOK.DatePicker.ClearDate");
               trashBtn.style.cssText = "flex: 0 0 30px; padding: 2px; background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.5); border-radius: 4px; color: #ff5252;";
               if (field === "deadlineTimestamp") trashBtn.style.height = "30px";
               const i = document.createElement("i");
