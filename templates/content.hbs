@@ -76,7 +76,7 @@
     {{> "modules/ClueBook/templates/partials/tab-board.hbs"}}
 
     {{#unless isBoardView}}
-      {{#each folders}}
+      {{#each foldersTop}}
       <div class="cb-folder-section color-{{this.color}} {{#if this.isCollapsed}}is-collapsed{{/if}}" data-folder-id="{{this.id}}">
         <div class="cb-folder-header" draggable="true" data-action="toggleFolderCollapse" data-folder-id="{{this.id}}">
           <div class="cb-folder-title-wrap">
@@ -91,6 +91,9 @@
             </button>
             <button type="button" class="cb-folder-btn btn-send-board" data-action="sendFolderToBoard" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.SendToBoard'}}">
               <i class="fas fa-project-diagram"></i>
+            </button>
+            <button type="button" class="cb-folder-btn btn-move-pos" data-action="toggleFolderPosition" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.MoveDown'}}">
+              <i class="fas fa-arrow-down"></i>
             </button>
             <button type="button" class="cb-folder-btn btn-edit-folder" data-action="editFolder" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.Edit'}}">
               <i class="fas fa-pencil-alt"></i>
@@ -120,6 +123,48 @@
           {{> "modules/ClueBook/templates/partials/entry-card.hbs"}}
         {{/each}}
       </div>
+
+      {{#each foldersBottom}}
+      <div class="cb-folder-section color-{{this.color}} {{#if this.isCollapsed}}is-collapsed{{/if}}" data-folder-id="{{this.id}}">
+        <div class="cb-folder-header" draggable="true" data-action="toggleFolderCollapse" data-folder-id="{{this.id}}">
+          <div class="cb-folder-title-wrap">
+            <i class="fas {{#if this.isCollapsed}}fa-folder{{else}}fa-folder-open{{/if}} cb-folder-icon"></i>
+            <span class="cb-folder-name">{{this.name}}</span>
+            <span class="cb-folder-badge">{{this.count}}</span>
+          </div>
+          <div class="cb-folder-controls">
+            {{#unless @root.isReadOnly}}
+            <button type="button" class="cb-folder-btn btn-add-entry" data-action="addEntryToFolder" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.AddEntry'}}">
+              <i class="fas fa-plus"></i>
+            </button>
+            <button type="button" class="cb-folder-btn btn-send-board" data-action="sendFolderToBoard" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.SendToBoard'}}">
+              <i class="fas fa-project-diagram"></i>
+            </button>
+            <button type="button" class="cb-folder-btn btn-move-pos" data-action="toggleFolderPosition" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.MoveUp'}}">
+              <i class="fas fa-arrow-up"></i>
+            </button>
+            <button type="button" class="cb-folder-btn btn-edit-folder" data-action="editFolder" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.Edit'}}">
+              <i class="fas fa-pencil-alt"></i>
+            </button>
+            <button type="button" class="cb-folder-btn btn-delete-folder" data-action="deleteFolder" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.Delete'}}">
+              <i class="fas fa-trash"></i>
+            </button>
+            {{/unless}}
+            <i class="fas fa-chevron-down cb-folder-chevron"></i>
+          </div>
+        </div>
+        <div class="cb-folder-entries">
+          {{#each this.entries}}
+            {{> "modules/ClueBook/templates/partials/entry-card.hbs"}}
+          {{else}}
+            <div class="cb-folder-empty">
+              <i class="fas fa-inbox"></i>
+              <span>{{localize "CLUEBOOK.Folder.EmptyHint"}}</span>
+            </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/each}}
     {{else}}
       {{#each entries}}
         {{> "modules/ClueBook/templates/partials/entry-card.hbs"}}

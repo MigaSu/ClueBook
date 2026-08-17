@@ -167,6 +167,8 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
 
         const parent = folderSection.parentNode;
         const allFolders = Array.from(parent.querySelectorAll('.cb-folder-section'));
+        const rootContainer = parent.querySelector('.cb-root-entries');
+
         const draggedIdx = allFolders.indexOf(draggedFolder);
         const targetIdx = allFolders.indexOf(folderSection);
 
@@ -176,13 +178,19 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
           parent.insertBefore(draggedFolder, folderSection);
         }
 
-        // Save new folder sort order
+        // Save new folder sort order and position relative to root container
+        const updatedAllChildren = Array.from(parent.children);
+        const currentRootIndex = rootContainer ? updatedAllChildren.indexOf(rootContainer) : -1;
+
         const updatedFolders = Array.from(parent.querySelectorAll('.cb-folder-section'));
         const updates = {};
         updatedFolders.forEach((el, index) => {
           const fId = el.dataset.folderId;
           if (fId) {
+            const childIndex = updatedAllChildren.indexOf(el);
+            const position = (currentRootIndex !== -1 && childIndex > currentRootIndex) ? "bottom" : "top";
             updates[`flags.ClueBook.data.folders.${fId}.sort`] = index;
+            updates[`flags.ClueBook.data.folders.${fId}.position`] = position;
           }
         });
         await this._updateWorkspaceData(updates);

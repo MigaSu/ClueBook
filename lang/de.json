@@ -102,8 +102,13 @@
       "Edit": "Ordner bearbeiten",
       "EditTitle": "Ordner bearbeiten",
       "EmptyHint": "Ordner ist leer. Karten hierher ziehen oder + klicken",
+      "MoveDown": "Unter die Karten verschieben",
+      "MoveUp": "Über die Karten verschieben",
       "NameLabel": "Ordner",
       "NoFolder": "— Kein Ordner (in Hauptliste) —",
+      "PositionBottom": "Unten (unter den Karten)",
+      "PositionLabel": "Position",
+      "PositionTop": "Oben (über den Karten)",
       "SaveBtn": "Speichern",
       "SendToBoard": "Alle Karten im Ordner an die Pinnwand senden",
       "SentToBoardSuccess": "{count} Karten aus dem Ordner an die Pinnwand gesendet!"

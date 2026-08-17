@@ -357,12 +357,14 @@
 }
 
 .cluebook-window .cb-root-entries {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-  width: 100%;
-  margin-top: 4px;
+  display: contents;
+}
+
+.cb-folder-form .color-swatch:has(input:checked) {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+  transform: scale(1.2);
 }
 
 .board-recenter-btn {

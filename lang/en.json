@@ -102,8 +102,13 @@
       "Edit": "Edit Folder",
       "EditTitle": "Edit Folder",
       "EmptyHint": "Folder is empty. Drag cards here or click +",
+      "MoveDown": "Move below cards",
+      "MoveUp": "Move above cards",
       "NameLabel": "Folder",
       "NoFolder": "— No Folder (in main list) —",
+      "PositionBottom": "Bottom (below cards)",
+      "PositionLabel": "Position",
+      "PositionTop": "Top (above cards)",
       "SaveBtn": "Save",
       "SendToBoard": "Send all cards in folder to board",
       "SentToBoardSuccess": "Sent {count} cards from folder to board!"

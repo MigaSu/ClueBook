@@ -9,25 +9,17 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     }
     if (this.state.isReadOnly) return;
 
-    const PRESET_COLORS = [
-      { id: "purple", name: "Purple", hex: "#7b61ff" },
-      { id: "blue", name: "Blue", hex: "#4a90e2" },
-      { id: "teal", name: "Teal", hex: "#26a69a" },
-      { id: "green", name: "Green", hex: "#66bb6a" },
-      { id: "yellow", name: "Yellow", hex: "#ffd54f" },
-      { id: "orange", name: "Orange", hex: "#ff9800" },
-      { id: "red", name: "Red", hex: "#ef5350" },
-      { id: "pink", name: "Pink", hex: "#ec407a" },
-      { id: "brown", name: "Brown", hex: "#8d6e63" }
-    ];
+    const PRESET_COLORS = ["purple", "blue", "teal", "green", "yellow", "orange", "red", "pink", "brown"];
 
-    const colorOptionsHTML = PRESET_COLORS.map(c => `
-      <label class="cb-folder-color-option" style="display:inline-flex; align-items:center; gap:6px; margin:4px 8px 4px 0; cursor:pointer;">
-        <input type="radio" name="folderColor" value="${c.id}" ${c.id === "purple" ? "checked" : ""}>
-        <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${c.hex}; border:1px solid rgba(255,255,255,0.4);"></span>
-        <span>${c.name}</span>
-      </label>
-    `).join("");
+    const colorOptionsHTML = `
+      <div class="color-palette" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+        ${PRESET_COLORS.map(c => `
+          <label class="color-swatch color-${c}" style="cursor: pointer; position: relative;">
+            <input type="radio" name="folderColor" value="${c}" ${c === "purple" ? "checked" : ""} style="display:none;">
+          </label>
+        `).join("")}
+      </div>
+    `;
 
     const content = `
       <form class="cb-folder-form" style="display:flex; flex-direction:column; gap:12px;">
@@ -36,10 +28,21 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
           <input type="text" name="folderName" value="${game.i18n.localize("CLUEBOOK.Folder.DefaultName")}" autofocus style="width:100%; padding:6px; border-radius:4px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.2); color:#fff;" />
         </div>
         <div class="form-group">
-          <label style="font-weight:600; margin-bottom:4px; display:block;">${game.i18n.localize("CLUEBOOK.Folder.ColorLabel")}:</label>
-          <div style="display:flex; flex-wrap:wrap;">
-            ${colorOptionsHTML}
+          <label style="font-weight:600; margin-bottom:4px; display:block;">${game.i18n.localize("CLUEBOOK.Folder.PositionLabel")}:</label>
+          <div style="display:flex; gap:16px;">
+            <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+              <input type="radio" name="folderPosition" value="top" checked>
+              <span>⬆️ ${game.i18n.localize("CLUEBOOK.Folder.PositionTop")}</span>
+            </label>
+            <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+              <input type="radio" name="folderPosition" value="bottom">
+              <span>⬇️ ${game.i18n.localize("CLUEBOOK.Folder.PositionBottom")}</span>
+            </label>
           </div>
+        </div>
+        <div class="form-group">
+          <label style="font-weight:600; margin-bottom:4px; display:block;">${game.i18n.localize("CLUEBOOK.Folder.ColorLabel")}:</label>
+          ${colorOptionsHTML}
         </div>
       </form>
     `;
@@ -57,7 +60,8 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
             const form = dialog.element.querySelector("form");
             const name = form.querySelector('input[name="folderName"]')?.value?.trim() || game.i18n.localize("CLUEBOOK.Folder.DefaultName");
             const color = form.querySelector('input[name="folderColor"]:checked')?.value || "purple";
-            return { name, color };
+            const position = form.querySelector('input[name="folderPosition"]:checked')?.value || "top";
+            return { name, color, position };
           }
         },
         {
@@ -73,7 +77,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     const folderId = foundry.utils.randomID();
     const tab = this.state.activeTab;
     const folders = this._getWorkspaceData()?.folders || {};
-    const tabFolders = Object.values(folders).filter(f => f && f.tab === tab);
+    const tabFolders = Object.values(folders).filter(f => f && f.tab === tab && (f.position || "top") === result.position);
     const nextSort = tabFolders.length > 0 ? Math.max(...tabFolders.map(f => f.sort || 0)) + 1 : 0;
 
     await this._updateWorkspaceData({
@@ -81,6 +85,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
         name: result.name,
         tab: tab,
         color: result.color,
+        position: result.position,
         sort: nextSort,
         isCollapsed: false
       }
@@ -104,25 +109,19 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     const folder = data?.folders?.[folderId];
     if (!folder) return;
 
-    const PRESET_COLORS = [
-      { id: "purple", name: "Purple", hex: "#7b61ff" },
-      { id: "blue", name: "Blue", hex: "#4a90e2" },
-      { id: "teal", name: "Teal", hex: "#26a69a" },
-      { id: "green", name: "Green", hex: "#66bb6a" },
-      { id: "yellow", name: "Yellow", hex: "#ffd54f" },
-      { id: "orange", name: "Orange", hex: "#ff9800" },
-      { id: "red", name: "Red", hex: "#ef5350" },
-      { id: "pink", name: "Pink", hex: "#ec407a" },
-      { id: "brown", name: "Brown", hex: "#8d6e63" }
-    ];
+    const PRESET_COLORS = ["purple", "blue", "teal", "green", "yellow", "orange", "red", "pink", "brown"];
+    const currentColor = folder.color || "purple";
+    const currentPosition = folder.position || "top";
 
-    const colorOptionsHTML = PRESET_COLORS.map(c => `
-      <label class="cb-folder-color-option" style="display:inline-flex; align-items:center; gap:6px; margin:4px 8px 4px 0; cursor:pointer;">
-        <input type="radio" name="folderColor" value="${c.id}" ${c.id === (folder.color || "purple") ? "checked" : ""}>
-        <span style="display:inline-block; width:14px; height:14px; border-radius:50%; background:${c.hex}; border:1px solid rgba(255,255,255,0.4);"></span>
-        <span>${c.name}</span>
-      </label>
-    `).join("");
+    const colorOptionsHTML = `
+      <div class="color-palette" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+        ${PRESET_COLORS.map(c => `
+          <label class="color-swatch color-${c}" style="cursor: pointer; position: relative;">
+            <input type="radio" name="folderColor" value="${c}" ${c === currentColor ? "checked" : ""} style="display:none;">
+          </label>
+        `).join("")}
+      </div>
+    `;
 
     const content = `
       <form class="cb-folder-form" style="display:flex; flex-direction:column; gap:12px;">
@@ -131,10 +130,21 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
           <input type="text" name="folderName" value="${folder.name || ""}" autofocus style="width:100%; padding:6px; border-radius:4px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.2); color:#fff;" />
         </div>
         <div class="form-group">
-          <label style="font-weight:600; margin-bottom:4px; display:block;">${game.i18n.localize("CLUEBOOK.Folder.ColorLabel")}:</label>
-          <div style="display:flex; flex-wrap:wrap;">
-            ${colorOptionsHTML}
+          <label style="font-weight:600; margin-bottom:4px; display:block;">${game.i18n.localize("CLUEBOOK.Folder.PositionLabel")}:</label>
+          <div style="display:flex; gap:16px;">
+            <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+              <input type="radio" name="folderPosition" value="top" ${currentPosition === "top" ? "checked" : ""}>
+              <span>⬆️ ${game.i18n.localize("CLUEBOOK.Folder.PositionTop")}</span>
+            </label>
+            <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+              <input type="radio" name="folderPosition" value="bottom" ${currentPosition === "bottom" ? "checked" : ""}>
+              <span>⬇️ ${game.i18n.localize("CLUEBOOK.Folder.PositionBottom")}</span>
+            </label>
           </div>
+        </div>
+        <div class="form-group">
+          <label style="font-weight:600; margin-bottom:4px; display:block;">${game.i18n.localize("CLUEBOOK.Folder.ColorLabel")}:</label>
+          ${colorOptionsHTML}
         </div>
       </form>
     `;
@@ -152,7 +162,8 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
             const form = dialog.element.querySelector("form");
             const name = form.querySelector('input[name="folderName"]')?.value?.trim() || folder.name;
             const color = form.querySelector('input[name="folderColor"]:checked')?.value || folder.color;
-            return { name, color };
+            const position = form.querySelector('input[name="folderPosition"]:checked')?.value || "top";
+            return { name, color, position };
           }
         },
         {
@@ -167,7 +178,32 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
 
     await this._updateWorkspaceData({
       [`flags.ClueBook.data.folders.${folderId}.name`]: result.name,
-      [`flags.ClueBook.data.folders.${folderId}.color`]: result.color
+      [`flags.ClueBook.data.folders.${folderId}.color`]: result.color,
+      [`flags.ClueBook.data.folders.${folderId}.position`]: result.position
+    });
+
+    this.render({ parts: ["content"] });
+  }
+
+  static async _onToggleFolderPosition(event, target) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (this.state.isReadOnly) return;
+
+    const folderId = target.dataset.folderId;
+    if (!folderId) return;
+
+    const data = this._getWorkspaceData();
+    const folder = data?.folders?.[folderId];
+    if (!folder) return;
+
+    const currentPos = folder.position || "top";
+    const nextPos = currentPos === "top" ? "bottom" : "top";
+
+    await this._updateWorkspaceData({
+      [`flags.ClueBook.data.folders.${folderId}.position`]: nextPos
     });
 
     this.render({ parts: ["content"] });

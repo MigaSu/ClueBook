@@ -98,6 +98,7 @@ export class ClueBookFolderModel extends foundry.abstract.DataModel {
       name: new StringField({ required: true, initial: "Новая папка" }),
       tab: new StringField({ required: true, initial: "notes" }),
       color: new StringField({ initial: "purple" }),
+      position: new StringField({ initial: "top" }), // "top" | "bottom"
       sort: new NumberField({ initial: 0 }),
       isCollapsed: new BooleanField({ initial: false })
     };

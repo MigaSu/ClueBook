@@ -189,6 +189,7 @@ export class ClueBookApp extends BaseApp {
       editFolder: ClueBookApp._onEditFolder,
       deleteFolder: ClueBookApp._onDeleteFolder,
       toggleFolderCollapse: ClueBookApp._onToggleFolderCollapse,
+      toggleFolderPosition: ClueBookApp._onToggleFolderPosition,
       addEntryToFolder: ClueBookApp._onAddEntryToFolder,
       sendFolderToBoard: ClueBookApp._onSendFolderToBoard
     }
@@ -369,7 +370,7 @@ export class ClueBookApp extends BaseApp {
     this._processTags(context, entries);
     this._processDates(context, entries);
 
-    // Group entries by folders for the active tab
+    // Group entries by folders for the active tab (partitioned into top and bottom)
     const allFolders = data.folders || {};
     const tabFolders = Object.entries(allFolders)
       .filter(([fId, f]) => f && f.tab === this.state.activeTab)
@@ -377,11 +378,15 @@ export class ClueBookApp extends BaseApp {
 
     const foldersList = tabFolders.map(([fId, f]) => {
       const folderEntries = entries.filter(e => e.folderId === fId);
+      const isBottom = f.position === "bottom";
       return {
         id: fId,
         name: f.name,
         tab: f.tab,
         color: f.color || "purple",
+        position: f.position || "top",
+        isTop: !isBottom,
+        isBottom: isBottom,
         sort: f.sort || 0,
         isCollapsed: f.isCollapsed ?? false,
         entries: folderEntries,
@@ -389,9 +394,13 @@ export class ClueBookApp extends BaseApp {
       };
     });
 
+    const foldersTop = foldersList.filter(f => f.isTop);
+    const foldersBottom = foldersList.filter(f => f.isBottom);
     const rootEntries = entries.filter(e => !e.folderId || !allFolders[e.folderId]);
 
     context.folders = foldersList;
+    context.foldersTop = foldersTop;
+    context.foldersBottom = foldersBottom;
     context.rootEntries = rootEntries;
     context.entries = entries; // For empty states and backward compatibility
 

@@ -102,8 +102,13 @@
       "Edit": "Modifier le dossier",
       "EditTitle": "Modifier le dossier",
       "EmptyHint": "Le dossier est vide. Glissez des cartes ici ou cliquez sur +",
+      "MoveDown": "Déplacer sous les cartes",
+      "MoveUp": "Déplacer au-dessus des cartes",
       "NameLabel": "Dossier",
       "NoFolder": "— Sans dossier (liste principale) —",
+      "PositionBottom": "En bas (sous les cartes)",
+      "PositionLabel": "Position",
+      "PositionTop": "En haut (au-dessus des cartes)",
       "SaveBtn": "Enregistrer",
       "SendToBoard": "Envoyer toutes les cartes du dossier sur le tableau",
       "SentToBoardSuccess": "{count} cartes du dossier envoyées sur le tableau!"
