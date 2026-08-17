@@ -38,7 +38,7 @@
   </button>
   {{/if}}
 
-  {{#unless isBoardView}}
+  {{#unless (or isBoardView (eq activeTab "gallery"))}}
   <div class="cb-tab-toolbar">
     {{#if (eq activeTab "quests")}}
     <div class="cb-status-filter-strip" style="margin: 0; padding: 0; background: transparent; border: none;">
@@ -88,11 +88,13 @@
     </button>
     {{/if}}
 
+    {{#unless (eq activeTab "gallery")}}
     <button type="button" class="cb-filter-pill cb-view-btn" data-action="toggleViewMenu" data-tab="{{activeTab}}" title="{{localize 'CLUEBOOK.View.ViewMode'}}">
       <i class="fas {{currentViewIcon}}"></i>
       <span>{{currentViewLabel}}</span>
       <i class="fas fa-chevron-down cb-sort-chevron"></i>
     </button>
+    {{/unless}}
   </div>
   {{/unless}}
 

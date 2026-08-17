@@ -495,9 +495,9 @@ export class ClueBookApp extends BaseApp {
     context.editingEntryId = this.state.editingEntryId;
     context.highlightedEntryId = this.state.highlightedEntryId;
     
-    // View modes per tab
+    // View modes per tab (gallery is always grid)
     const tabViewModes = game.user?.getFlag("ClueBook", "tabViewModes") || this.state.tabViewModes || {};
-    const currentViewMode = tabViewModes[this.state.activeTab] || "grid";
+    const currentViewMode = this.state.activeTab === "gallery" ? "grid" : (tabViewModes[this.state.activeTab] || "grid");
     context.currentViewMode = currentViewMode;
     context.isGridView = currentViewMode === "grid";
     context.isCompactView = currentViewMode === "compact";
