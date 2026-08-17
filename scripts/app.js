@@ -379,11 +379,25 @@ export class ClueBookApp extends BaseApp {
     const foldersList = tabFolders.map(([fId, f]) => {
       const folderEntries = entries.filter(e => e.folderId === fId);
       const isBottom = f.position === "bottom";
+      const isCustomColor = f.color && f.color.startsWith("#");
+      let customStyle = "";
+      let customIconStyle = "";
+      if (isCustomColor) {
+        const hex = f.color.replace("#", "");
+        const r = parseInt(hex.substring(0, 2), 16) || 123;
+        const g = parseInt(hex.substring(2, 4), 16) || 97;
+        const b = parseInt(hex.substring(4, 6), 16) || 255;
+        customStyle = `background: rgba(${r}, ${g}, ${b}, 0.07); border-color: rgba(${r}, ${g}, ${b}, 0.35); --cb-folder-color: ${f.color};`;
+        customIconStyle = `color: ${f.color};`;
+      }
       return {
         id: fId,
         name: f.name,
         tab: f.tab,
         color: f.color || "purple",
+        isCustomColor: isCustomColor,
+        customStyle: customStyle,
+        customIconStyle: customIconStyle,
         position: f.position || "top",
         isTop: !isBottom,
         isBottom: isBottom,

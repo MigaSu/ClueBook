@@ -77,10 +77,10 @@
 
     {{#unless isBoardView}}
       {{#each foldersTop}}
-      <div class="cb-folder-section color-{{this.color}} {{#if this.isCollapsed}}is-collapsed{{/if}}" data-folder-id="{{this.id}}">
+      <div class="cb-folder-section color-{{this.color}} {{#if this.isCollapsed}}is-collapsed{{/if}}" data-folder-id="{{this.id}}" {{#if this.customStyle}}style="{{this.customStyle}}"{{/if}}>
         <div class="cb-folder-header" draggable="true" data-action="toggleFolderCollapse" data-folder-id="{{this.id}}">
           <div class="cb-folder-title-wrap">
-            <i class="fas {{#if this.isCollapsed}}fa-folder{{else}}fa-folder-open{{/if}} cb-folder-icon"></i>
+            <i class="fas {{#if this.isCollapsed}}fa-folder{{else}}fa-folder-open{{/if}} cb-folder-icon" {{#if this.customIconStyle}}style="{{this.customIconStyle}}"{{/if}}></i>
             <span class="cb-folder-name">{{this.name}}</span>
             <span class="cb-folder-badge">{{this.count}}</span>
           </div>
@@ -125,10 +125,10 @@
       </div>
 
       {{#each foldersBottom}}
-      <div class="cb-folder-section color-{{this.color}} {{#if this.isCollapsed}}is-collapsed{{/if}}" data-folder-id="{{this.id}}">
+      <div class="cb-folder-section color-{{this.color}} {{#if this.isCollapsed}}is-collapsed{{/if}}" data-folder-id="{{this.id}}" {{#if this.customStyle}}style="{{this.customStyle}}"{{/if}}>
         <div class="cb-folder-header" draggable="true" data-action="toggleFolderCollapse" data-folder-id="{{this.id}}">
           <div class="cb-folder-title-wrap">
-            <i class="fas {{#if this.isCollapsed}}fa-folder{{else}}fa-folder-open{{/if}} cb-folder-icon"></i>
+            <i class="fas {{#if this.isCollapsed}}fa-folder{{else}}fa-folder-open{{/if}} cb-folder-icon" {{#if this.customIconStyle}}style="{{this.customIconStyle}}"{{/if}}></i>
             <span class="cb-folder-name">{{this.name}}</span>
             <span class="cb-folder-badge">{{this.count}}</span>
           </div>

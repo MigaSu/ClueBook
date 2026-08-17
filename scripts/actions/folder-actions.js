@@ -28,6 +28,11 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
             <input type="radio" name="folderColor" value="${c.id}" ${c.id === "purple" ? "checked" : ""} style="display:none;">
           </label>
         `).join("")}
+        <label class="color-swatch color-custom" title="${game.i18n.localize('CLUEBOOK.Color.Custom')}" style="cursor: pointer; width: 24px; height: 24px; border-radius: 50%; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid rgba(0,0,0,0.2); position: relative; overflow: hidden;">
+          <input type="color" name="customColorHex" value="#7b61ff" style="position: absolute; opacity: 0; width: 200%; height: 200%; left: -50%; top: -50%; cursor: pointer;">
+          <input type="radio" name="folderColor" value="custom" style="display:none;">
+          <div class="custom-color-bg" style="width: 100%; height: 100%; background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red); border-radius: 50%;"></div>
+        </label>
       </div>
     `;
 
@@ -61,6 +66,17 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
       classes: ["cluebook-window", "cb-folder-dialog"],
       window: { title: game.i18n.localize("CLUEBOOK.Folder.CreateTitle") },
       content: content,
+      render: (event, dialog) => {
+        const colorInput = dialog.element.querySelector('input[name="customColorHex"]');
+        const customRadio = dialog.element.querySelector('input[name="folderColor"][value="custom"]');
+        const customBg = dialog.element.querySelector('.custom-color-bg');
+        if (colorInput && customRadio && customBg) {
+          colorInput.addEventListener('input', (e) => {
+            customRadio.checked = true;
+            customBg.style.background = e.target.value;
+          });
+        }
+      },
       buttons: [
         {
           action: "create",
@@ -70,7 +86,9 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
           callback: (event, button, dialog) => {
             const form = dialog.element.querySelector("form");
             const name = form.querySelector('input[name="folderName"]')?.value?.trim() || game.i18n.localize("CLUEBOOK.Folder.DefaultName");
-            const color = form.querySelector('input[name="folderColor"]:checked')?.value || "purple";
+            const colorRadio = form.querySelector('input[name="folderColor"]:checked')?.value || "purple";
+            const customHex = form.querySelector('input[name="customColorHex"]')?.value || "#7b61ff";
+            const color = colorRadio === "custom" ? customHex : colorRadio;
             const position = form.querySelector('input[name="folderPosition"]:checked')?.value || "top";
             return { name, color, position };
           }
@@ -133,14 +151,21 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     ];
     const currentColor = folder.color || "purple";
     const currentPosition = folder.position || "top";
+    const isCustom = currentColor.startsWith("#");
+    const customHex = isCustom ? currentColor : "#7b61ff";
 
     const colorOptionsHTML = `
       <div class="color-palette" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; align-items: center;">
         ${PRESET_COLORS.map(c => `
           <label class="color-swatch color-${c.id}" style="cursor: pointer; width: 24px; height: 24px; border-radius: 50%; background: ${c.hex}; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid rgba(0,0,0,0.2);">
-            <input type="radio" name="folderColor" value="${c.id}" ${c.id === currentColor ? "checked" : ""} style="display:none;">
+            <input type="radio" name="folderColor" value="${c.id}" ${(!isCustom && c.id === currentColor) ? "checked" : ""} style="display:none;">
           </label>
         `).join("")}
+        <label class="color-swatch color-custom" title="${game.i18n.localize('CLUEBOOK.Color.Custom')}" style="cursor: pointer; width: 24px; height: 24px; border-radius: 50%; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid rgba(0,0,0,0.2); position: relative; overflow: hidden;">
+          <input type="color" name="customColorHex" value="${customHex}" style="position: absolute; opacity: 0; width: 200%; height: 200%; left: -50%; top: -50%; cursor: pointer;">
+          <input type="radio" name="folderColor" value="custom" ${isCustom ? "checked" : ""} style="display:none;">
+          <div class="custom-color-bg" style="width: 100%; height: 100%; background: ${isCustom ? customHex : 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)'}; border-radius: 50%;"></div>
+        </label>
       </div>
     `;
 
@@ -174,6 +199,17 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
       classes: ["cluebook-window", "cb-folder-dialog"],
       window: { title: game.i18n.localize("CLUEBOOK.Folder.EditTitle") },
       content: content,
+      render: (event, dialog) => {
+        const colorInput = dialog.element.querySelector('input[name="customColorHex"]');
+        const customRadio = dialog.element.querySelector('input[name="folderColor"][value="custom"]');
+        const customBg = dialog.element.querySelector('.custom-color-bg');
+        if (colorInput && customRadio && customBg) {
+          colorInput.addEventListener('input', (e) => {
+            customRadio.checked = true;
+            customBg.style.background = e.target.value;
+          });
+        }
+      },
       buttons: [
         {
           action: "save",
@@ -183,7 +219,9 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
           callback: (event, button, dialog) => {
             const form = dialog.element.querySelector("form");
             const name = form.querySelector('input[name="folderName"]')?.value?.trim() || folder.name;
-            const color = form.querySelector('input[name="folderColor"]:checked')?.value || folder.color;
+            const colorRadio = form.querySelector('input[name="folderColor"]:checked')?.value || "purple";
+            const customHex = form.querySelector('input[name="customColorHex"]')?.value || "#7b61ff";
+            const color = colorRadio === "custom" ? customHex : colorRadio;
             const position = form.querySelector('input[name="folderPosition"]:checked')?.value || "top";
             return { name, color, position };
           }
