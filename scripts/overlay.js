@@ -1,4 +1,5 @@
 import { ClueBookEntryModel } from "./data-models.js";
+import { TextEnrichmentService } from "./services/text-enrichment-service.js";
 
 export class ClueBookOverlay {
   static init() {
@@ -143,21 +144,14 @@ export class ClueBookOverlay {
     newEntry.pinned = false;
     
     // Strip qnmention links from text fields
-    const stripLinks = (text) => {
-      if (!text) return text;
-      return text.replace(/\[\[qnmention:[^:]+:([^\]]+)\]\](?:\{([^}]*)\})?/g, (m, name, customText) => {
-        return customText || name;
-      });
-    };
-    
-    if (newEntry.text) newEntry.text = stripLinks(newEntry.text);
-    if (newEntry.event) newEntry.event = stripLinks(newEntry.event);
-    if (newEntry.note) newEntry.note = stripLinks(newEntry.note);
-    if (newEntry.name) newEntry.name = stripLinks(newEntry.name);
-    if (newEntry.subtitle) newEntry.subtitle = stripLinks(newEntry.subtitle);
-    if (newEntry.owner) newEntry.owner = stripLinks(newEntry.owner);
-    if (newEntry.location) newEntry.location = stripLinks(newEntry.location);
-    if (newEntry.attitude) newEntry.attitude = stripLinks(newEntry.attitude);
+    if (newEntry.text) newEntry.text = TextEnrichmentService.stripToPlainText(newEntry.text);
+    if (newEntry.event) newEntry.event = TextEnrichmentService.stripToPlainText(newEntry.event);
+    if (newEntry.note) newEntry.note = TextEnrichmentService.stripToPlainText(newEntry.note);
+    if (newEntry.name) newEntry.name = TextEnrichmentService.stripToPlainText(newEntry.name);
+    if (newEntry.subtitle) newEntry.subtitle = TextEnrichmentService.stripToPlainText(newEntry.subtitle);
+    if (newEntry.owner) newEntry.owner = TextEnrichmentService.stripToPlainText(newEntry.owner);
+    if (newEntry.location) newEntry.location = TextEnrichmentService.stripToPlainText(newEntry.location);
+    if (newEntry.attitude) newEntry.attitude = TextEnrichmentService.stripToPlainText(newEntry.attitude);
 
     // Determine target data path
     const finalEntry = new ClueBookEntryModel(newEntry).toObject();

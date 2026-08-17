@@ -12,9 +12,9 @@
       </div>
 
       <div class="cb-row-main">
-        <span class="cb-row-title">{{this.displayTitle}}</span>
-        {{#if this.snippet}}
-          <span class="cb-row-snippet">{{this.snippet}}</span>
+        <span class="cb-row-title">{{{this.displayTitleHTML}}}</span>
+        {{#if this.snippetHTML}}
+          <span class="cb-row-snippet">{{{this.snippetHTML}}}</span>
         {{/if}}
       </div>
 
@@ -105,7 +105,7 @@
 
       <div class="cb-list-body">
         <div class="cb-list-line1">
-          <span class="cb-row-title">{{this.displayTitle}}</span>
+          <span class="cb-row-title">{{{this.displayTitleHTML}}}</span>
 
           <div class="cb-row-meta">
             {{#if (eq this.sourceTab "quests")}}
@@ -176,7 +176,7 @@
         </div>
 
         <div class="cb-list-line2">
-          <span class="cb-row-snippet">{{#if this.snippet}}{{this.snippet}}{{else}}<em>{{localize "CLUEBOOK.Entry.NoDescription"}}</em>{{/if}}</span>
+          <span class="cb-row-snippet">{{#if this.snippetHTML}}{{{this.snippetHTML}}}{{else}}<em>{{localize "CLUEBOOK.Entry.NoDescription"}}</em>{{/if}}</span>
           {{#if this.resolvedTags.length}}
           <div class="cb-row-tags">
             {{#each this.resolvedTags}}

@@ -2,6 +2,7 @@ import { ClueBookSocket } from "./socket.js";
 import { ClueBookDatePicker } from "./date-picker.js";
 import { ClueBookEditDialog } from "./edit-dialog.js";
 import { TimeService } from "./services/time-service.js";
+import { TextEnrichmentService } from "./services/text-enrichment-service.js";
 import { ClueBookDataMixin } from "./app-data.js";
 import { ClueBookBoardMixin } from "./app-board.js";
 import { ClueBookTagManager } from "./tag-manager.js";
@@ -660,13 +661,13 @@ export class ClueBookApp extends BaseApp {
 
             if (matchText && matchTags) {
               const enriched = await this._enrichEntry(entry);
-              const { displayTitle, snippet } = ClueBookApp._extractTitleAndSnippet(
+              const { displayTitleHTML, snippetHTML, plainTitle, plainSnippet } = TextEnrichmentService.extractDisplayAndSnippet(
                 entry.name || entry.title,
                 entry.note || entry.text || entry.event
               );
-              const displayOwner = ClueBookApp._cleanPlainText(entry.owner);
-              const displaySubtitle = ClueBookApp._cleanPlainText(entry.subtitle);
-              entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, displayTitle, snippet, displayOwner, displaySubtitle, enriched });
+              const displayOwner = TextEnrichmentService.stripToPlainText(entry.owner);
+              const displaySubtitle = TextEnrichmentService.stripToPlainText(entry.subtitle);
+              entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, displayTitleHTML, snippetHTML, displayTitle: plainTitle, snippet: plainSnippet, displayOwner, displaySubtitle, enriched });
             }
           }
         }
@@ -679,8 +680,8 @@ export class ClueBookApp extends BaseApp {
           if (!entry || !isEntryVisible(entry)) continue;
           if (entry.onBoard) {
             const enriched = await this._enrichEntry(entry);
-            const displayTitle = ClueBookApp._cleanPlainText(entry.name || entry.title) || game.i18n.localize("CLUEBOOK.Entry.Untitled");
-            entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, displayTitle, enriched });
+            const displayTitle = TextEnrichmentService.stripToPlainText(entry.name || entry.title) || game.i18n.localize("CLUEBOOK.Entry.Untitled");
+            entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, displayTitle, displayTitleHTML: displayTitle, enriched });
           }
         }
       }
@@ -805,21 +806,23 @@ export class ClueBookApp extends BaseApp {
         if (!entry || !isEntryVisible(entry)) continue;
         const enriched = await this._enrichEntry(entry);
 
-        // Auto-extract clean title & snippet for list/compact views
-        const { displayTitle, snippet } = ClueBookApp._extractTitleAndSnippet(
+        // Auto-extract clean HTML title & snippet with clickable mentions for list/compact views
+        const { displayTitleHTML, snippetHTML, plainTitle, plainSnippet } = TextEnrichmentService.extractDisplayAndSnippet(
           entry.name || entry.title,
           entry.note || entry.text || entry.event
         );
-        const displayOwner = ClueBookApp._cleanPlainText(entry.owner);
-        const displaySubtitle = ClueBookApp._cleanPlainText(entry.subtitle);
+        const displayOwner = TextEnrichmentService.stripToPlainText(entry.owner);
+        const displaySubtitle = TextEnrichmentService.stripToPlainText(entry.subtitle);
 
         entries.push({ 
           id, 
           sourceTab: this.state.activeTab, 
           isTracked: trackedIds.includes(id), 
           ...entry, 
-          displayTitle,
-          snippet,
+          displayTitleHTML,
+          snippetHTML,
+          displayTitle: plainTitle,
+          snippet: plainSnippet,
           displayOwner,
           displaySubtitle,
           enriched 
@@ -1407,25 +1410,23 @@ export class ClueBookApp extends BaseApp {
       }
     }
 
-    // Double-click to edit (or inline edit for labels)
-    html.querySelectorAll('.cluebook-entry .entry-content').forEach(contentNode => {
-      contentNode.addEventListener('dblclick', (ev) => {
-        if (ev.target.closest('.cb-quest-status-wrapper, .cb-clickable-badge, [data-action="toggleQuestStatusMenu"]')) {
-          ev.preventDefault();
-          ev.stopPropagation();
+    // Double-click on card / row to edit (or inline edit for labels)
+    html.querySelectorAll('.cluebook-entry').forEach(entryNode => {
+      entryNode.addEventListener('dblclick', (ev) => {
+        // Do not trigger edit if double-clicking on buttons, links, mention tags, or inputs
+        if (ev.target.closest('a, button, .cb-mention-link, .content-link, .cb-quest-status-wrapper, .cb-clickable-badge, [data-action], .cb-row-actions, .cb-tag, .cb-link-chip, input, select, textarea')) {
           return;
         }
-        const entry = ev.currentTarget.closest('.cluebook-entry');
-        if (!entry) return;
-
-        if (entry.dataset.sourceTab === "labels") {
-          this._startLabelInlineEdit(entry);
+        if (entryNode.dataset.sourceTab === "labels") {
+          this._startLabelInlineEdit(entryNode);
           return;
         }
-
-        ClueBookApp._onToggleEdit.call(this, ev, entry);
+        ClueBookApp._onToggleEdit.call(this, ev, entryNode);
       });
     });
+
+    // Bind all mention links in the app window
+    TextEnrichmentService.bindMentionClicks(html);
 
     // Intercept Scene Links to offer View/Activate/Configure
     html.addEventListener('click', async (ev) => {

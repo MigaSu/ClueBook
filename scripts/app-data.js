@@ -1,4 +1,5 @@
 import { ClueBookEntryModel, ClueBookLinkModel, getForcedDeletion } from "./data-models.js";
+import { TextEnrichmentService } from "./services/text-enrichment-service.js";
 
 export const ClueBookDataMixin = (Base) => class extends Base {
   _getWorkspaceData() {
@@ -107,11 +108,7 @@ export const ClueBookDataMixin = (Base) => class extends Base {
 
     const processUUIDs = (text) => {
       if (!text) return text;
-      // Parse qnmention
-      let newText = text.replace(/\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g, (match, id, name, customText) => {
-        const displayText = customText || name;
-        return `<a class="content-link cb-mention-link" data-mention-id="${id}">${displayText}</a>`;
-      });
+      let newText = TextEnrichmentService.enrichMentionsToHTML(text);
       const uuidRegex = /(?<!@UUID\[)(?<!\.)\b(?:Actor|Item|JournalEntry|JournalEntryPage|Scene|RollTable|Cards|Macro|Playlist|User)(?:\.[a-zA-Z0-9_-]+)+\b/g;
       newText = newText.replace(uuidRegex, match => `@UUID[${match}]`);
       const compendiumRegex = /(?<!@UUID\[)(?<!\.)\bCompendium\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+\b/g;

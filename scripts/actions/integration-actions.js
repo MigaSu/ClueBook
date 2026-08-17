@@ -2,6 +2,7 @@ import { ClueBookEditDialog } from "../edit-dialog.js";
 import { ClueBookSocket } from "../socket.js";
 import { ClueBookTagManager } from "../tag-manager.js";
 import { TimeService } from "../services/time-service.js";
+import { TextEnrichmentService } from "../services/text-enrichment-service.js";
 
 export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
   static async _onShareOverlay(event, target) {
@@ -35,15 +36,11 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
     const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
     const processUUIDs = (text) => {
       if (!text) return text;
+      let newText = TextEnrichmentService.enrichMentionsToHTML(text);
       const uuidRegex = /(?<!@UUID\[)(?<!\.)\b(?:Actor|Item|JournalEntry|JournalEntryPage|Scene|RollTable|Cards|Macro|Playlist|User)(?:\.[a-zA-Z0-9_-]+)+\b/g;
-      let newText = text.replace(uuidRegex, match => `@UUID[${match}]`);
+      newText = newText.replace(uuidRegex, match => `@UUID[${match}]`);
       const compendiumRegex = /(?<!@UUID\[)(?<!\.)\bCompendium\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+\b/g;
       newText = newText.replace(compendiumRegex, match => `@UUID[${match}]`);
-      // Parse qnmention
-      newText = newText.replace(/\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g, (match, id, name, customText) => {
-        const displayText = customText || name;
-        return `<a class="content-link cb-mention-link" data-mention-id="${id}">${displayText}</a>`;
-      });
       return newText;
     };
     

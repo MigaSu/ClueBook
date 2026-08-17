@@ -3,6 +3,7 @@ import { ClueBookSocket } from "../socket.js";
 import { ClueBookTagManager } from "../tag-manager.js";
 import { getForcedDeletion } from "../data-models.js";
 import { TimeService } from "../services/time-service.js";
+import { TextEnrichmentService } from "../services/text-enrichment-service.js";
 export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
   static async _onExportJSON(event, target) {
     let data = {};
@@ -691,12 +692,7 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
         if (entry && !key.startsWith('flags.ClueBook.data.links.')) {
           ['text', 'note', 'event', 'gmNotes', 'subtitle', 'owner', 'location', 'attitude'].forEach(field => {
             if (entry[field] && typeof entry[field] === 'string') {
-              // Regex matches [[qnmention:OLD_ID:Title]] and replaces OLD_ID with realId
-              entry[field] = entry[field].replace(/\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g, (match, oldId, name, customText) => {
-                const newId = idMap[oldId] || oldId; // fallback to oldId if not mapped (e.g. external link)
-                const suffix = customText ? `{${customText}}` : '';
-                return `[[qnmention:${newId}:${name}]]${suffix}`;
-              });
+              entry[field] = TextEnrichmentService.remapMentionIds(entry[field], idMap);
             }
           });
         }

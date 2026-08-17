@@ -1,4 +1,5 @@
 import { TimeService } from "./services/time-service.js";
+import { TextEnrichmentService } from "./services/text-enrichment-service.js";
 import { ClueBookDatePicker } from "./date-picker.js";
 import { getRandomPhotoTilt } from "./data-models.js";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -611,7 +612,7 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
       const match = textBeforeCursor.match(/@([a-zA-Zа-яА-ЯёЁ0-9_ -]*)$/);
       
       if (match) {
-        const replaceString = `[[qnmention:${target.id}:${target.name}]] `;
+        const replaceString = TextEnrichmentService.createMention(target.id, target.name) + " ";
         ta.value = val.substring(0, match.index) + replaceString + val.substring(cursor);
         ta.selectionStart = ta.selectionEnd = match.index + replaceString.length;
       }

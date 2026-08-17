@@ -1,4 +1,5 @@
 import { TimeService } from "./time-service.js";
+import { TextEnrichmentService } from "./text-enrichment-service.js";
 
 export class TrackerService {
 
@@ -77,14 +78,7 @@ export class TrackerService {
     const enrich = async (text) => {
       if (!text) return game.i18n.localize("CLUEBOOK.EntryDetails.Untitled");
       let newText = await TE.enrichHTML(processUUIDs(text), { async: true });
-      newText = newText.replace(
-        /\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g,
-        (match, tab, targetId, displayText) => {
-          const label = displayText || targetId;
-          return `<span class="cb-link-tag" data-tab="${tab}" data-entry-id="${targetId}"><i class="fas fa-link"></i> ${label}</span>`;
-        }
-      );
-      return newText;
+      return TextEnrichmentService.enrichMentionsToHTML(newText);
     };
 
     // Quests

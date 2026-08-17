@@ -3,6 +3,7 @@ import { ClueBookSocket } from "./socket.js";
 import { ClueBookOverlay } from "./overlay.js";
 import { TrackerWidget } from "./tracker.js";
 import { TimeService } from "./services/time-service.js";
+import { TextEnrichmentService } from "./services/text-enrichment-service.js";
 
 // Global reference to the app instances
 let clueBookApp = null;
@@ -225,7 +226,8 @@ Hooks.once("init", async () => {
         trackerWidgetApp.close({ animate: false });
         trackerWidgetApp = null;
       }
-    }
+    },
+    TextEnrichmentService
   };
 
   await loadTemplates([
