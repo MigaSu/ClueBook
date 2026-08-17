@@ -477,6 +477,12 @@ export class ClueBookApp extends BaseApp {
       badge: (showBadges && tabCounts[t.id] !== undefined && tabCounts[t.id] > 0) ? tabCounts[t.id] : null
     }));
 
+    if (context.isSettings || context.isWorkspaces) {
+      context.showAddBtn = false;
+      context.isBoardView = false;
+      return context;
+    }
+
     const entries = await this._prepareEntriesForTab(context, data);
     this._processExplicitLinks(context, data, entries);
     this._processTags(context, entries);
@@ -1154,6 +1160,24 @@ export class ClueBookApp extends BaseApp {
         // Ignore if typing in an input
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(ev.target.tagName)) return;
         
+        if (ev.key === "a" && (ev.ctrlKey || ev.metaKey)) {
+          ev.preventDefault();
+          const listContainer = html.querySelector('.entries-list');
+          if (listContainer) {
+            const visibleEntries = listContainer.querySelectorAll('.cluebook-entry:not([style*="display: none"])');
+            this.state.selectedEntries.clear();
+            visibleEntries.forEach(el => {
+              const id = el.dataset.entryId;
+              if (id) {
+                this.state.selectedEntries.add(id);
+                el.classList.add('is-selected');
+              }
+            });
+            this._updateSelectionHUD();
+          }
+          return;
+        }
+
         if (this.state.selectedEntryId || this.state.selectedEntries.size > 0) {
           if (ev.key === "Delete" || ev.key === "Backspace") {
             ev.preventDefault();
@@ -1178,21 +1202,6 @@ export class ClueBookApp extends BaseApp {
             this.state.selectedEntries.clear();
             html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
             this._updateSelectionHUD();
-          } else if (ev.key === "a" && (ev.ctrlKey || ev.metaKey)) {
-            ev.preventDefault();
-            const listContainer = html.querySelector('.entries-list');
-            if (listContainer) {
-              const visibleEntries = listContainer.querySelectorAll('.cluebook-entry:not([style*="display: none"])');
-              this.state.selectedEntries.clear();
-              visibleEntries.forEach(el => {
-                const id = el.dataset.entryId;
-                if (id) {
-                  this.state.selectedEntries.add(id);
-                  el.classList.add('is-selected');
-                }
-              });
-              this._updateSelectionHUD();
-            }
           }
         }
       });
@@ -1525,17 +1534,21 @@ export class ClueBookApp extends BaseApp {
     }
 
     // Click outside entries in non-board view to clear selection
-    if (!this.state.isBoardView) {
-      html.addEventListener('click', (ev) => {
-        if (!ev.target.closest('.cluebook-entry') && !ev.target.closest('.cb-context-menu') && !ev.target.closest('.cb-selection-hud') && !ev.target.closest('.cb-tab-toolbar')) {
-          if (this.state.selectedEntries.size > 0) {
-            this.state.selectedEntries.clear();
-            this.state.selectedEntryId = null;
-            html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
-            this._updateSelectionHUD();
+    if (this.state.activeTab !== "board") {
+      const contentList = html.querySelector('.cluebook-content:not(.board-canvas)');
+      if (contentList) {
+        contentList.addEventListener('click', (ev) => {
+          if (this.state.activeTab === "board") return;
+          if (!ev.target.closest('.cluebook-entry') && !ev.target.closest('.cb-context-menu') && !ev.target.closest('.cb-selection-hud') && !ev.target.closest('.cb-tab-toolbar') && !ev.target.closest('.cb-folder-header')) {
+            if (this.state.selectedEntries.size > 0) {
+              this.state.selectedEntries.clear();
+              this.state.selectedEntryId = null;
+              html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
+              this._updateSelectionHUD();
+            }
           }
-        }
-      });
+        });
+      }
     }
 
     // Setup Board Interactivity
