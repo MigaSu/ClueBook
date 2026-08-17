@@ -384,11 +384,20 @@ export class ClueBookApp extends BaseApp {
       let customIconStyle = "";
       if (isCustomColor) {
         const hex = f.color.replace("#", "");
-        const r = parseInt(hex.substring(0, 2), 16) || 123;
-        const g = parseInt(hex.substring(2, 4), 16) || 97;
-        const b = parseInt(hex.substring(4, 6), 16) || 255;
-        customStyle = `background: rgba(${r}, ${g}, ${b}, 0.12) !important; border-color: rgba(${r}, ${g}, ${b}, 0.4) !important; --cb-folder-color: ${f.color};`;
-        customIconStyle = `color: ${f.color} !important;`;
+        const rParsed = parseInt(hex.substring(0, 2), 16);
+        const gParsed = parseInt(hex.substring(2, 4), 16);
+        const bParsed = parseInt(hex.substring(4, 6), 16);
+        const r = isNaN(rParsed) ? 123 : rParsed;
+        const g = isNaN(gParsed) ? 97 : gParsed;
+        const b = isNaN(bParsed) ? 255 : bParsed;
+
+        if (r < 30 && g < 30 && b < 30) {
+          customStyle = `background: rgba(0, 0, 0, 0.5) !important; border-color: rgba(255, 255, 255, 0.25) !important; --cb-folder-color: #ffffff;`;
+          customIconStyle = `color: #ffffff !important;`;
+        } else {
+          customStyle = `background: rgba(${r}, ${g}, ${b}, 0.14) !important; border-color: rgba(${r}, ${g}, ${b}, 0.45) !important; --cb-folder-color: ${f.color};`;
+          customIconStyle = `color: ${f.color} !important;`;
+        }
       }
       return {
         id: fId,
