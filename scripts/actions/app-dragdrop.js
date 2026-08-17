@@ -87,6 +87,13 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
         }
       });
 
+      entry.addEventListener('drop', (ev) => {
+        if (draggedEntry) {
+          ev.preventDefault();
+          ev.stopPropagation();
+        }
+      });
+
       entry.addEventListener('dragend', async () => {
         if (!draggedEntry) return;
         listContainer.classList.remove('is-dragging-list');
@@ -124,11 +131,10 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
 
         draggedEntry = null;
         await this._updateWorkspaceData(updates);
-        this.render({ parts: ["content"] });
       });
     });
 
-    // 2. Folder Dropzones (Drop card into folder)
+    // 2. Folder Dropzones (Drop card into empty folder or folder container)
     html.querySelectorAll('.cb-folder-section').forEach(folderEl => {
       const folderId = folderEl.dataset.folderId;
 
@@ -147,23 +153,16 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
         }
       });
 
-      folderEl.addEventListener('drop', async (ev) => {
+      folderEl.addEventListener('drop', (ev) => {
         if (!draggedEntry || this.state.isReadOnly) return;
         ev.preventDefault();
         ev.stopPropagation();
         folderEl.classList.remove('is-dragover');
 
-        const entryId = draggedEntry.dataset.entryId;
-        const sourceTab = draggedEntry.dataset.sourceTab || this.state.activeTab;
-        if (!entryId) return;
-
         const entriesContainer = folderEl.querySelector('.cb-folder-entries');
         if (entriesContainer && draggedEntry.parentNode !== entriesContainer) {
           entriesContainer.appendChild(draggedEntry);
         }
-
-        await this._saveDataRaw(sourceTab, entryId, "folderId", folderId);
-        this.render({ parts: ["content"] });
       });
     });
 
@@ -177,19 +176,13 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
         }
       });
 
-      rootContainer.addEventListener('drop', async (ev) => {
+      rootContainer.addEventListener('drop', (ev) => {
         if (!draggedEntry || this.state.isReadOnly) return;
         ev.preventDefault();
         ev.stopPropagation();
-        const entryId = draggedEntry.dataset.entryId;
-        const sourceTab = draggedEntry.dataset.sourceTab || this.state.activeTab;
 
-        if (entryId) {
-          if (draggedEntry.parentNode !== rootContainer) {
-            rootContainer.appendChild(draggedEntry);
-          }
-          await this._saveDataRaw(sourceTab, entryId, "folderId", "");
-          this.render({ parts: ["content"] });
+        if (draggedEntry.parentNode !== rootContainer) {
+          rootContainer.appendChild(draggedEntry);
         }
       });
     }
