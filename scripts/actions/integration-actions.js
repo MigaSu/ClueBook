@@ -70,7 +70,7 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
       contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-scroll"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Quest")} <i class="fas ${statusIcon} cb-status-${entry.status}"></i></h3>`;
       
       if (entry.deadlineTimestamp && TimeService.isActive()) {
-        const formatted = this._formatSCTimestamp(entry.deadlineTimestamp).full;
+        const formatted = TimeService.formatTimestamp(entry.deadlineTimestamp).fullStr;
         if (entry.timeMode === "at") contentHTML += `<p><strong><i class="fas fa-clock"></i> ${game.i18n.localize("CLUEBOOK.AppActions.StrictlyAt")}:</strong> ${formatted}</p>`;
         else contentHTML += `<p><strong><i class="fas fa-hourglass-end"></i> ${game.i18n.localize("CLUEBOOK.AppActions.DoBy")}:</strong> ${formatted}</p>`;
       } else if (entry.deadline) {
@@ -110,7 +110,7 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
       window.ClueBookOverlay.show(contentHTML, entry, sourceTab);
     }
     
-    ui.notifications.info(game.i18n.localize("CLUEBOOK.AppActions.SentToOverlay"));
+    ui.notifications.info(game.i18n.localize("CLUEBOOK.AppActions.SentSuccess") || game.i18n.localize("CLUEBOOK.AppActions.SentToOverlay"));
   }
 
   static async _onViewImage(event, target) {

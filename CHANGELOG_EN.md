@@ -58,6 +58,9 @@ All notable changes, refactoring, and bug fixes are documented in this file.
 * **Optional Completion Time:** Added an optional "Specify completion time" field in the quest edit modal.
 
 ### 🎨 UI/UX Fixes & Stability
+* **Overlay Sharing Fix:** Resolved `_formatSCTimestamp is not a function` error when sharing cards with deadlines to players, and simplified the action button title to concise "Share".
+* **Double-Click Edit Isolation:** Double-clicking or rapid clicking on quest status badges no longer triggers the edit modal.
+* **Floating Portal Menu for Task Status:** Upgraded status selection dropdown to a floating fixed portal to prevent internal card scrolling and clipping.
 * **Dangling Link Labels Fix:** Connection lines and label badges are now strictly isolated to render only when both linked cards are actively visible on the board canvas.
 * **Smooth Geometric Zoom & Sync:** Upgraded board zoom to scale geometrically with full camera synchronization, impervious to concurrent data updates during mouse wheel rolling.
 * **Natural Link Word-Wrapping:** Fixed mid-word line breaking (`word-break: normal; overflow-wrap: break-word;`), ensuring links wrap between whole words rather than breaking arbitrary syllables across letters.
