@@ -575,20 +575,51 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
 
     const selectedCount = this.state.selectedEntries.size;
     const isSingle = selectedCount === 1;
+    const singleId = isSingle ? Array.from(this.state.selectedEntries)[0] : null;
+    const sourceTab = this.state.activeTab;
+    const singleEntry = singleId ? this._getWorkspaceData()?.[sourceTab]?.[singleId] : null;
 
     const menu = document.createElement('div');
     menu.className = 'cb-context-menu';
-    const rawHTML = `
-      ${isSingle ? `<div class="cb-menu-item" data-action="single-edit"><i class="fas fa-pencil-alt"></i> ${game.i18n.localize("CLUEBOOK.Entry.Edit")}</div>` : ''}
-      <div class="cb-menu-item" data-action="mass-edit"><i class="fas fa-palette"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Edit")} (${selectedCount})</div>
-      <div class="cb-menu-item" data-action="move-folder"><i class="fas fa-folder"></i> ${game.i18n.localize("CLUEBOOK.Folder.MoveToFolder")}</div>
-      <div class="cb-menu-separator"></div>
-      <div class="cb-menu-item" data-action="toggle-visibility"><i class="fas fa-eye-slash"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Visibility")}</div>
-      <div class="cb-menu-item" data-action="toggle-board"><i class="fas fa-project-diagram"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Board")}</div>
-      <div class="cb-menu-separator"></div>
-      <div class="cb-menu-item danger" data-action="delete"><i class="fas fa-trash"></i> ${game.i18n.localize("CLUEBOOK.Entry.Delete")} [Del]</div>
-    `;
-    menu.replaceChildren(...new DOMParser().parseFromString(rawHTML, "text/html").body.childNodes);
+
+    let menuHTML = '';
+    if (isSingle && singleEntry) {
+      menuHTML += `<div class="cb-menu-item" data-action="single-edit"><i class="fas fa-pencil-alt"></i> ${game.i18n.localize("CLUEBOOK.Entry.Edit")}</div>`;
+      if (singleEntry.actorUuid) {
+        menuHTML += `<div class="cb-menu-item" data-action="open-actor"><i class="fas fa-id-card"></i> ${game.i18n.localize("CLUEBOOK.Entry.OpenActorSheet")}</div>`;
+      }
+      if (singleEntry.sceneUuid) {
+        menuHTML += `<div class="cb-menu-item" data-action="activate-scene"><i class="fas fa-play"></i> ${game.i18n.localize("CLUEBOOK.Location.ActivateScene")}</div>`;
+      }
+      if (game.user.isGM) {
+        menuHTML += `<div class="cb-menu-item" data-action="share-overlay"><i class="fas fa-bullhorn"></i> ${game.i18n.localize("CLUEBOOK.AppActions.SentToOverlay")}</div>`;
+      }
+      if (this.getSettings()?.features?.enableTracker !== false && (sourceTab === "quests" || sourceTab === "timeline")) {
+        const isTracked = this._getTrackedEvents ? this._getTrackedEvents().includes(singleId) : false;
+        menuHTML += `<div class="cb-menu-item" data-action="toggle-track"><i class="fas fa-star"></i> ${isTracked ? (game.i18n.localize("CLUEBOOK.Tracker.Untrack") || "Снять отслеживание") : game.i18n.localize("CLUEBOOK.Tracker.ToggleTrack")}</div>`;
+      }
+      menuHTML += `<div class="cb-menu-item" data-action="mass-edit"><i class="fas fa-palette"></i> ${game.i18n.localize("CLUEBOOK.Edit.ChangeColor") || "Сменить цвет..."}</div>`;
+      menuHTML += `<div class="cb-menu-item" data-action="move-folder"><i class="fas fa-folder"></i> ${game.i18n.localize("CLUEBOOK.Folder.MoveToFolder")}</div>`;
+      menuHTML += `<div class="cb-menu-separator"></div>`;
+      if (game.user.isGM) {
+        menuHTML += `<div class="cb-menu-item" data-action="toggle-visibility"><i class="fas ${singleEntry.isHidden ? 'fa-eye' : 'fa-eye-slash'}"></i> ${game.i18n.localize("CLUEBOOK.Entry.Visibility")}</div>`;
+      }
+      menuHTML += `<div class="cb-menu-item" data-action="toggle-board"><i class="fas fa-project-diagram"></i> ${singleEntry.onBoard ? (game.i18n.localize("CLUEBOOK.Entry.RemoveFromBoard") || "Убрать с доски") : game.i18n.localize("CLUEBOOK.Entry.SendToBoard")}</div>`;
+      menuHTML += `<div class="cb-menu-separator"></div>`;
+      menuHTML += `<div class="cb-menu-item danger" data-action="delete"><i class="fas fa-trash"></i> ${game.i18n.localize("CLUEBOOK.Entry.Delete")} [Del]</div>`;
+    } else {
+      menuHTML += `<div class="cb-menu-item" data-action="mass-edit"><i class="fas fa-palette"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Edit")} (${selectedCount})</div>`;
+      menuHTML += `<div class="cb-menu-item" data-action="move-folder"><i class="fas fa-folder"></i> ${game.i18n.localize("CLUEBOOK.Folder.MoveToFolder")} (${selectedCount})</div>`;
+      menuHTML += `<div class="cb-menu-separator"></div>`;
+      if (game.user.isGM) {
+        menuHTML += `<div class="cb-menu-item" data-action="toggle-visibility"><i class="fas fa-eye-slash"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Visibility")}</div>`;
+      }
+      menuHTML += `<div class="cb-menu-item" data-action="toggle-board"><i class="fas fa-project-diagram"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Board")}</div>`;
+      menuHTML += `<div class="cb-menu-separator"></div>`;
+      menuHTML += `<div class="cb-menu-item danger" data-action="delete"><i class="fas fa-trash"></i> ${game.i18n.localize("CLUEBOOK.Entry.Delete")} (${selectedCount}) [Del]</div>`;
+    }
+
+    menu.replaceChildren(...new DOMParser().parseFromString(menuHTML, "text/html").body.childNodes);
 
     document.body.appendChild(menu);
 
@@ -621,13 +652,37 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
   async _executeListContextMenuAction(action) {
     const ids = Array.from(this.state.selectedEntries);
     if (ids.length < 1) return;
+    const entryId = ids[0];
+    const sourceTab = this.state.activeTab;
+    const entry = this._getWorkspaceData()?.[sourceTab]?.[entryId];
 
     if (action === 'delete') {
       return this._onDeleteGroup();
     } else if (action === 'single-edit') {
-      const entryId = ids[0];
       const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
       if (entryEl) this._openEditDialog(entryEl);
+    } else if (action === 'open-actor') {
+      if (entry?.actorUuid) {
+        const actor = await fromUuid(entry.actorUuid);
+        if (actor?.sheet) actor.sheet.render(true);
+      }
+    } else if (action === 'activate-scene') {
+      if (entry?.sceneUuid) {
+        const scene = await fromUuid(entry.sceneUuid);
+        if (scene) scene.view();
+      }
+    } else if (action === 'share-overlay') {
+      const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
+      if (entryEl) {
+        const btn = entryEl.querySelector('.btn-share') || entryEl;
+        this.constructor._onShareOverlay.call(this, null, btn);
+      }
+    } else if (action === 'toggle-track') {
+      const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
+      if (entryEl) {
+        const btn = entryEl.querySelector('.btn-track') || entryEl;
+        this.constructor._onToggleTrack.call(this, null, btn);
+      }
     } else if (action === 'move-folder') {
       return this._onMassMoveFolder(ids);
     } else if (action === 'toggle-visibility') {

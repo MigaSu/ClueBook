@@ -3,10 +3,10 @@
   {{#unless @root.isReadOnly}}
   <div class="entry-controls">
     {{#if @root.isGM}}
-    {{#if this.sceneUuid}}
+    {{#if (and this.sceneUuid (not @root.settings.hideSceneBtn))}}
     <a data-action="activateScene" data-scene-id="{{this.sceneUuid}}" class="btn-scene" title="{{localize "CLUEBOOK.Location.ActivateScene"}} ({{localize "CLUEBOOK.Location.ActivateSceneShift"}})"><i class="fas fa-play"></i></a>
     {{/if}}
-    {{#if this.actorUuid}}
+    {{#if (and this.actorUuid (not @root.settings.hideActorBtn))}}
     <a data-action="openActor" data-actor-id="{{this.actorUuid}}" class="btn-actor" title="{{localize "CLUEBOOK.Entry.OpenActorSheet"}}"><i class="fas fa-id-card"></i></a>
     {{/if}}
     {{#unless (or @root.settings.hideGMVisibilityBtn (eq this.sourceTab "labels") (eq this.sourceTab "pins"))}}
@@ -21,11 +21,11 @@
     <a data-action="viewImage" data-img-src="{{this.img}}" data-img-title="{{this.name}}" class="btn-view-image" title="{{localize "CLUEBOOK.Entry.ViewImage"}}"><i class="fas fa-search-plus"></i></a>
     {{/if}}
 
-    {{#unless @root.settings.features.hideEditBtn}}
+    {{#unless (or @root.settings.features.hideEditBtn @root.settings.hideEditBtn)}}
     <a data-action="toggleEdit" class="btn-edit" title="{{localize "CLUEBOOK.Entry.Edit"}}"><i class="fas fa-pencil-alt"></i></a>
     {{/unless}}
 
-    {{#if (and @root.enableTracker (or (eq this.sourceTab "quests") (eq this.sourceTab "timeline")))}}
+    {{#if (and @root.enableTracker (not @root.settings.hideTrackerBtn) (or (eq this.sourceTab "quests") (eq this.sourceTab "timeline")))}}
     <a data-action="toggleTrack" class="btn-track {{#if this.isTracked}}active{{/if}}" title="{{localize "CLUEBOOK.Tracker.ToggleTrack"}}"><i class="fas fa-star"></i></a>
     {{/if}}
 
@@ -43,7 +43,9 @@
     {{#unless @root.settings.hideSendToBoardBtn}}
     <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="{{localize "CLUEBOOK.Entry.SendToBoard"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-project-diagram"></i></a>
     {{/unless}}
+    {{#unless @root.settings.hideDeleteBtn}}
     <a data-action="deleteEntry" class="btn-delete" title="{{localize "CLUEBOOK.Entry.Delete"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-trash"></i></a>
+    {{/unless}}
     {{/if}}
   </div>
   {{/unless}}

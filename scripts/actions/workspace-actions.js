@@ -140,25 +140,74 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
               <input type="text" name="workspaceName" value="${currentName}" required autofocus class="setting-input cluebook-input" style="flex: 0 0 auto; max-width: 60%;">
             </div>
             ${accessHTML}
-            <div class="setting-row flex-checkbox" style="margin-top: 15px;">
-              <label for="cb-edit-ws-gm-vis">${game.i18n.localize("CLUEBOOK.Settings.HideGMVisibilityBtn")}</label>
+          </div>
+
+          <!-- Card Action Buttons Customization -->
+          <div class="settings-card">
+            <h3><i class="fas fa-toggle-on"></i> ${game.i18n.localize("CLUEBOOK.Settings.CategoryCardButtons")}</h3>
+            <p style="font-size:12px; color:var(--cb-text-muted); margin:0 0 10px 0;">${game.i18n.localize("CLUEBOOK.Settings.CardButtonsHint")}</p>
+            
+            <div class="setting-row flex-checkbox">
+              <label for="cb-btn-edit">${game.i18n.localize("CLUEBOOK.Settings.BtnEdit")}</label>
               <div class="cb-toggle">
-                <input type="checkbox" name="hideGMVisibilityBtn" id="cb-edit-ws-gm-vis" ${(settingsObj.hideGMVisibilityBtn === true) ? 'checked' : ''}>
-                <label for="cb-edit-ws-gm-vis"></label>
+                <input type="checkbox" name="showBtnEdit" id="cb-btn-edit" ${(!settingsObj.hideEditBtn) ? 'checked' : ''}>
+                <label for="cb-btn-edit"></label>
               </div>
             </div>
+
             <div class="setting-row flex-checkbox">
-              <label for="cb-edit-ws-gm-over">${game.i18n.localize("CLUEBOOK.Settings.HideGMOverlayBtn")}</label>
+              <label for="cb-btn-board">${game.i18n.localize("CLUEBOOK.Settings.BtnBoard")}</label>
               <div class="cb-toggle">
-                <input type="checkbox" name="hideGMOverlayBtn" id="cb-edit-ws-gm-over" ${(settingsObj.hideGMOverlayBtn === true) ? 'checked' : ''}>
-                <label for="cb-edit-ws-gm-over"></label>
+                <input type="checkbox" name="showBtnBoard" id="cb-btn-board" ${(!settingsObj.hideSendToBoardBtn) ? 'checked' : ''}>
+                <label for="cb-btn-board"></label>
               </div>
             </div>
+
             <div class="setting-row flex-checkbox">
-              <label for="cb-edit-ws-gm-send">${game.i18n.localize("CLUEBOOK.Settings.HideSendToBoardBtn")}</label>
+              <label for="cb-btn-track">${game.i18n.localize("CLUEBOOK.Settings.BtnTrack")}</label>
               <div class="cb-toggle">
-                <input type="checkbox" name="hideSendToBoardBtn" id="cb-edit-ws-gm-send" ${(settingsObj.hideSendToBoardBtn === true) ? 'checked' : ''}>
-                <label for="cb-edit-ws-gm-send"></label>
+                <input type="checkbox" name="showBtnTrack" id="cb-btn-track" ${(!settingsObj.hideTrackerBtn) ? 'checked' : ''}>
+                <label for="cb-btn-track"></label>
+              </div>
+            </div>
+
+            <div class="setting-row flex-checkbox">
+              <label for="cb-btn-actor">${game.i18n.localize("CLUEBOOK.Settings.BtnActor")}</label>
+              <div class="cb-toggle">
+                <input type="checkbox" name="showBtnActor" id="cb-btn-actor" ${(!settingsObj.hideActorBtn) ? 'checked' : ''}>
+                <label for="cb-btn-actor"></label>
+              </div>
+            </div>
+
+            <div class="setting-row flex-checkbox">
+              <label for="cb-btn-scene">${game.i18n.localize("CLUEBOOK.Settings.BtnScene")}</label>
+              <div class="cb-toggle">
+                <input type="checkbox" name="showBtnScene" id="cb-btn-scene" ${(!settingsObj.hideSceneBtn) ? 'checked' : ''}>
+                <label for="cb-btn-scene"></label>
+              </div>
+            </div>
+
+            <div class="setting-row flex-checkbox">
+              <label for="cb-btn-gm-vis">${game.i18n.localize("CLUEBOOK.Settings.BtnVisibility")}</label>
+              <div class="cb-toggle">
+                <input type="checkbox" name="showBtnVisibility" id="cb-btn-gm-vis" ${(!settingsObj.hideGMVisibilityBtn) ? 'checked' : ''}>
+                <label for="cb-btn-gm-vis"></label>
+              </div>
+            </div>
+
+            <div class="setting-row flex-checkbox">
+              <label for="cb-btn-gm-over">${game.i18n.localize("CLUEBOOK.Settings.BtnOverlay")}</label>
+              <div class="cb-toggle">
+                <input type="checkbox" name="showBtnOverlay" id="cb-btn-gm-over" ${(!settingsObj.hideGMOverlayBtn) ? 'checked' : ''}>
+                <label for="cb-btn-gm-over"></label>
+              </div>
+            </div>
+
+            <div class="setting-row flex-checkbox">
+              <label for="cb-btn-delete">${game.i18n.localize("CLUEBOOK.Settings.BtnDelete")}</label>
+              <div class="cb-toggle">
+                <input type="checkbox" name="showBtnDelete" id="cb-btn-delete" ${(!settingsObj.hideDeleteBtn) ? 'checked' : ''}>
+                <label for="cb-btn-delete"></label>
               </div>
             </div>
           </div>
@@ -274,16 +323,26 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
             if (!newName) return;
 
             const isReadOnly = form.elements.readOnly?.checked ?? false;
-            const hideGMVisibilityBtn = form.elements.hideGMVisibilityBtn?.checked ?? false;
-            const hideGMOverlayBtn = form.elements.hideGMOverlayBtn?.checked ?? false;
-            const hideSendToBoardBtn = form.elements.hideSendToBoardBtn?.checked ?? false;
+            const hideEditBtn = !(form.elements.showBtnEdit?.checked ?? true);
+            const hideSendToBoardBtn = !(form.elements.showBtnBoard?.checked ?? true);
+            const hideTrackerBtn = !(form.elements.showBtnTrack?.checked ?? true);
+            const hideActorBtn = !(form.elements.showBtnActor?.checked ?? true);
+            const hideSceneBtn = !(form.elements.showBtnScene?.checked ?? true);
+            const hideGMVisibilityBtn = !(form.elements.showBtnVisibility?.checked ?? true);
+            const hideGMOverlayBtn = !(form.elements.showBtnOverlay?.checked ?? true);
+            const hideDeleteBtn = !(form.elements.showBtnDelete?.checked ?? true);
             
             const updatedSettings = {
                 ...settingsObj,
                 readOnly: isReadOnly,
+                hideEditBtn: hideEditBtn,
+                hideSendToBoardBtn: hideSendToBoardBtn,
+                hideTrackerBtn: hideTrackerBtn,
+                hideActorBtn: hideActorBtn,
+                hideSceneBtn: hideSceneBtn,
                 hideGMVisibilityBtn: hideGMVisibilityBtn,
                 hideGMOverlayBtn: hideGMOverlayBtn,
-                hideSendToBoardBtn: hideSendToBoardBtn,
+                hideDeleteBtn: hideDeleteBtn,
                 theme: {
                   ...(settingsObj.theme || {}),
                   linkColor: form.elements.theme_linkColor?.value || '#ff5252',
