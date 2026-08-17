@@ -1,5 +1,7 @@
 # 🕵️ ClueBook
 
+![ClueBook](Screenshots/Title.png)
+
 [![Downloads](https://img.shields.io/github/downloads/MigaSu/ClueBook/total)](https://github.com/MigaSu/ClueBook/releases)
 [![Downloads Latest](https://img.shields.io/github/downloads/MigaSu/ClueBook/latest/total)](https://github.com/MigaSu/ClueBook/releases)
 [![Foundry V14](https://img.shields.io/badge/Foundry-v14%20Ready-7b61ff.svg)](https://foundryvtt.com)
