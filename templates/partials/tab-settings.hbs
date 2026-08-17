@@ -18,6 +18,69 @@
       </div>
 
       <div class="settings-card">
+        <h3><i class="fas fa-eye"></i> {{localize "CLUEBOOK.Settings.CategoryTabs"}}</h3>
+        <p style="font-size: 11px; opacity: 0.7; margin: 0 0 10px 0;">{{localize "CLUEBOOK.Settings.CategoryTabsHint"}}</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;">
+          <div class="setting-row flex-checkbox" style="padding: 0;">
+            <label style="font-size: 11px;"><i class="fas fa-search"></i> {{localize "CLUEBOOK.Tabs.Search"}}</label>
+            <div class="cb-toggle cb-toggle-small">
+              <input type="checkbox" class="setting-input" id="cb-tab-vis-search" data-key="hiddenTabs.search" {{#if (ne settings.hiddenTabs.search true)}}checked{{/if}} data-invert="true">
+              <label for="cb-tab-vis-search"></label>
+            </div>
+          </div>
+          <div class="setting-row flex-checkbox" style="padding: 0;">
+            <label style="font-size: 11px;"><i class="fas fa-sticky-note"></i> {{localize "CLUEBOOK.Tabs.Notes"}}</label>
+            <div class="cb-toggle cb-toggle-small">
+              <input type="checkbox" class="setting-input" id="cb-tab-vis-notes" data-key="hiddenTabs.notes" {{#if (ne settings.hiddenTabs.notes true)}}checked{{/if}} data-invert="true">
+              <label for="cb-tab-vis-notes"></label>
+            </div>
+          </div>
+          <div class="setting-row flex-checkbox" style="padding: 0;">
+            <label style="font-size: 11px;"><i class="fas fa-user"></i> {{localize "CLUEBOOK.Tabs.NPC"}}</label>
+            <div class="cb-toggle cb-toggle-small">
+              <input type="checkbox" class="setting-input" id="cb-tab-vis-npc" data-key="hiddenTabs.npc" {{#if (ne settings.hiddenTabs.npc true)}}checked{{/if}} data-invert="true">
+              <label for="cb-tab-vis-npc"></label>
+            </div>
+          </div>
+          <div class="setting-row flex-checkbox" style="padding: 0;">
+            <label style="font-size: 11px;"><i class="fas fa-map-marked-alt"></i> {{localize "CLUEBOOK.Tabs.Locations"}}</label>
+            <div class="cb-toggle cb-toggle-small">
+              <input type="checkbox" class="setting-input" id="cb-tab-vis-locations" data-key="hiddenTabs.locations" {{#if (ne settings.hiddenTabs.locations true)}}checked{{/if}} data-invert="true">
+              <label for="cb-tab-vis-locations"></label>
+            </div>
+          </div>
+          <div class="setting-row flex-checkbox" style="padding: 0;">
+            <label style="font-size: 11px;"><i class="fas fa-scroll"></i> {{localize "CLUEBOOK.Tabs.Quests"}}</label>
+            <div class="cb-toggle cb-toggle-small">
+              <input type="checkbox" class="setting-input" id="cb-tab-vis-quests" data-key="hiddenTabs.quests" {{#if (ne settings.hiddenTabs.quests true)}}checked{{/if}} data-invert="true">
+              <label for="cb-tab-vis-quests"></label>
+            </div>
+          </div>
+          <div class="setting-row flex-checkbox" style="padding: 0;">
+            <label style="font-size: 11px;"><i class="fas fa-clock"></i> {{localize "CLUEBOOK.Tabs.Timeline"}}</label>
+            <div class="cb-toggle cb-toggle-small">
+              <input type="checkbox" class="setting-input" id="cb-tab-vis-timeline" data-key="hiddenTabs.timeline" {{#if (ne settings.hiddenTabs.timeline true)}}checked{{/if}} data-invert="true">
+              <label for="cb-tab-vis-timeline"></label>
+            </div>
+          </div>
+          <div class="setting-row flex-checkbox" style="padding: 0;">
+            <label style="font-size: 11px;"><i class="fas fa-camera-retro"></i> {{localize "CLUEBOOK.Tabs.Gallery"}}</label>
+            <div class="cb-toggle cb-toggle-small">
+              <input type="checkbox" class="setting-input" id="cb-tab-vis-gallery" data-key="hiddenTabs.gallery" {{#if (ne settings.hiddenTabs.gallery true)}}checked{{/if}} data-invert="true">
+              <label for="cb-tab-vis-gallery"></label>
+            </div>
+          </div>
+          <div class="setting-row flex-checkbox" style="padding: 0;">
+            <label style="font-size: 11px;"><i class="fas fa-project-diagram"></i> {{localize "CLUEBOOK.Tabs.Board"}}</label>
+            <div class="cb-toggle cb-toggle-small">
+              <input type="checkbox" class="setting-input" id="cb-tab-vis-board" data-key="hiddenTabs.board" {{#if (ne settings.hiddenTabs.board true)}}checked{{/if}} data-invert="true">
+              <label for="cb-tab-vis-board"></label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-card">
         <h3><i class="fas fa-magic"></i> {{localize "CLUEBOOK.Settings.CategoryFAB"}}</h3>
 
         <div class="setting-row">

@@ -437,6 +437,8 @@
       "CategoryGlobal": "Global (Nur SL)",
       "CategoryIntegrations": "Integrationen",
       "CategoryInteraction": "Interaktion",
+      "CategoryTabs": "Reiter-Sichtbarkeit",
+      "CategoryTabsHint": "Inhaltliche Kategorien für diese Pinnwand aktivieren oder deaktivieren.",
       "CategoryTimeWidget": "Zeit-Widget",
       "CategoryTrackerWidget": "Tracker-Widget",
       "CategoryWidgets": "Widgets & Werkzeuge",

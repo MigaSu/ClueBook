@@ -213,6 +213,70 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
             </div>
           </div>
 
+          <!-- Tab Visibility -->
+          <div class="settings-card">
+            <h3><i class="fas fa-eye"></i> ${game.i18n.localize("CLUEBOOK.Settings.CategoryTabs")}</h3>
+            <p style="font-size: 11px; opacity: 0.7; margin: 0 0 10px 0;">${game.i18n.localize("CLUEBOOK.Settings.CategoryTabsHint")}</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;">
+              <div class="setting-row flex-checkbox" style="padding: 0;">
+                <label style="font-size: 11px;"><i class="fas fa-search"></i> ${game.i18n.localize("CLUEBOOK.Tabs.Search")}</label>
+                <div class="cb-toggle cb-toggle-small">
+                  <input type="checkbox" name="tab_search" id="cb-ws-tab-search" ${(!settingsObj.hiddenTabs?.search) ? 'checked' : ''}>
+                  <label for="cb-ws-tab-search"></label>
+                </div>
+              </div>
+              <div class="setting-row flex-checkbox" style="padding: 0;">
+                <label style="font-size: 11px;"><i class="fas fa-sticky-note"></i> ${game.i18n.localize("CLUEBOOK.Tabs.Notes")}</label>
+                <div class="cb-toggle cb-toggle-small">
+                  <input type="checkbox" name="tab_notes" id="cb-ws-tab-notes" ${(!settingsObj.hiddenTabs?.notes) ? 'checked' : ''}>
+                  <label for="cb-ws-tab-notes"></label>
+                </div>
+              </div>
+              <div class="setting-row flex-checkbox" style="padding: 0;">
+                <label style="font-size: 11px;"><i class="fas fa-user"></i> ${game.i18n.localize("CLUEBOOK.Tabs.NPC")}</label>
+                <div class="cb-toggle cb-toggle-small">
+                  <input type="checkbox" name="tab_npc" id="cb-ws-tab-npc" ${(!settingsObj.hiddenTabs?.npc) ? 'checked' : ''}>
+                  <label for="cb-ws-tab-npc"></label>
+                </div>
+              </div>
+              <div class="setting-row flex-checkbox" style="padding: 0;">
+                <label style="font-size: 11px;"><i class="fas fa-map-marked-alt"></i> ${game.i18n.localize("CLUEBOOK.Tabs.Locations")}</label>
+                <div class="cb-toggle cb-toggle-small">
+                  <input type="checkbox" name="tab_locations" id="cb-ws-tab-locations" ${(!settingsObj.hiddenTabs?.locations) ? 'checked' : ''}>
+                  <label for="cb-ws-tab-locations"></label>
+                </div>
+              </div>
+              <div class="setting-row flex-checkbox" style="padding: 0;">
+                <label style="font-size: 11px;"><i class="fas fa-scroll"></i> ${game.i18n.localize("CLUEBOOK.Tabs.Quests")}</label>
+                <div class="cb-toggle cb-toggle-small">
+                  <input type="checkbox" name="tab_quests" id="cb-ws-tab-quests" ${(!settingsObj.hiddenTabs?.quests) ? 'checked' : ''}>
+                  <label for="cb-ws-tab-quests"></label>
+                </div>
+              </div>
+              <div class="setting-row flex-checkbox" style="padding: 0;">
+                <label style="font-size: 11px;"><i class="fas fa-clock"></i> ${game.i18n.localize("CLUEBOOK.Tabs.Timeline")}</label>
+                <div class="cb-toggle cb-toggle-small">
+                  <input type="checkbox" name="tab_timeline" id="cb-ws-tab-timeline" ${(!settingsObj.hiddenTabs?.timeline) ? 'checked' : ''}>
+                  <label for="cb-ws-tab-timeline"></label>
+                </div>
+              </div>
+              <div class="setting-row flex-checkbox" style="padding: 0;">
+                <label style="font-size: 11px;"><i class="fas fa-camera-retro"></i> ${game.i18n.localize("CLUEBOOK.Tabs.Gallery")}</label>
+                <div class="cb-toggle cb-toggle-small">
+                  <input type="checkbox" name="tab_gallery" id="cb-ws-tab-gallery" ${(!settingsObj.hiddenTabs?.gallery) ? 'checked' : ''}>
+                  <label for="cb-ws-tab-gallery"></label>
+                </div>
+              </div>
+              <div class="setting-row flex-checkbox" style="padding: 0;">
+                <label style="font-size: 11px;"><i class="fas fa-project-diagram"></i> ${game.i18n.localize("CLUEBOOK.Tabs.Board")}</label>
+                <div class="cb-toggle cb-toggle-small">
+                  <input type="checkbox" name="tab_board" id="cb-ws-tab-board" ${(!settingsObj.hiddenTabs?.board) ? 'checked' : ''}>
+                  <label for="cb-ws-tab-board"></label>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Board Appearance -->
           <div class="settings-card">
             <h3><i class="fas fa-project-diagram"></i> ${game.i18n.localize("CLUEBOOK.Settings.CategoryBoardAppearance")}</h3>
@@ -344,6 +408,16 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
                 hideGMVisibilityBtn: hideGMVisibilityBtn,
                 hideGMOverlayBtn: hideGMOverlayBtn,
                 hideDeleteBtn: hideDeleteBtn,
+                hiddenTabs: {
+                  search: !(form.elements.tab_search?.checked ?? true),
+                  notes: !(form.elements.tab_notes?.checked ?? true),
+                  npc: !(form.elements.tab_npc?.checked ?? true),
+                  locations: !(form.elements.tab_locations?.checked ?? true),
+                  quests: !(form.elements.tab_quests?.checked ?? true),
+                  timeline: !(form.elements.tab_timeline?.checked ?? true),
+                  gallery: !(form.elements.tab_gallery?.checked ?? true),
+                  board: !(form.elements.tab_board?.checked ?? true)
+                },
                 theme: {
                   ...(settingsObj.theme || {}),
                   linkColor: form.elements.theme_linkColor?.value || '#ff5252',

@@ -350,6 +350,16 @@ export class ClueBookApp extends BaseApp {
     },
     widget: {
       direction: "up-right"
+    },
+    hiddenTabs: {
+      search: false,
+      notes: false,
+      npc: false,
+      locations: false,
+      quests: false,
+      timeline: false,
+      gallery: false,
+      board: false
     }
   };
 
@@ -364,7 +374,7 @@ export class ClueBookApp extends BaseApp {
     const features = { ...defaults.features, ...(localSettings.features || {}) };
     const widget = { ...defaults.widget, ...(localSettings.widget || {}) };
     
-    let defaultColors, readOnly, tags, showTagsToPlayers, hideGMVisibilityBtn, hideGMOverlayBtn, hideSendToBoardBtn;
+    let defaultColors, readOnly, tags, showTagsToPlayers, hideGMVisibilityBtn, hideGMOverlayBtn, hideSendToBoardBtn, hiddenTabs;
     
     if (this.state.activeWorkspace !== "personal") {
       const journal = this._getWorkspaceJournal();
@@ -376,6 +386,7 @@ export class ClueBookApp extends BaseApp {
       hideGMVisibilityBtn = sharedSettings.hideGMVisibilityBtn ?? false;
       hideGMOverlayBtn = sharedSettings.hideGMOverlayBtn ?? false;
       hideSendToBoardBtn = sharedSettings.hideSendToBoardBtn ?? false;
+      hiddenTabs = sharedSettings.hiddenTabs || {};
       
       // Override board-specific theme settings
       if (sharedSettings.theme) {
@@ -394,25 +405,43 @@ export class ClueBookApp extends BaseApp {
       hideGMVisibilityBtn = localSettings.hideGMVisibilityBtn ?? false;
       hideGMOverlayBtn = localSettings.hideGMOverlayBtn ?? false;
       hideSendToBoardBtn = localSettings.hideSendToBoardBtn ?? false;
+      hiddenTabs = localSettings.hiddenTabs || {};
     }
     
-    return { theme, features, defaultColors, widget, readOnly, tags, hideGMVisibilityBtn, hideGMOverlayBtn, hideSendToBoardBtn };
+    return { theme, features, defaultColors, widget, readOnly, tags, hideGMVisibilityBtn, hideGMOverlayBtn, hideSendToBoardBtn, hiddenTabs };
   }
 
+  static ALL_TABS = [
+    { id: "search", icon: "fas fa-search", label: "CLUEBOOK.Tabs.Search" },
+    { id: "notes", icon: "fas fa-sticky-note", label: "CLUEBOOK.Tabs.Notes" },
+    { id: "npc", icon: "fas fa-user", label: "CLUEBOOK.Tabs.NPC" },
+    { id: "locations", icon: "fas fa-map-marked-alt", label: "CLUEBOOK.Tabs.Locations" },
+    { id: "quests", icon: "fas fa-scroll", label: "CLUEBOOK.Tabs.Quests" },
+    { id: "timeline", icon: "fas fa-clock", label: "CLUEBOOK.Tabs.Timeline" },
+    { id: "gallery", icon: "fas fa-camera-retro", label: "CLUEBOOK.Tabs.Gallery" },
+    { id: "board", icon: "fas fa-project-diagram", label: "CLUEBOOK.Tabs.Board" }
+  ];
+
   /**
-   * Defines the tabs for the application
+   * Defines the tabs for the application with per-board visibility filtering
    */
   get tabs() {
-    return [
-      { id: "search", icon: "fas fa-search", label: game.i18n.localize("CLUEBOOK.Tabs.Search") },
-      { id: "notes", icon: "fas fa-sticky-note", label: game.i18n.localize("CLUEBOOK.Tabs.Notes") },
-      { id: "npc", icon: "fas fa-user", label: game.i18n.localize("CLUEBOOK.Tabs.NPC") },
-      { id: "locations", icon: "fas fa-map-marked-alt", label: game.i18n.localize("CLUEBOOK.Tabs.Locations") },
-      { id: "quests", icon: "fas fa-scroll", label: game.i18n.localize("CLUEBOOK.Tabs.Quests") },
-      { id: "timeline", icon: "fas fa-clock", label: game.i18n.localize("CLUEBOOK.Tabs.Timeline") },
-      { id: "gallery", icon: "fas fa-camera-retro", label: game.i18n.localize("CLUEBOOK.Tabs.Gallery") },
-      { id: "board", icon: "fas fa-project-diagram", label: game.i18n.localize("CLUEBOOK.Tabs.Board") }
-    ];
+    const settings = this.getSettings();
+    const hidden = settings.hiddenTabs || {};
+    const visible = ClueBookApp.ALL_TABS
+      .filter(t => !hidden[t.id])
+      .map(t => ({
+        id: t.id,
+        icon: t.icon,
+        label: game.i18n.localize(t.label)
+      }));
+
+    if (visible.length === 0) {
+      return [
+        { id: "notes", icon: "fas fa-sticky-note", label: game.i18n.localize("CLUEBOOK.Tabs.Notes") }
+      ];
+    }
+    return visible;
   }
 
 
@@ -1564,7 +1593,9 @@ export class ClueBookApp extends BaseApp {
         if (contentPane) this._savedScrollPos = contentPane.scrollTop;
 
         let value = target.value;
-        if (target.type === 'checkbox') value = target.checked;
+        if (target.type === 'checkbox') {
+          value = target.dataset.invert === 'true' ? !target.checked : target.checked;
+        }
         if (target.type === 'range') value = Number(target.value);
         saveSetting(this.state.isShared ? 'shared' : 'personal', key, value);
       });

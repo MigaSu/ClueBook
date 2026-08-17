@@ -442,6 +442,8 @@
       "CategoryGlobal": "Глобальные (Для Мастера)",
       "CategoryIntegrations": "Интеграции",
       "CategoryInteraction": "Взаимодействие",
+      "CategoryTabs": "Отображение вкладок",
+      "CategoryTabsHint": "Включите или отключите категории контента для этой доски.",
       "CategoryTimeWidget": "Виджет Времени",
       "CategoryTrackerWidget": "Виджет Трекера",
       "CategoryWidgets": "Виджеты и Инструменты",

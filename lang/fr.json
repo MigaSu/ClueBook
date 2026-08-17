@@ -442,6 +442,8 @@
       "CategoryGlobal": "Global (MJ Uniquement)",
       "CategoryIntegrations": "Intégrations",
       "CategoryInteraction": "Interaction",
+      "CategoryTabs": "Visibilité des onglets",
+      "CategoryTabsHint": "Activez ou désactivez les catégories de contenu pour ce tableau.",
       "CategoryTimeWidget": "Widget de temps",
       "CategoryTrackerWidget": "Widget de suivi",
       "CategoryWidgets": "Widgets & Outils",

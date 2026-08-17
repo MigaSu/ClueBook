@@ -102,7 +102,7 @@ Hooks.once("init", async () => {
           onClick: () => game.modules.get("ClueBook").api.openApp({}),
           button: true
         },
-        ...(settings.widget?.buttons?.notes !== false ? {
+        ...(settings.widget?.buttons?.notes !== false && !settings.hiddenTabs?.notes ? {
           addNote: {
             name: "addNote",
             title: game.i18n.localize("CLUEBOOK.Main.AddNote"),
@@ -111,7 +111,7 @@ Hooks.once("init", async () => {
             button: true
           }
         } : {}),
-        ...(settings.widget?.buttons?.npc !== false ? {
+        ...(settings.widget?.buttons?.npc !== false && !settings.hiddenTabs?.npc ? {
           addNpc: {
             name: "addNpc",
             title: game.i18n.localize("CLUEBOOK.Main.AddNPC"),
@@ -120,7 +120,7 @@ Hooks.once("init", async () => {
             button: true
           }
         } : {}),
-        ...(settings.widget?.buttons?.locations !== false ? {
+        ...(settings.widget?.buttons?.locations !== false && !settings.hiddenTabs?.locations ? {
           addLocation: {
             name: "addLocation",
             title: game.i18n.localize("CLUEBOOK.Main.AddLocation"),
@@ -129,7 +129,7 @@ Hooks.once("init", async () => {
             button: true
           }
         } : {}),
-        ...(settings.widget?.buttons?.quests !== false ? {
+        ...(settings.widget?.buttons?.quests !== false && !settings.hiddenTabs?.quests ? {
           addQuest: {
             name: "addQuest",
             title: game.i18n.localize("CLUEBOOK.Main.AddQuest"),
@@ -138,7 +138,7 @@ Hooks.once("init", async () => {
             button: true
           }
         } : {}),
-        ...(settings.widget?.buttons?.timeline !== false ? {
+        ...(settings.widget?.buttons?.timeline !== false && !settings.hiddenTabs?.timeline ? {
           addTimeline: {
             name: "addTimeline",
             title: game.i18n.localize("CLUEBOOK.Main.AddEvent"),
@@ -359,7 +359,8 @@ Hooks.once("ready", async () => {
       ];
       
       for (const b of buttons) {
-        if (currentSettings.widget?.buttons?.[b.key] !== false) {
+        const isTabHidden = currentSettings.hiddenTabs?.[b.key] === true;
+        if (currentSettings.widget?.buttons?.[b.key] !== false && !isTabHidden) {
           const a = document.createElement("a");
           a.className = "cb-fab-btn";
           a.dataset.type = b.type;

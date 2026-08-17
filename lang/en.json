@@ -442,6 +442,8 @@
       "CategoryGlobal": "Global (GM Only)",
       "CategoryIntegrations": "Integrations",
       "CategoryInteraction": "Interaction",
+      "CategoryTabs": "Tab Visibility",
+      "CategoryTabsHint": "Enable or disable content categories for this board.",
       "CategoryTimeWidget": "Time Widget",
       "CategoryTrackerWidget": "Tracker Widget",
       "CategoryWidgets": "Widgets & Tools",
