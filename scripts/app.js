@@ -3,6 +3,7 @@ import { ClueBookDatePicker } from "./date-picker.js";
 import { ClueBookEditDialog } from "./edit-dialog.js";
 import { TimeService } from "./services/time-service.js";
 import { TextEnrichmentService } from "./services/text-enrichment-service.js";
+import { UIService } from "./services/ui-service.js";
 import { ClueBookDataMixin } from "./app-data.js";
 import { ClueBookBoardMixin } from "./app-board.js";
 import { ClueBookTagManager } from "./tag-manager.js";
@@ -446,14 +447,7 @@ export class ClueBookApp extends BaseApp {
       let customStyle = "";
       let customIconStyle = "";
       if (isCustomColor) {
-        const hex = f.color.replace("#", "");
-        const rParsed = parseInt(hex.substring(0, 2), 16);
-        const gParsed = parseInt(hex.substring(2, 4), 16);
-        const bParsed = parseInt(hex.substring(4, 6), 16);
-        const r = isNaN(rParsed) ? 123 : rParsed;
-        const g = isNaN(gParsed) ? 97 : gParsed;
-        const b = isNaN(bParsed) ? 255 : bParsed;
-
+        const { r, g, b } = UIService.hexToRgb(f.color);
         if (r < 30 && g < 30 && b < 30) {
           customStyle = `background: rgba(0, 0, 0, 0.5) !important; border-color: rgba(255, 255, 255, 0.25) !important; --cb-folder-color: #ffffff;`;
           customIconStyle = `color: #ffffff !important;`;

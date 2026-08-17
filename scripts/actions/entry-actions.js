@@ -3,6 +3,7 @@ import { ClueBookSocket } from "../socket.js";
 import { ClueBookTagManager } from "../tag-manager.js";
 import { getForcedDeletion, getRandomPhotoTilt } from "../data-models.js";
 import { TimeService } from "../services/time-service.js";
+import { UIService } from "../services/ui-service.js";
 export const ClueBookEntryActionsMixin = (Base) => class extends Base {
   static async _onManageTags(event, target) {
     let journal = null;
@@ -82,73 +83,24 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     const sourceTab = entryEl.dataset.sourceTab || "quests";
     if (!entryId) return;
 
-    // Remove any existing floating status menu
-    const existingMenu = document.querySelector('.cb-quest-floating-menu');
-    if (existingMenu) {
-      const wasSame = existingMenu.dataset.entryId === entryId;
-      existingMenu.remove();
-      if (wasSame) return; // Toggle off
-    }
-
     const currentStatus = entryEl.dataset.questStatus || (badge.classList.contains('badge-completed') ? 'completed' : (badge.classList.contains('badge-failed') ? 'failed' : 'active'));
 
-    const menu = document.createElement('div');
-    menu.className = 'cb-quest-floating-menu';
-    menu.dataset.entryId = entryId;
-
-    const items = [
-      { status: 'active', icon: '⏳', label: game.i18n.localize('CLUEBOOK.Quest.Active') },
-      { status: 'completed', icon: '✅', label: game.i18n.localize('CLUEBOOK.Quest.Completed') },
-      { status: 'failed', icon: '❌', label: game.i18n.localize('CLUEBOOK.Quest.Failed') }
-    ];
-
-    items.forEach(item => {
-      const option = document.createElement('div');
-      option.className = `cb-dropdown-item ${currentStatus === item.status ? 'selected' : ''}`;
-      option.dataset.status = item.status;
-      option.innerHTML = `<span>${item.icon}</span> <span>${item.label}</span>`;
-      option.addEventListener('click', async (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-        menu.remove();
+    UIService.showFloatingMenu({
+      target: badge,
+      currentId: currentStatus,
+      minWidth: 160,
+      items: [
+        { id: 'active', iconText: '⏳', label: game.i18n.localize('CLUEBOOK.Quest.Active') },
+        { id: 'completed', iconText: '✅', label: game.i18n.localize('CLUEBOOK.Quest.Completed') },
+        { id: 'failed', iconText: '❌', label: game.i18n.localize('CLUEBOOK.Quest.Failed') }
+      ],
+      onSelect: async (item) => {
         await this._updateWorkspaceData({
-          [`flags.ClueBook.data.${sourceTab}.${entryId}.status`]: item.status
+          [`flags.ClueBook.data.${sourceTab}.${entryId}.status`]: item.id
         });
         this.render({ parts: ["content"] });
-      });
-      menu.appendChild(option);
-    });
-
-    document.body.appendChild(menu);
-
-    const rect = badge.getBoundingClientRect();
-    let top = rect.bottom + 4;
-    let left = rect.left;
-
-    // Boundary protection against window overflow
-    if (left + 160 > window.innerWidth) {
-      left = Math.max(10, window.innerWidth - 170);
-    }
-    if (top + 130 > window.innerHeight) {
-      top = Math.max(10, rect.top - 120);
-    }
-
-    menu.style.position = 'fixed';
-    menu.style.top = `${top}px`;
-    menu.style.left = `${left}px`;
-    menu.style.zIndex = '100000';
-
-    const closeFloatingMenu = (ev) => {
-      if (!menu.contains(ev.target) && !badge.contains(ev.target)) {
-        menu.remove();
-        document.removeEventListener('click', closeFloatingMenu);
-        document.removeEventListener('contextmenu', closeFloatingMenu);
       }
-    };
-    setTimeout(() => {
-      document.addEventListener('click', closeFloatingMenu);
-      document.addEventListener('contextmenu', closeFloatingMenu);
-    }, 10);
+    });
   }
 
   static async _onToggleSortMenu(event, target) {
@@ -162,63 +114,25 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
       ? (this.state.timelineSortMode || "chronological") 
       : (this.state.questSortMode || "chronological");
 
-    document.querySelectorAll('.cb-sort-floating-menu').forEach(el => el.remove());
-
-    const menu = document.createElement('div');
-    menu.className = 'cb-quest-floating-menu cb-sort-floating-menu';
-
-    const options = [
-      { id: "chronological", label: game.i18n.localize("CLUEBOOK.Sort.ChronologicalAsc"), icon: "fa-hourglass-start" },
-      { id: "chronological_desc", label: game.i18n.localize("CLUEBOOK.Sort.ChronologicalDesc"), icon: "fa-hourglass-end" },
-      { id: "manual", label: game.i18n.localize("CLUEBOOK.Sort.Manual"), icon: "fa-hand-paper" }
-    ];
-
-    options.forEach(opt => {
-      const item = document.createElement('div');
-      item.className = `cb-quest-menu-item ${opt.id === currentMode ? 'active' : ''}`;
-      item.innerHTML = `<i class="fas ${opt.icon}"></i> <span>${opt.label}</span>`;
-      item.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        menu.remove();
+    UIService.showFloatingMenu({
+      target,
+      currentId: currentMode,
+      minWidth: 220,
+      className: 'cb-sort-floating-menu',
+      items: [
+        { id: "chronological", label: game.i18n.localize("CLUEBOOK.Sort.ChronologicalAsc"), icon: "fa-hourglass-start" },
+        { id: "chronological_desc", label: game.i18n.localize("CLUEBOOK.Sort.ChronologicalDesc"), icon: "fa-hourglass-end" },
+        { id: "manual", label: game.i18n.localize("CLUEBOOK.Sort.Manual"), icon: "fa-hand-paper" }
+      ],
+      onSelect: (item) => {
         if (tab === "timeline") {
-          this.state.timelineSortMode = opt.id;
+          this.state.timelineSortMode = item.id;
         } else {
-          this.state.questSortMode = opt.id;
+          this.state.questSortMode = item.id;
         }
         this.render({ parts: ["content"] });
-      });
-      menu.appendChild(item);
-    });
-
-    document.body.appendChild(menu);
-
-    const rect = target.getBoundingClientRect();
-    let top = rect.bottom + 4;
-    let left = rect.left;
-
-    if (left + 220 > window.innerWidth) {
-      left = Math.max(10, window.innerWidth - 230);
-    }
-    if (top + 140 > window.innerHeight) {
-      top = Math.max(10, rect.top - 130);
-    }
-
-    menu.style.position = 'fixed';
-    menu.style.top = `${top}px`;
-    menu.style.left = `${left}px`;
-    menu.style.zIndex = '100000';
-
-    const closeFloatingMenu = (ev) => {
-      if (!menu.contains(ev.target) && !target.contains(ev.target)) {
-        menu.remove();
-        document.removeEventListener('click', closeFloatingMenu);
-        document.removeEventListener('contextmenu', closeFloatingMenu);
       }
-    };
-    setTimeout(() => {
-      document.addEventListener('click', closeFloatingMenu);
-      document.addEventListener('contextmenu', closeFloatingMenu);
-    }, 10);
+    });
   }
 
   static async _onToggleViewMenu(event, target) {
@@ -231,62 +145,24 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     const tabViewModes = game.user.getFlag("ClueBook", "tabViewModes") || this.state.tabViewModes || {};
     const currentMode = tabViewModes[tab] || "grid";
 
-    document.querySelectorAll('.cb-view-floating-menu').forEach(el => el.remove());
-
-    const menu = document.createElement('div');
-    menu.className = 'cb-quest-floating-menu cb-view-floating-menu';
-
-    const options = [
-      { id: "grid", label: game.i18n.localize("CLUEBOOK.View.Grid"), icon: "fa-th-large" },
-      { id: "compact", label: game.i18n.localize("CLUEBOOK.View.Compact"), icon: "fa-table" },
-      { id: "list", label: game.i18n.localize("CLUEBOOK.View.List"), icon: "fa-list-ul" }
-    ];
-
-    options.forEach(opt => {
-      const item = document.createElement('div');
-      item.className = `cb-quest-menu-item ${opt.id === currentMode ? 'active' : ''}`;
-      item.innerHTML = `<i class="fas ${opt.icon}"></i> <span>${opt.label}</span>`;
-      item.addEventListener('click', async (ev) => {
-        ev.stopPropagation();
-        menu.remove();
+    UIService.showFloatingMenu({
+      target,
+      currentId: currentMode,
+      minWidth: 190,
+      className: 'cb-view-floating-menu',
+      items: [
+        { id: "grid", label: game.i18n.localize("CLUEBOOK.View.Grid"), icon: "fa-th-large" },
+        { id: "compact", label: game.i18n.localize("CLUEBOOK.View.Compact"), icon: "fa-table" },
+        { id: "list", label: game.i18n.localize("CLUEBOOK.View.List"), icon: "fa-list-ul" }
+      ],
+      onSelect: async (item) => {
         this.state.tabViewModes = this.state.tabViewModes || {};
-        this.state.tabViewModes[tab] = opt.id;
-        const updatedModes = { ...(game.user.getFlag("ClueBook", "tabViewModes") || {}), [tab]: opt.id };
+        this.state.tabViewModes[tab] = item.id;
+        const updatedModes = { ...(game.user.getFlag("ClueBook", "tabViewModes") || {}), [tab]: item.id };
         await game.user.setFlag("ClueBook", "tabViewModes", updatedModes);
         this.render({ parts: ["content"] });
-      });
-      menu.appendChild(item);
-    });
-
-    document.body.appendChild(menu);
-
-    const rect = target.getBoundingClientRect();
-    let top = rect.bottom + 4;
-    let left = rect.left;
-
-    if (left + 190 > window.innerWidth) {
-      left = Math.max(10, window.innerWidth - 200);
-    }
-    if (top + 140 > window.innerHeight) {
-      top = Math.max(10, rect.top - 130);
-    }
-
-    menu.style.position = 'fixed';
-    menu.style.top = `${top}px`;
-    menu.style.left = `${left}px`;
-    menu.style.zIndex = '100000';
-
-    const closeFloatingMenu = (ev) => {
-      if (!menu.contains(ev.target) && !target.contains(ev.target)) {
-        menu.remove();
-        document.removeEventListener('click', closeFloatingMenu);
-        document.removeEventListener('contextmenu', closeFloatingMenu);
       }
-    };
-    setTimeout(() => {
-      document.addEventListener('click', closeFloatingMenu);
-      document.addEventListener('contextmenu', closeFloatingMenu);
-    }, 10);
+    });
   }
 
   static async _onTogglePin(event, target) {

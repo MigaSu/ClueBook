@@ -66,18 +66,9 @@ export class TrackerService {
     if (!data) return;
     
     const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
-    const processUUIDs = (text) => {
-      if (!text) return text;
-      const uuidRegex = /(?<!@UUID\[)(?<!\.)\b(?:Actor|Item|JournalEntry|JournalEntryPage|Scene|RollTable|Cards|Macro|Playlist|User)(?:\.[a-zA-Z0-9_-]+)+\b/g;
-      let newText = text.replace(uuidRegex, match => `@UUID[${match}]`);
-      const compendiumRegex = /(?<!@UUID\[)(?<!\.)\bCompendium\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+\b/g;
-      newText = newText.replace(compendiumRegex, match => `@UUID[${match}]`);
-      return newText;
-    };
-    
     const enrich = async (text) => {
       if (!text) return game.i18n.localize("CLUEBOOK.EntryDetails.Untitled");
-      let newText = await TE.enrichHTML(processUUIDs(text), { async: true });
+      let newText = await TE.enrichHTML(TextEnrichmentService.wrapBareUUIDs(text), { async: true });
       return TextEnrichmentService.enrichMentionsToHTML(newText);
     };
 

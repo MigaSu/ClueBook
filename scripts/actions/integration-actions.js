@@ -36,12 +36,8 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
     const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
     const processUUIDs = (text) => {
       if (!text) return text;
-      let newText = TextEnrichmentService.enrichMentionsToHTML(text);
-      const uuidRegex = /(?<!@UUID\[)(?<!\.)\b(?:Actor|Item|JournalEntry|JournalEntryPage|Scene|RollTable|Cards|Macro|Playlist|User)(?:\.[a-zA-Z0-9_-]+)+\b/g;
-      newText = newText.replace(uuidRegex, match => `@UUID[${match}]`);
-      const compendiumRegex = /(?<!@UUID\[)(?<!\.)\bCompendium\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+\b/g;
-      newText = newText.replace(compendiumRegex, match => `@UUID[${match}]`);
-      return newText;
+      let newText = TextEnrichmentService.wrapBareUUIDs(text);
+      return TextEnrichmentService.enrichMentionsToHTML(newText);
     };
     
     const enrich = async (t) => await TE.enrichHTML(processUUIDs(t), { async: true });

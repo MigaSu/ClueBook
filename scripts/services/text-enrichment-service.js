@@ -10,6 +10,21 @@ export class TextEnrichmentService {
    */
   static MENTION_REGEX = /\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g;
 
+  static BARE_UUID_REGEX = /(?<!@UUID\[)(?<!\.)\b(?:Actor|Item|JournalEntry|JournalEntryPage|Scene|RollTable|Cards|Macro|Playlist|User)(?:\.[a-zA-Z0-9_-]+)+\b/g;
+  static COMPENDIUM_UUID_REGEX = /(?<!@UUID\[)(?<!\.)\bCompendium\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+\b/g;
+
+  /**
+   * Wraps bare UUIDs and Compendium links into @UUID[...] syntax.
+   * @param {string} text 
+   * @returns {string}
+   */
+  static wrapBareUUIDs(text) {
+    if (!text || typeof text !== "string") return text;
+    let res = text.replace(this.BARE_UUID_REGEX, match => `@UUID[${match}]`);
+    res = res.replace(this.COMPENDIUM_UUID_REGEX, match => `@UUID[${match}]`);
+    return res;
+  }
+
   /**
    * Creates a standardized mention string.
    * @param {string} id 
