@@ -87,6 +87,21 @@
       "WhoHasAccess": "Who has access (You and GM always have access):",
       "WhoHasAccessPrompt": "Who has access (You and GM always have access):"
     },
+    "Board": {
+      "AlignCenter": "Align Center",
+      "AlignLeft": "Align Left",
+      "AlignRight": "Align Right",
+      "DistributeHorizontal": "Distribute Horizontally",
+      "DistributeVertical": "Distribute Vertically",
+      "FitAll": "Fit all cards to screen",
+      "LinkSettingsHint": "Click to configure link",
+      "PinsCount": "Cards on board",
+      "PinsCountHint": "Number of cards pinned on the board",
+      "Recenter": "Recenter",
+      "ResetZoom": "Reset zoom (100%)",
+      "ZoomIn": "Zoom In (+)",
+      "ZoomOut": "Zoom Out (-)"
+    },
     "Folder": {
       "AddEntry": "Create card in this folder",
       "AddFolder": "Add Folder",
@@ -415,6 +430,11 @@
       "Preview": "Preview",
       "Settings": "Settings"
     },
+    "Selection": {
+      "Clear": "Clear selection (Esc)",
+      "Count": "Selected: {selected} of {total}",
+      "Selected": "Selected cards:"
+    },
     "Settings": {
       "AboutBoostyText": "Support (Boosty)",
       "AboutBoostyTitle": "Support on Boosty",
@@ -502,6 +522,8 @@
       "ShowBtnTracker": "'Tracker' Button",
       "ShowCalendarWidget": "Show Time Widget (game clock)",
       "ShowHotkeys": "Show board hotkeys",
+      "ShowTabBadges": "Show counters on tabs",
+      "ShowTabBadgesHint": "Displays compact count badges on navigation tab icons.",
       "ShowTagsToPlayers": "Show tags to players (Board-wide)",
       "SnapToGrid": "Snap-to-Grid",
       "Timeline": "Timeline",

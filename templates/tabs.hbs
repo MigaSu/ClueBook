@@ -2,6 +2,9 @@
   {{#each tabs}}
     <a class="item {{#if (eq ../activeTab this.id)}}active{{/if}}" data-tab="{{this.id}}" title="{{this.label}}">
       <i class="{{this.icon}}"></i>
+      {{#if this.badge}}
+      <span class="cb-tab-badge">{{this.badge}}</span>
+      {{/if}}
     </a>
   {{/each}}
   <div class="mode-toggle">

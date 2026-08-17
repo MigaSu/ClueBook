@@ -87,6 +87,21 @@
       "WhoHasAccess": "Кто имеет доступ (Вы и Мастер всегда имеют доступ):",
       "WhoHasAccessPrompt": "Кто имеет доступ (Вы и Мастер всегда имеют доступ):"
     },
+    "Board": {
+      "AlignCenter": "Выровнять по центру",
+      "AlignLeft": "Выровнять по левому краю",
+      "AlignRight": "Выровнять по правому краю",
+      "DistributeHorizontal": "Распределить по горизонтали",
+      "DistributeVertical": "Распределить по вертикали",
+      "FitAll": "Вписать все карточки в экран",
+      "LinkSettingsHint": "Кликните для настройки связи",
+      "PinsCount": "Карточек на доске",
+      "PinsCountHint": "Количество карточек на интерактивной доске",
+      "Recenter": "Центрировать",
+      "ResetZoom": "Сбросить масштаб (100%)",
+      "ZoomIn": "Приблизить (+)",
+      "ZoomOut": "Отдалить (-)"
+    },
     "Folder": {
       "AddEntry": "Создать карточку в этой папке",
       "AddFolder": "Добавить папку",
@@ -415,6 +430,11 @@
       "Preview": "Предпросмотр",
       "Settings": "Настройки"
     },
+    "Selection": {
+      "Clear": "Снять выделение (Esc)",
+      "Count": "Выделено: {selected} из {total}",
+      "Selected": "Выделено карточек:"
+    },
     "Settings": {
       "AboutBoostyText": "Поддержать (Boosty)",
       "AboutBoostyTitle": "Поддержать на Boosty",
@@ -502,6 +522,8 @@
       "ShowBtnTracker": "Кнопка 'Трекер'",
       "ShowCalendarWidget": "Показывать виджет времени (игровые часы)",
       "ShowHotkeys": "Показывать подсказки на доске",
+      "ShowTabBadges": "Показывать счетчики на вкладках",
+      "ShowTabBadgesHint": "Отображает компактные бейджи с количеством карточек на иконках вкладок.",
       "ShowTagsToPlayers": "Показывать теги игрокам (На всей доске)",
       "SnapToGrid": "Привязка к сетке (Snap-to-Grid)",
       "Timeline": "Хронология",

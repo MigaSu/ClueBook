@@ -87,6 +87,21 @@
       "WhoHasAccess": "Qui a accès (Vous et le MJ ont toujours accès):",
       "WhoHasAccessPrompt": "Qui a accès (Vous et le MJ ont toujours accès):"
     },
+    "Board": {
+      "AlignCenter": "Centrer",
+      "AlignLeft": "Aligner à gauche",
+      "AlignRight": "Aligner à droite",
+      "DistributeHorizontal": "Distribuer horizontalement",
+      "DistributeVertical": "Distribuer verticalement",
+      "FitAll": "Ajuster toutes les cartes",
+      "LinkSettingsHint": "Cliquer pour configurer le lien",
+      "PinsCount": "Cartes sur le tableau",
+      "PinsCountHint": "Nombre de cartes épinglées",
+      "Recenter": "Recentrer",
+      "ResetZoom": "Réinitialiser le zoom (100%)",
+      "ZoomIn": "Zoomer (+)",
+      "ZoomOut": "Dézoomer (-)"
+    },
     "Folder": {
       "AddEntry": "Créer une carte dans ce dossier",
       "AddFolder": "Ajouter un dossier",
@@ -415,6 +430,11 @@
       "Preview": "Aperçu",
       "Settings": "Paramètres"
     },
+    "Selection": {
+      "Clear": "Effacer la sélection (Échap)",
+      "Count": "Sélectionné(s) : {selected} sur {total}",
+      "Selected": "Cartes sélectionnées :"
+    },
     "Settings": {
       "AboutBoostyText": "Support (Boosty)",
       "AboutBoostyTitle": "Support on Boosty",
@@ -501,7 +521,9 @@
       "ShowBtnTimeline": "Bouton 'Chronologie'",
       "ShowBtnTracker": "Bouton 'Tracker'",
       "ShowCalendarWidget": "Afficher le widget de temps (horloge du jeu)",
-      "ShowHotkeys": "Afficher les raccourcis du tableau",
+      "ShowHotkeys": "Afficher les raccourcis sur le tableau",
+      "ShowTabBadges": "Afficher les compteurs sur les onglets",
+      "ShowTabBadgesHint": "Affiche des badges de décompte compacts sur les icônes des onglets.",
       "ShowTagsToPlayers": "Afficher les tags pour les joueurs",
       "SnapToGrid": "Aligner sur la grille",
       "Timeline": "Chronologie",

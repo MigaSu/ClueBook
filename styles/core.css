@@ -79,6 +79,34 @@
   box-shadow: 0 0 8px var(--cb-accent-glow);
 }
 
+.cluebook-tabs .item .cb-tab-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--cb-accent, #7b61ff);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 17px;
+  height: 17px;
+  line-height: 17px;
+  border-radius: 9px;
+  padding: 0 4px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.cluebook-tabs .item.active .cb-tab-badge {
+  background: #ffffff;
+  color: var(--cb-accent, #7b61ff);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  border-color: #ffffff;
+}
+
 .cluebook-tabs .mode-toggle {
   margin-top: auto;
   border-top: 1px solid var(--cb-border);
@@ -423,6 +451,161 @@
   color: #fff;
   transform: scale(1.1);
   box-shadow: 0 0 15px var(--cb-accent-glow);
+}
+
+/* --- Floating Board HUD --- */
+.cb-board-hud {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(18, 21, 31, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  padding: 4px 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  user-select: none;
+}
+
+.cb-board-hud .cb-hud-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.cb-board-hud .cb-hud-badge i {
+  color: var(--cb-accent, #7b61ff);
+  font-size: 11px;
+}
+
+.cb-board-hud .cb-hud-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 2px;
+}
+
+.cb-board-hud .cb-hud-btn {
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.cb-board-hud .cb-hud-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.cb-board-hud .cb-hud-zoom-val {
+  width: auto;
+  border-radius: 12px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.cb-board-hud .cb-hud-btn-primary {
+  color: var(--cb-accent, #7b61ff);
+}
+
+.cb-board-hud .cb-hud-btn-primary:hover {
+  background: var(--cb-accent, #7b61ff);
+  color: #ffffff;
+  box-shadow: 0 0 10px var(--cb-accent-glow, rgba(123, 97, 255, 0.5));
+}
+
+/* --- Multi-Selection Floating HUD --- */
+.cb-selection-hud {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(18, 21, 31, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--cb-accent, #7b61ff);
+  border-radius: 30px;
+  padding: 8px 18px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), 0 0 15px var(--cb-accent-glow, rgba(123, 97, 255, 0.3));
+  animation: cbSlideUpFade 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+@keyframes cbSlideUpFade {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 15px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.cb-selection-hud-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.cb-selection-hud-info i {
+  color: var(--cb-accent, #7b61ff);
+}
+
+.cb-selection-count {
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.cb-selection-hud-clear {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.cb-selection-hud-clear:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  color: #ffffff;
+  transform: scale(1.1);
 }
 
 .cluebook-search-input:focus {

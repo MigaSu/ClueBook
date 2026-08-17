@@ -324,7 +324,8 @@ export class ClueBookApp extends BaseApp {
       boardShowSuggestedLinks: false,
       hideTags: false,
       hideTagsOnCards: false,
-      galleryAlwaysBelow: false
+      galleryAlwaysBelow: false,
+      showTabBadges: true
     },
     theme: {
       defaultWorkspace: "personal",
@@ -452,12 +453,30 @@ export class ClueBookApp extends BaseApp {
     const data = await this._prepareWorkspaceData(context);
     this._prepareUIState(context);
     
-    if (context.isSettings || context.isWorkspaces) {
-      context.showAddBtn = false;
-      context.isBoardView = false;
-      return context;
+    // Count board pins & tab counts
+    let boardPinCount = 0;
+    for (const tabKey of ["notes", "npc", "locations", "quests", "timeline", "gallery", "pins"]) {
+      boardPinCount += Object.values(data[tabKey] || {}).filter(e => e && !e._deleted && e.onBoard === true).length;
     }
-    
+    context.boardPinCount = boardPinCount;
+    context.boardZoomPercent = Math.round((this.state.camera?.zoom || 1) * 100);
+
+    const tabCounts = {
+      notes: Object.values(data.notes || {}).filter(e => e && !e._deleted).length,
+      npc: Object.values(data.npc || {}).filter(e => e && !e._deleted).length,
+      locations: Object.values(data.locations || {}).filter(e => e && !e._deleted).length,
+      quests: Object.values(data.quests || {}).filter(e => e && !e._deleted && (!e.status || e.status === "active")).length,
+      timeline: Object.values(data.timeline || {}).filter(e => e && !e._deleted).length,
+      gallery: Object.values(data.gallery || {}).filter(e => e && !e._deleted).length,
+      board: boardPinCount
+    };
+
+    const showBadges = context.settings?.features?.showTabBadges !== false;
+    context.tabs = context.tabs.map(t => ({
+      ...t,
+      badge: (showBadges && tabCounts[t.id] !== undefined && tabCounts[t.id] > 0) ? tabCounts[t.id] : null
+    }));
+
     const entries = await this._prepareEntriesForTab(context, data);
     this._processExplicitLinks(context, data, entries);
     this._processTags(context, entries);
@@ -1158,6 +1177,22 @@ export class ClueBookApp extends BaseApp {
             this.state.selectedEntryId = null;
             this.state.selectedEntries.clear();
             html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
+            this._updateSelectionHUD();
+          } else if (ev.key === "a" && (ev.ctrlKey || ev.metaKey)) {
+            ev.preventDefault();
+            const listContainer = html.querySelector('.entries-list');
+            if (listContainer) {
+              const visibleEntries = listContainer.querySelectorAll('.cluebook-entry:not([style*="display: none"])');
+              this.state.selectedEntries.clear();
+              visibleEntries.forEach(el => {
+                const id = el.dataset.entryId;
+                if (id) {
+                  this.state.selectedEntries.add(id);
+                  el.classList.add('is-selected');
+                }
+              });
+              this._updateSelectionHUD();
+            }
           }
         }
       });
@@ -1377,6 +1412,7 @@ export class ClueBookApp extends BaseApp {
                 this.state.selectedEntries.add(id);
                 allEntries[i].classList.add('is-selected');
              }
+             this._updateSelectionHUD();
           }
         } else if (ev.ctrlKey || ev.metaKey) {
           ev.preventDefault();
@@ -1390,6 +1426,7 @@ export class ClueBookApp extends BaseApp {
              this.state.selectedEntryId = entryId;
              lastSelectedListEntryId = entryId;
           }
+          this._updateSelectionHUD();
         } else {
           html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
           this.state.selectedEntries.clear();
@@ -1475,6 +1512,32 @@ export class ClueBookApp extends BaseApp {
       }
     });
 
+    // Wire Clear Selection in HUD
+    const clearSelectionBtn = html.querySelector('[data-action="clearSelection"]');
+    if (clearSelectionBtn) {
+      clearSelectionBtn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        this.state.selectedEntries.clear();
+        this.state.selectedEntryId = null;
+        html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
+        this._updateSelectionHUD();
+      });
+    }
+
+    // Click outside entries in non-board view to clear selection
+    if (!this.state.isBoardView) {
+      html.addEventListener('click', (ev) => {
+        if (!ev.target.closest('.cluebook-entry') && !ev.target.closest('.cb-context-menu') && !ev.target.closest('.cb-selection-hud') && !ev.target.closest('.cb-tab-toolbar')) {
+          if (this.state.selectedEntries.size > 0) {
+            this.state.selectedEntries.clear();
+            this.state.selectedEntryId = null;
+            html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
+            this._updateSelectionHUD();
+          }
+        }
+      });
+    }
+
     // Setup Board Interactivity
     if (this.state.activeTab === "board" && !this.state.searchQuery) {
       this._setupBoardInteractivity(html);
@@ -1487,6 +1550,22 @@ export class ClueBookApp extends BaseApp {
 
     // Setup Global Clipboard Paste (Ctrl+V)
     this._setupClipboardPaste(html);
+  }
+
+  /**
+   * Updates multi-selection floating HUD visibility and count
+   */
+  _updateSelectionHUD() {
+    const hud = this.element?.querySelector('.cb-selection-hud');
+    if (!hud) return;
+    const count = this.state.selectedEntries?.size || 0;
+    if (count > 1) {
+      hud.style.display = 'flex';
+      const countEl = hud.querySelector('.cb-selection-count');
+      if (countEl) countEl.textContent = count;
+    } else {
+      hud.style.display = 'none';
+    }
   }
 
   /**

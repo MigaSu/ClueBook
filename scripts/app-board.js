@@ -166,6 +166,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         syncCameraToState();
         applyTransform();
         persistCameraState();
+        updateHudZoom();
 
         this.state.isBoardInteracting = true;
         clearTimeout(wheelInteractionTimeout);
@@ -260,6 +261,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         if (!ev.shiftKey) {
           this.state.selectedEntries.clear();
           html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
+          this._updateSelectionHUD();
         }
         
         const rect = entriesList.getBoundingClientRect();
@@ -315,10 +317,18 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       } catch (e) {}
     });
 
-    // Recenter Button
-    const recenterBtn = this.element.querySelector('[data-action="recenterBoard"]');
-    if (recenterBtn) {
-      recenterBtn.addEventListener('click', (ev) => {
+    // --- Board HUD Controls ---
+    const updateHudZoom = () => {
+      const zoomText = board.querySelector('.cb-hud-zoom-text');
+      if (zoomText) zoomText.textContent = `${Math.round(currentZoom * 100)}%`;
+      const pinCountEl = board.querySelector('.cb-hud-pin-count');
+      if (pinCountEl) pinCountEl.textContent = cardMap.size;
+    };
+    updateHudZoom();
+
+    const fitAllBtn = this.element.querySelector('[data-action="fitAllToScreen"]');
+    if (fitAllBtn) {
+      fitAllBtn.addEventListener('click', (ev) => {
         ev.preventDefault();
         if (cardMap.size > 0) {
           let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -329,11 +339,22 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
             if (item.y + item.h > maxY) maxY = item.y + item.h;
           });
           if (minX !== Infinity) {
-            const centerX = minX + (maxX - minX) / 2;
-            const centerY = minY + (maxY - minY) / 2;
-            currentZoom = 0.5;
-            currentPanX = Math.round((board.offsetWidth / 2) - (centerX * currentZoom));
-            currentPanY = Math.round((board.offsetHeight / 2) - (centerY * currentZoom));
+            const boardW = board.offsetWidth || 800;
+            const boardH = board.offsetHeight || 600;
+            const contentW = (maxX - minX) + 160;
+            const contentH = (maxY - minY) + 160;
+            
+            const scaleX = boardW / contentW;
+            const scaleY = boardH / contentH;
+            let newZoom = Math.min(1.2, Math.max(0.15, Math.min(scaleX, scaleY)));
+            newZoom = Number(newZoom.toFixed(2));
+            
+            const contentCenterX = minX + (maxX - minX) / 2;
+            const contentCenterY = minY + (maxY - minY) / 2;
+            
+            currentZoom = newZoom;
+            currentPanX = Math.round((boardW / 2) - (contentCenterX * currentZoom));
+            currentPanY = Math.round((boardH / 2) - (contentCenterY * currentZoom));
           }
         } else {
           currentPanX = 0;
@@ -343,6 +364,60 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         syncCameraToState();
         applyTransform();
         persistCameraState();
+        updateHudZoom();
+      });
+    }
+
+    const zoomInBtn = this.element.querySelector('[data-action="zoomIn"]');
+    if (zoomInBtn) {
+      zoomInBtn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const boardW = board.offsetWidth || 800;
+        const boardH = board.offsetHeight || 600;
+        const newZoom = Math.min(3.0, Number((currentZoom * 1.2).toFixed(2)));
+        const scaleRatio = newZoom / currentZoom;
+        currentPanX = Math.round((boardW / 2) - ((boardW / 2) - currentPanX) * scaleRatio);
+        currentPanY = Math.round((boardH / 2) - ((boardH / 2) - currentPanY) * scaleRatio);
+        currentZoom = newZoom;
+        syncCameraToState();
+        applyTransform();
+        persistCameraState();
+        updateHudZoom();
+      });
+    }
+
+    const zoomOutBtn = this.element.querySelector('[data-action="zoomOut"]');
+    if (zoomOutBtn) {
+      zoomOutBtn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const boardW = board.offsetWidth || 800;
+        const boardH = board.offsetHeight || 600;
+        const newZoom = Math.max(0.1, Number((currentZoom * 0.833).toFixed(2)));
+        const scaleRatio = newZoom / currentZoom;
+        currentPanX = Math.round((boardW / 2) - ((boardW / 2) - currentPanX) * scaleRatio);
+        currentPanY = Math.round((boardH / 2) - ((boardH / 2) - currentPanY) * scaleRatio);
+        currentZoom = newZoom;
+        syncCameraToState();
+        applyTransform();
+        persistCameraState();
+        updateHudZoom();
+      });
+    }
+
+    const resetZoomBtn = this.element.querySelector('[data-action="resetZoom"]');
+    if (resetZoomBtn) {
+      resetZoomBtn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const boardW = board.offsetWidth || 800;
+        const boardH = board.offsetHeight || 600;
+        const scaleRatio = 1.0 / currentZoom;
+        currentPanX = Math.round((boardW / 2) - ((boardW / 2) - currentPanX) * scaleRatio);
+        currentPanY = Math.round((boardH / 2) - ((boardH / 2) - currentPanY) * scaleRatio);
+        currentZoom = 1;
+        syncCameraToState();
+        applyTransform();
+        persistCameraState();
+        updateHudZoom();
       });
     }
 
@@ -585,6 +660,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
             this.state.selectedEntries.add(entryId);
             entry.classList.add('is-selected');
           }
+          this._updateSelectionHUD();
           ev.preventDefault();
           return;
         }
@@ -607,6 +683,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
           board.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
           this.state.selectedEntries.add(entryId);
           entry.classList.add('is-selected');
+          this._updateSelectionHUD();
         }
 
         // Bring to front on select (only for unpinned cards)
@@ -768,6 +845,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
           this.lassoBox.remove();
           this.lassoBox = null;
         }
+        this._updateSelectionHUD();
       }
 
       if (draggedEntry && activeDragItems && activeDragItems.length > 0) {

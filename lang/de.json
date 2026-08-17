@@ -87,6 +87,21 @@
       "WhoHasAccess": "Wer hat Zugang (Sie und der SL haben immer Zugang):",
       "WhoHasAccessPrompt": "Wer hat Zugang (Sie und der SL haben immer Zugang):"
     },
+    "Board": {
+      "AlignCenter": "Zentrieren",
+      "AlignLeft": "Linksbündig",
+      "AlignRight": "Rechtsbündig",
+      "DistributeHorizontal": "Horizontal verteilen",
+      "DistributeVertical": "Vertikal verteilen",
+      "FitAll": "Alle Karten einpassen",
+      "LinkSettingsHint": "Klicken, um Verbindung anzupassen",
+      "PinsCount": "Karten auf der Pinnwand",
+      "PinsCountHint": "Anzahl der angehefteten Karten",
+      "Recenter": "Zentrieren",
+      "ResetZoom": "Zoom zurücksetzen (100%)",
+      "ZoomIn": "Vergrößern (+)",
+      "ZoomOut": "Verkleinern (-)"
+    },
     "Folder": {
       "AddEntry": "Karte in diesem Ordner erstellen",
       "AddFolder": "Ordner hinzufügen",
@@ -410,6 +425,11 @@
       "Preview": "Vorschau",
       "Settings": "Einstellungen"
     },
+    "Selection": {
+      "Clear": "Auswahl aufheben (Esc)",
+      "Count": "Ausgewählt: {selected} von {total}",
+      "Selected": "Ausgewählte Karten:"
+    },
     "Settings": {
       "AboutBoostyText": "Support (Boosty)",
       "AboutBoostyTitle": "Support on Boosty",
@@ -496,7 +516,9 @@
       "ShowBtnTimeline": "'Zeitachse' Taste",
       "ShowBtnTracker": "'Tracker' Taste",
       "ShowCalendarWidget": "Zeit-Widget anzeigen (Spieluhr)",
-      "ShowHotkeys": "Board-Tastenkürzel anzeigen",
+      "ShowHotkeys": "Tastenkombinationen anzeigen",
+      "ShowTabBadges": "Zähler auf Reitern anzeigen",
+      "ShowTabBadgesHint": "Zeigt kompakte Zähler auf den Navigationssymbolen an.",
       "ShowTagsToPlayers": "Tags für Spieler anzeigen (Gesamtes Board)",
       "SnapToGrid": "Am Raster ausrichten",
       "Timeline": "Zeitleiste",

@@ -15,6 +15,13 @@
           <label>{{localize "CLUEBOOK.Settings.Opacity"}}</label>
           <input type="range" class="setting-input" data-key="theme.opacity" min="40" max="100" value="{{settings.theme.opacity}}">
         </div>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.ShowTabBadges"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-tab-badges" data-key="features.showTabBadges" {{#if (ne settings.features.showTabBadges false)}}checked{{/if}}>
+            <label for="cb-sw-tab-badges"></label>
+          </div>
+        </div>
       </div>
 
       <div class="settings-card">
