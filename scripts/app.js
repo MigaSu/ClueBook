@@ -1365,6 +1365,9 @@ export class ClueBookApp extends BaseApp {
         this.state.searchQuery = "";
         this.state.searchTags = [];
         this.state.editingEntryId = null;
+        this.state.selectedEntries.clear();
+        this.state.selectedEntryId = null;
+        this._updateSelectionHUD();
         const tab = ev.currentTarget.dataset.tab;
         this.state.activeTab = tab;
         
@@ -1458,19 +1461,27 @@ export class ClueBookApp extends BaseApp {
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(ev.target.tagName)) return;
 
         const entryId = entry.dataset.entryId;
-        if (!this.state.selectedEntries.has(entryId)) {
-           html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
-           this.state.selectedEntries.clear();
-           this.state.selectedEntries.add(entryId);
-           entry.classList.add('is-selected');
-           this.state.selectedEntryId = entryId;
-           lastSelectedListEntryId = entryId;
+        // Right-clicking without Shift/Ctrl/Meta selects ONLY this single card
+        if (!ev.shiftKey && !ev.ctrlKey && !ev.metaKey) {
+          html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
+          this.state.selectedEntries.clear();
+          this.state.selectedEntries.add(entryId);
+          entry.classList.add('is-selected');
+          this.state.selectedEntryId = entryId;
+          lastSelectedListEntryId = entryId;
+          this._updateSelectionHUD();
+        } else if (!this.state.selectedEntries.has(entryId)) {
+          this.state.selectedEntries.add(entryId);
+          entry.classList.add('is-selected');
+          this.state.selectedEntryId = entryId;
+          lastSelectedListEntryId = entryId;
+          this._updateSelectionHUD();
         }
 
         if (this.state.selectedEntries.size >= 1 && this._showListContextMenu) {
-           ev.preventDefault();
-           ev.stopPropagation();
-           this._showListContextMenu(ev);
+          ev.preventDefault();
+          ev.stopPropagation();
+          this._showListContextMenu(ev);
         }
       });
       

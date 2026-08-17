@@ -6,7 +6,7 @@ import { TextEnrichmentService } from "../services/text-enrichment-service.js";
 
 export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
   static async _onShareOverlay(event, target) {
-    event.stopPropagation();
+    if (event?.stopPropagation) event.stopPropagation();
     const entryElement = target.closest('.cluebook-entry');
     const entryId = entryElement.dataset.entryId;
     const sourceTab = entryElement.dataset.sourceTab || this.state.activeTab;

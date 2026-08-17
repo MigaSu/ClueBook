@@ -544,7 +544,6 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
         const isTracked = this._getTrackedEvents ? this._getTrackedEvents().includes(singleId) : false;
         menuHTML += `<div class="cb-menu-item" data-action="toggle-track"><i class="fas fa-star"></i> ${isTracked ? game.i18n.localize("CLUEBOOK.Tracker.Untrack") : game.i18n.localize("CLUEBOOK.Tracker.ToggleTrack")}</div>`;
       }
-      menuHTML += `<div class="cb-menu-item" data-action="mass-edit"><i class="fas fa-palette"></i> ${game.i18n.localize("CLUEBOOK.Edit.ChangeColor")}</div>`;
       menuHTML += `<div class="cb-menu-item" data-action="move-folder"><i class="fas fa-folder"></i> ${game.i18n.localize("CLUEBOOK.Folder.MoveToFolder")}</div>`;
       menuHTML += `<div class="cb-menu-separator"></div>`;
       if (game.user.isGM) {
@@ -606,7 +605,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
       return this._onDeleteGroup();
     } else if (action === 'single-edit') {
       const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
-      if (entryEl) this._openEditDialog(entryEl);
+      if (entryEl) this.constructor._onEditEntry.call(this, null, entryEl);
     } else if (action === 'open-actor') {
       if (entry?.actorUuid) {
         const actor = await fromUuid(entry.actorUuid);
@@ -620,14 +619,12 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     } else if (action === 'share-overlay') {
       const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
       if (entryEl) {
-        const btn = entryEl.querySelector('.btn-share') || entryEl;
-        this.constructor._onShareOverlay.call(this, null, btn);
+        this.constructor._onShareOverlay.call(this, null, entryEl);
       }
     } else if (action === 'toggle-track') {
       const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
       if (entryEl) {
-        const btn = entryEl.querySelector('.btn-track') || entryEl;
-        this.constructor._onToggleTrack.call(this, null, btn);
+        this.constructor._onToggleTrack.call(this, null, entryEl);
       }
     } else if (action === 'move-folder') {
       return this._onMassMoveFolder(ids);
