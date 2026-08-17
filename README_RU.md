@@ -1,6 +1,7 @@
 [![Downloads](https://img.shields.io/github/downloads/MigaSu/ClueBook/total)](https://github.com/MigaSu/ClueBook/releases)
 [![Downloads Latest](https://img.shields.io/github/downloads/MigaSu/ClueBook/latest/total)](https://github.com/MigaSu/ClueBook/releases)
 [![Foundry V14](https://img.shields.io/badge/Foundry-v14%20Ready-7b61ff.svg)](https://foundryvtt.com)
+[![Boosty](https://img.shields.io/badge/Boosty-Support-f15f2c.svg)](https://boosty.to/migasu)
 
 **Manifest URL:** `https://github.com/MigaSu/ClueBook/releases/latest/download/module.json`
 
