@@ -33,26 +33,9 @@
   {{/if}}
 
   {{#if isBoardView}}
-  <div class="cb-board-hud">
-    <div class="cb-hud-badge" title="{{localize 'CLUEBOOK.Board.PinsCountHint'}}">
-      <i class="fas fa-thumbtack"></i>
-      <span class="cb-hud-pin-count">{{boardPinCount}}</span>
-    </div>
-    <div class="cb-hud-divider"></div>
-    <button type="button" class="cb-hud-btn" data-action="zoomOut" title="{{localize 'CLUEBOOK.Board.ZoomOut'}}">
-      <i class="fas fa-minus"></i>
-    </button>
-    <button type="button" class="cb-hud-btn cb-hud-zoom-val" data-action="resetZoom" title="{{localize 'CLUEBOOK.Board.ResetZoom'}}">
-      <span class="cb-hud-zoom-text">{{boardZoomPercent}}%</span>
-    </button>
-    <button type="button" class="cb-hud-btn" data-action="zoomIn" title="{{localize 'CLUEBOOK.Board.ZoomIn'}}">
-      <i class="fas fa-plus"></i>
-    </button>
-    <div class="cb-hud-divider"></div>
-    <button type="button" class="cb-hud-btn cb-hud-btn-primary" data-action="fitAllToScreen" title="{{localize 'CLUEBOOK.Board.FitAll'}}">
-      <i class="fas fa-crosshairs"></i>
-    </button>
-  </div>
+  <button class="board-recenter-btn" title="{{localize "CLUEBOOK.Board.Recenter"}}" data-action="recenterBoard">
+    <i class="fas fa-crosshairs"></i>
+  </button>
   {{/if}}
 
   {{#unless (or isBoardView (eq activeTab "gallery"))}}

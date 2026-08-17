@@ -166,7 +166,6 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         syncCameraToState();
         applyTransform();
         persistCameraState();
-        updateHudZoom();
 
         this.state.isBoardInteracting = true;
         clearTimeout(wheelInteractionTimeout);
@@ -317,18 +316,10 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       } catch (e) {}
     });
 
-    // --- Board HUD Controls ---
-    const updateHudZoom = () => {
-      const zoomText = board.querySelector('.cb-hud-zoom-text');
-      if (zoomText) zoomText.textContent = `${Math.round(currentZoom * 100)}%`;
-      const pinCountEl = board.querySelector('.cb-hud-pin-count');
-      if (pinCountEl) pinCountEl.textContent = cardMap.size;
-    };
-    updateHudZoom();
-
-    const fitAllBtn = this.element.querySelector('[data-action="fitAllToScreen"]');
-    if (fitAllBtn) {
-      fitAllBtn.addEventListener('click', (ev) => {
+    // Recenter Button (Fit all & center)
+    const recenterBtn = this.element.querySelector('[data-action="recenterBoard"]');
+    if (recenterBtn) {
+      recenterBtn.addEventListener('click', (ev) => {
         ev.preventDefault();
         if (cardMap.size > 0) {
           let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -364,60 +355,6 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         syncCameraToState();
         applyTransform();
         persistCameraState();
-        updateHudZoom();
-      });
-    }
-
-    const zoomInBtn = this.element.querySelector('[data-action="zoomIn"]');
-    if (zoomInBtn) {
-      zoomInBtn.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        const boardW = board.offsetWidth || 800;
-        const boardH = board.offsetHeight || 600;
-        const newZoom = Math.min(3.0, Number((currentZoom * 1.2).toFixed(2)));
-        const scaleRatio = newZoom / currentZoom;
-        currentPanX = Math.round((boardW / 2) - ((boardW / 2) - currentPanX) * scaleRatio);
-        currentPanY = Math.round((boardH / 2) - ((boardH / 2) - currentPanY) * scaleRatio);
-        currentZoom = newZoom;
-        syncCameraToState();
-        applyTransform();
-        persistCameraState();
-        updateHudZoom();
-      });
-    }
-
-    const zoomOutBtn = this.element.querySelector('[data-action="zoomOut"]');
-    if (zoomOutBtn) {
-      zoomOutBtn.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        const boardW = board.offsetWidth || 800;
-        const boardH = board.offsetHeight || 600;
-        const newZoom = Math.max(0.1, Number((currentZoom * 0.833).toFixed(2)));
-        const scaleRatio = newZoom / currentZoom;
-        currentPanX = Math.round((boardW / 2) - ((boardW / 2) - currentPanX) * scaleRatio);
-        currentPanY = Math.round((boardH / 2) - ((boardH / 2) - currentPanY) * scaleRatio);
-        currentZoom = newZoom;
-        syncCameraToState();
-        applyTransform();
-        persistCameraState();
-        updateHudZoom();
-      });
-    }
-
-    const resetZoomBtn = this.element.querySelector('[data-action="resetZoom"]');
-    if (resetZoomBtn) {
-      resetZoomBtn.addEventListener('click', (ev) => {
-        ev.preventDefault();
-        const boardW = board.offsetWidth || 800;
-        const boardH = board.offsetHeight || 600;
-        const scaleRatio = 1.0 / currentZoom;
-        currentPanX = Math.round((boardW / 2) - ((boardW / 2) - currentPanX) * scaleRatio);
-        currentPanY = Math.round((boardH / 2) - ((boardH / 2) - currentPanY) * scaleRatio);
-        currentZoom = 1;
-        syncCameraToState();
-        applyTransform();
-        persistCameraState();
-        updateHudZoom();
       });
     }
 
