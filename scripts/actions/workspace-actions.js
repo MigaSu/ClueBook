@@ -110,17 +110,22 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
       game.users.forEach(u => {
         if (u.id === game.user.id || u.isGM) return; // Self and GM always have access
         const hasAccess = currentOwnership[u.id] === 3;
-        userCheckboxes += `<label style="display:block; margin-bottom: 5px;"><input type="checkbox" name="user_${u.id}" ${hasAccess ? 'checked' : ''}> ${u.name}</label>`;
+        userCheckboxes += `
+          <label style="display:flex; align-items:center; gap:8px; margin-bottom:6px; cursor:pointer; font-size:13px; color:#fff;">
+            <input type="checkbox" name="user_${u.id}" ${hasAccess ? 'checked' : ''} style="margin:0; width:16px; height:16px; cursor:pointer;">
+            <span>${u.name}</span>
+          </label>
+        `;
       });
 
       accessHTML = `
-            <div class="form-group" style="margin-top: 10px;">
-              <label>${game.i18n.localize("CLUEBOOK.AppActions.WhoHasAccess")}</label>
-              <div style="max-height: 120px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 5px; margin-top: 5px; font-size: 13px;">
-                ${userCheckboxes || game.i18n.localize("CLUEBOOK.AppActions.NoOtherPlayers")}
+            <div class="form-group" style="margin-top: 12px;">
+              <label style="font-size: 13px; font-weight: 500; margin-bottom: 6px; display: block; color: var(--cb-text);">${game.i18n.localize("CLUEBOOK.AppActions.WhoHasAccess")}</label>
+              <div style="max-height: 140px; overflow-y: auto; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.12); padding: 10px; border-radius: 6px; font-size: 13px;">
+                ${userCheckboxes || `<span style="opacity:0.6; color:#cbd5e1;">${game.i18n.localize("CLUEBOOK.AppActions.NoOtherPlayers")}</span>`}
               </div>
             </div>
-            <div class="setting-row flex-checkbox" style="margin-top: 15px;">
+            <div class="setting-row flex-checkbox" style="margin-top: 14px;">
               <label for="cb-edit-ws-readonly">${game.i18n.localize("CLUEBOOK.AppActions.ReadOnlyForPlayers")}</label>
               <div class="cb-toggle">
                 <input type="checkbox" name="readOnly" id="cb-edit-ws-readonly" ${settingsObj.readOnly ? 'checked' : ''}>
@@ -132,7 +137,7 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
 
     const content = `
       <form class="cluebook-board-settings-form">
-        <div class="settings-grid" style="grid-template-columns: 1fr; max-height: 50vh; overflow-y: auto;">
+        <div class="settings-grid" style="grid-template-columns: 1fr; max-height: 60vh; overflow-y: auto; padding: 4px;">
           <!-- Access & General -->
           <div class="settings-card">
             <h3><i class="fas fa-lock"></i> ${game.i18n.localize("CLUEBOOK.Settings.CategoryAccess")}</h3>
@@ -374,7 +379,13 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
     `;
 
     new foundry.applications.api.DialogV2({
-      window: { title: game.i18n.localize("CLUEBOOK.AppActions.BoardSettings") },
+      classes: ["cluebook-window", "cluebook-board-settings-dialog"],
+      window: { 
+        title: game.i18n.localize("CLUEBOOK.AppActions.BoardSettings"),
+        icon: "fas fa-cog",
+        resizable: true
+      },
+      position: { width: 620, height: "auto" },
       content: content,
       buttons: [
         {

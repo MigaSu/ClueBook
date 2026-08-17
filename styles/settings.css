@@ -220,3 +220,43 @@
 .cluebook-window .cb-toggle input:checked + label:before {
   transform: translateX(14px);
 }
+
+/* --- Board Settings Modal Dialog --- */
+.cluebook-window.cluebook-board-settings-dialog {
+  background: #141724 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(123, 97, 255, 0.3) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7) !important;
+  border-radius: 12px !important;
+}
+
+.cluebook-window.cluebook-board-settings-dialog .window-content {
+  background: transparent !important;
+  padding: 14px 18px !important;
+}
+
+.cluebook-window.cluebook-board-settings-dialog .settings-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+
+.cluebook-window.cluebook-board-settings-dialog .settings-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  padding: 14px !important;
+}
+
+.cluebook-window.cluebook-board-settings-dialog .settings-card h3 {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: #93c5fd !important;
+  margin: 0 0 12px 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding-bottom: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
