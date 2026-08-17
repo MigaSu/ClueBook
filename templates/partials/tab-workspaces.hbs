@@ -13,6 +13,10 @@
           {{/each}}
         </select>
         
+        <button type="button" data-action="toggleFavoriteWorkspace" data-workspace-id="{{activeWorkspace}}" title="{{#if isFavoriteActiveWorkspace}}{{localize 'CLUEBOOK.Workspaces.RemoveFavorite'}}{{else}}{{localize 'CLUEBOOK.Workspaces.Favorite'}}{{/if}}" style="flex: 0 0 auto; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; background: {{#if isFavoriteActiveWorkspace}}rgba(255, 215, 0, 0.2){{else}}rgba(255,255,255,0.1){{/if}}; border: 1px solid {{#if isFavoriteActiveWorkspace}}rgba(255, 215, 0, 0.5){{else}}rgba(255,255,255,0.2){{/if}}; color: {{#if isFavoriteActiveWorkspace}}#ffd700{{else}}rgba(255,255,255,0.7){{/if}}; border-radius: 6px;">
+          <i class="{{#if isFavoriteActiveWorkspace}}fas{{else}}far{{/if}} fa-star"></i>
+        </button>
+
         <button type="button" data-action="editWorkspace" title="{{localize "CLUEBOOK.Settings.EditWorkspace"}}" style="flex: 0 0 auto; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;">
           <i class="fas fa-cog"></i>
         </button>

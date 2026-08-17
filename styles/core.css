@@ -15,7 +15,96 @@
 }
 
 
-/* --- Application Window --- */
+/* --- Application Window & Header --- */
+.cluebook-window .window-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.cluebook-window .cb-header-boards {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  margin-right: auto;
+  max-width: calc(100% - 220px);
+  overflow: hidden;
+  height: 28px;
+}
+
+.cluebook-window .cb-header-board-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: var(--cb-text-muted, #8b8b99);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  max-width: 140px;
+}
+
+.cluebook-window .cb-header-board-chip .cb-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cluebook-window .cb-header-board-chip i {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.cluebook-window .cb-header-board-chip:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.cluebook-window .cb-header-board-chip.active {
+  background: var(--cb-accent, #7b61ff);
+  border-color: #ffffff;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 0 10px var(--cb-accent-glow, rgba(123, 97, 255, 0.4));
+}
+
+.cluebook-window .cb-header-board-chip.active i {
+  opacity: 1;
+}
+
+.cluebook-window .cb-header-board-dropdown-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: var(--cb-text-muted, #8b8b99);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 0 0 auto;
+}
+
+.cluebook-window .cb-header-board-dropdown-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+}
+
 .cluebook-window .window-content {
   display: flex;
   flex-direction: row;
@@ -596,6 +685,38 @@ select.cluebook-input {
   min-height: 30px;
   box-sizing: border-box;
   line-height: normal;
+}
+
+/* --- Pin Icon Picker Options --- */
+.cb-icon-option {
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--cb-text-muted, #8b8b99);
+  font-size: 15px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.cb-icon-option:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.cb-icon-option.active {
+  background: var(--cb-accent, #7b61ff) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px var(--cb-accent-glow, rgba(123, 97, 255, 0.6)), inset 0 0 4px rgba(255, 255, 255, 0.4);
+  transform: scale(1.1);
 }
 
 

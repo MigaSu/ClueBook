@@ -31,17 +31,42 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
         return;
       }
 
-      // 2. Check for dropped Foundry document (Actor / Item)
+      // 2. Check for dropped Foundry document (Actor / Item / Scene / Journal)
       try {
         const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
         const data = TE.getDragEventData ? TE.getDragEventData(ev) : JSON.parse(ev.dataTransfer.getData('text/plain') || '{}');
         if (data?.uuid) {
           const doc = await fromUuid(data.uuid);
-          if (doc?.img && doc.img !== CONST.DEFAULT_TOKEN) {
-            await this._createQuickMediaBatch([{ imgPath: doc.img, title: doc.name || "Entity" }], false, 100, 100);
+          if (doc) {
+            let imgPath = null;
+            let title = doc.name || "Entity";
+
+            if (doc.documentName === "Scene") {
+              imgPath = doc.background?.src || doc.thumb || doc.img;
+            } else if (doc.documentName === "JournalEntryPage" && doc.type === "image") {
+              imgPath = doc.src;
+            } else if (doc.documentName === "JournalEntry") {
+              const imagePage = doc.pages?.find(p => p.type === "image");
+              imgPath = imagePage?.src || doc.img || doc.thumb;
+            } else if (doc.img && doc.img !== CONST.DEFAULT_TOKEN) {
+              imgPath = doc.img;
+            } else if (doc.thumb) {
+              imgPath = doc.thumb;
+            }
+
+            if (imgPath) {
+              await this._createQuickMediaBatch([{
+                imgPath,
+                title,
+                sceneUuid: doc.documentName === "Scene" ? doc.uuid : undefined,
+                actorUuid: doc.documentName === "Actor" ? doc.uuid : undefined
+              }], false, 100, 100);
+            }
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error("ClueBook | List drop document error:", e);
+      }
     });
 
     // 1. Cards Drag & Drop (into folders, root, or re-sorting)
@@ -279,6 +304,8 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
       newEntry.id = id;
       newEntry.name = item.title;
       newEntry.img = item.imgPath;
+      if (item.sceneUuid) newEntry.sceneUuid = item.sceneUuid;
+      if (item.actorUuid) newEntry.actorUuid = item.actorUuid;
       newEntry.onBoard = onBoard;
       
       if (onBoard) {

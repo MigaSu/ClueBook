@@ -129,27 +129,6 @@
           </div>
         </div>
         <div class="setting-row flex-checkbox">
-          <label>{{localize "CLUEBOOK.Settings.HideTagsSys"}}</label>
-          <div class="cb-toggle">
-            <input type="checkbox" class="setting-input" id="cb-sw-hide-tags" data-key="features.hideTags" {{#if settings.features.hideTags}}checked{{/if}}>
-            <label for="cb-sw-hide-tags"></label>
-          </div>
-        </div>
-        <div class="setting-row flex-checkbox">
-          <label>{{localize "CLUEBOOK.Settings.HideTagsOnCards"}}</label>
-          <div class="cb-toggle">
-            <input type="checkbox" class="setting-input" id="cb-sw-hide-tags-cards" data-key="features.hideTagsOnCards" {{#if settings.features.hideTagsOnCards}}checked{{/if}}>
-            <label for="cb-sw-hide-tags-cards"></label>
-          </div>
-        </div>
-        <div class="setting-row flex-checkbox">
-          <label>{{localize "CLUEBOOK.Settings.HideEditBtn"}}</label>
-          <div class="cb-toggle">
-            <input type="checkbox" class="setting-input" id="cb-sw-hide-edit" data-key="features.hideEditBtn" {{#if settings.features.hideEditBtn}}checked{{/if}}>
-            <label for="cb-sw-hide-edit"></label>
-          </div>
-        </div>
-        <div class="setting-row flex-checkbox">
           <label>{{localize "CLUEBOOK.Settings.BoardExplicitLinks"}}</label>
           <div class="cb-toggle">
             <input type="checkbox" class="setting-input" id="cb-sw-board-links" data-key="features.boardShowExplicitLinks" {{#if (ne settings.features.boardShowExplicitLinks false)}}checked{{/if}}>
@@ -157,10 +136,38 @@
           </div>
         </div>
         <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.ShowTagsSys"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-hide-tags" data-key="features.hideTags" data-invert="true" {{#if (ne settings.features.hideTags true)}}checked{{/if}}>
+            <label for="cb-sw-hide-tags"></label>
+          </div>
+        </div>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.ShowTagsOnCards"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-hide-tags-cards" data-key="features.hideTagsOnCards" data-invert="true" {{#if (ne settings.features.hideTagsOnCards true)}}checked{{/if}}>
+            <label for="cb-sw-hide-tags-cards"></label>
+          </div>
+        </div>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.ShowEditBtn"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-hide-edit" data-key="features.hideEditBtn" data-invert="true" {{#if (ne settings.features.hideEditBtn true)}}checked{{/if}}>
+            <label for="cb-sw-hide-edit"></label>
+          </div>
+        </div>
+        <div class="setting-row flex-checkbox">
           <label>{{localize "CLUEBOOK.Settings.GalleryAlwaysBelow"}}</label>
           <div class="cb-toggle">
             <input type="checkbox" class="setting-input" id="cb-sw-gallery-below" data-key="features.galleryAlwaysBelow" {{#if settings.features.galleryAlwaysBelow}}checked{{/if}}>
             <label for="cb-sw-gallery-below"></label>
+          </div>
+        </div>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.EnablePhotoTilt"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-photo-tilt" data-key="features.disablePhotoTilt" data-invert="true" {{#if (ne settings.features.disablePhotoTilt true)}}checked{{/if}}>
+            <label for="cb-sw-photo-tilt"></label>
           </div>
         </div>
       </div>

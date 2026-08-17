@@ -1,4 +1,4 @@
-<div class="cluebook-entry {{#if (eq this.id @root.editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id @root.highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}} {{#unless @root.isBoardView}}{{#if @root.isCompactView}}view-compact{{else if @root.isListView}}view-list{{else}}view-grid{{/if}}{{/unless}} {{#if (eq this.sourceTab "gallery")}}is-gallery-card frame-{{#if this.frameStyle}}{{this.frameStyle}}{{else}}polaroid{{/if}}{{/if}} {{#if (eq this.sourceTab "labels")}}is-label-card font-{{this.fontFamily}} size-{{this.fontSize}} bg-{{this.bgStyle}}{{/if}} {{#if (eq this.sourceTab "pins")}}is-pin-card{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-text-color="{{this.textColor}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" tabindex="-1" {{#unless @root.isBoardView}}draggable="true"{{/unless}} style="{{#if @root.isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; {{#if this.rotation}}--cb-rotation: {{this.rotation}}deg; transform: rotate({{this.rotation}}deg);{{/if}} {{#if (and @root.settings.features.galleryAlwaysBelow (eq this.sourceTab "gallery"))}}z-index: 4;{{else if (eq this.sourceTab "labels")}}z-index: 25;{{else if (eq this.sourceTab "pins")}}z-index: 20;{{else}}z-index: 10;{{/if}} {{#if (eq this.id @root.highlightedEntryId)}}animation-duration: {{@root.settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#unless @root.isBoardView}}{{#if (or @root.isCompactView @root.isListView)}}--cb-entry-color: {{#if this.color}}{{this.color}}{{else}}#7b61ff{{/if}};{{else}}{{#if (and this.isCustomColor (ne this.frameStyle "frameless") (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}{{/if}}{{else}}{{#if (and this.isCustomColor (ne this.frameStyle "frameless") (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}{{/unless}}">
+<div class="cluebook-entry {{#if (eq this.id @root.editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id @root.highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}} {{#if this.onBoard}}is-on-board{{/if}} {{#if this.isTracked}}is-tracked{{/if}} {{#unless @root.isBoardView}}{{#if @root.isCompactView}}view-compact{{else if @root.isListView}}view-list{{else}}view-grid{{/if}}{{/unless}} {{#if (eq this.sourceTab "gallery")}}is-gallery-card frame-{{#if this.frameStyle}}{{this.frameStyle}}{{else}}polaroid{{/if}}{{/if}} {{#if (eq this.sourceTab "labels")}}is-label-card font-{{this.fontFamily}} size-{{this.fontSize}} bg-{{this.bgStyle}}{{/if}} {{#if (eq this.sourceTab "pins")}}is-pin-card{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-text-color="{{this.textColor}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" tabindex="-1" {{#unless @root.isBoardView}}draggable="true"{{/unless}} style="{{#if @root.isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; {{#if (and this.rotation (not @root.settings.features.disablePhotoTilt))}}--cb-rotation: {{this.rotation}}deg; transform: rotate({{this.rotation}}deg);{{/if}} {{#if (and @root.settings.features.galleryAlwaysBelow (eq this.sourceTab "gallery"))}}z-index: 4;{{else if (eq this.sourceTab "labels")}}z-index: 25;{{else if (eq this.sourceTab "pins")}}z-index: 20;{{else}}z-index: 10;{{/if}} {{#if (eq this.id @root.highlightedEntryId)}}animation-duration: {{@root.settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#unless @root.isBoardView}}{{#if (or @root.isCompactView @root.isListView)}}--cb-entry-color: {{#if this.color}}{{this.color}}{{else}}#7b61ff{{/if}};{{else}}{{#if (and this.isCustomColor (ne this.frameStyle "frameless") (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}{{/if}}{{else}}{{#if (and this.isCustomColor (ne this.frameStyle "frameless") (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}{{/unless}}">
 
   {{#if (and (not @root.isBoardView) @root.isCompactView (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}}
     <!-- Compact View (Single-line row) -->
@@ -54,6 +54,10 @@
           {{/if}}
         {{/if}}
 
+        {{#if (and @root.isGM this.isHidden)}}
+          <span class="cb-row-badge is-hidden-badge" title="{{localize 'CLUEBOOK.Entry.Hidden'}}"><i class="fas fa-eye-slash"></i> {{localize 'CLUEBOOK.Entry.Hidden'}}</span>
+        {{/if}}
+
         {{#if this.resolvedTags.length}}
         <div class="cb-row-tags">
           {{#each this.resolvedTags}}
@@ -77,7 +81,7 @@
           {{/unless}}
         {{/if}}
         {{#if (and @root.enableTracker (not @root.settings.hideTrackerBtn) (or (eq this.sourceTab "quests") (eq this.sourceTab "timeline")))}}
-        <a data-action="toggleTrack" class="btn-track {{#if this.isTracked}}active{{/if}}" title="{{localize "CLUEBOOK.Tracker.ToggleTrack"}}"><i class="fas fa-star"></i></a>
+        <a data-action="toggleTrack" class="btn-track {{#if this.isTracked}}active{{/if}}" title="{{#if this.isTracked}}{{localize 'CLUEBOOK.Tracker.Untrack'}}{{else}}{{localize 'CLUEBOOK.Tracker.ToggleTrack'}}{{/if}}"><i class="fas fa-star"></i></a>
         {{/if}}
         {{#unless @root.settings.hideSendToBoardBtn}}
         <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="{{localize "CLUEBOOK.Entry.SendToBoard"}}"><i class="fas fa-project-diagram"></i></a>
@@ -142,6 +146,9 @@
                 <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{this.date}}</span>
               {{/if}}
             {{/if}}
+              {{#if (and @root.isGM this.isHidden)}}
+                <span class="cb-row-badge is-hidden-badge" title="{{localize 'CLUEBOOK.Entry.Hidden'}}"><i class="fas fa-eye-slash"></i> {{localize 'CLUEBOOK.Entry.Hidden'}}</span>
+              {{/if}}
           </div>
 
           <div class="cb-toolbar-spacer"></div>
@@ -160,7 +167,7 @@
               {{/unless}}
             {{/if}}
             {{#if (and @root.enableTracker (not @root.settings.hideTrackerBtn) (or (eq this.sourceTab "quests") (eq this.sourceTab "timeline")))}}
-            <a data-action="toggleTrack" class="btn-track {{#if this.isTracked}}active{{/if}}" title="{{localize "CLUEBOOK.Tracker.ToggleTrack"}}"><i class="fas fa-star"></i></a>
+            <a data-action="toggleTrack" class="btn-track {{#if this.isTracked}}active{{/if}}" title="{{#if this.isTracked}}{{localize 'CLUEBOOK.Tracker.Untrack'}}{{else}}{{localize 'CLUEBOOK.Tracker.ToggleTrack'}}{{/if}}"><i class="fas fa-star"></i></a>
             {{/if}}
             {{#unless @root.settings.hideSendToBoardBtn}}
             <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="{{localize "CLUEBOOK.Entry.SendToBoard"}}"><i class="fas fa-project-diagram"></i></a>
@@ -217,7 +224,7 @@
       {{/unless}}
 
       {{#if (and @root.enableTracker (not @root.settings.hideTrackerBtn) (or (eq this.sourceTab "quests") (eq this.sourceTab "timeline")))}}
-      <a data-action="toggleTrack" class="btn-track {{#if this.isTracked}}active{{/if}}" title="{{localize "CLUEBOOK.Tracker.ToggleTrack"}}"><i class="fas fa-star"></i></a>
+      <a data-action="toggleTrack" class="btn-track {{#if this.isTracked}}active{{/if}}" title="{{#if this.isTracked}}{{localize 'CLUEBOOK.Tracker.Untrack'}}{{else}}{{localize 'CLUEBOOK.Tracker.ToggleTrack'}}{{/if}}"><i class="fas fa-star"></i></a>
       {{/if}}
 
       {{#if @root.isBoardView}}
@@ -250,7 +257,7 @@
       {{#if this.name}}<span class="cb-pin-title">{{this.name}}</span>{{/if}}
     </div>
 
-    {{#if (or this.note this.name this.gmNotes)}}
+    {{#if (or this.note (and @root.isGM this.gmNotes))}}
       <div class="cb-pin-popover">
         <div class="cb-pin-popover-header">
           <i class="fas {{#if this.icon}}{{this.icon}}{{else}}fa-thumbtack{{/if}}" style="{{#if this.color}}color: {{this.color}};{{/if}}"></i>

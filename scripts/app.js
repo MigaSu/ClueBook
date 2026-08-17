@@ -195,7 +195,9 @@ export class ClueBookApp extends BaseApp {
       addEntryToFolder: ClueBookApp._onAddEntryToFolder,
       sendFolderToBoard: ClueBookApp._onSendFolderToBoard,
       toggleSortMenu: ClueBookApp._onToggleSortMenu,
-      toggleViewMenu: ClueBookApp._onToggleViewMenu
+      toggleViewMenu: ClueBookApp._onToggleViewMenu,
+      toggleFavoriteWorkspace: ClueBookApp._onToggleFavoriteWorkspace,
+      filterSearchCategory: ClueBookApp._onFilterSearchCategory
     }
   };
 
@@ -308,6 +310,7 @@ export class ClueBookApp extends BaseApp {
     selectedEntryId: null,
     selectedEntries: new Set(),
     searchTags: [],
+    searchCategoryFilter: "all",
     questFilter: "all",
     npcFilter: "all",
     isQuestArchiveOpen: false,
@@ -325,6 +328,7 @@ export class ClueBookApp extends BaseApp {
       hideTags: false,
       hideTagsOnCards: false,
       galleryAlwaysBelow: false,
+      disablePhotoTilt: false,
       showTabBadges: true
     },
     theme: {
@@ -601,6 +605,9 @@ export class ClueBookApp extends BaseApp {
       this.state.activeWorkspace = "personal";
     }
     
+    const favoriteWorkspaces = game.user?.getFlag("ClueBook", "favoriteWorkspaces") || [];
+    context.favoriteWorkspaces = favoriteWorkspaces;
+    context.isFavoriteActiveWorkspace = favoriteWorkspaces.includes(this.state.activeWorkspace);
     context.workspaces = availableWorkspaces;
   }
 
@@ -709,17 +716,76 @@ export class ClueBookApp extends BaseApp {
 
             if (matchText && matchTags) {
               const enriched = await this._enrichEntry(entry);
-              const { displayTitleHTML, snippetHTML, plainTitle, plainSnippet } = TextEnrichmentService.extractDisplayAndSnippet(
+              const { displayTitleHTML, snippetHTML, plainTitle, plainSnippet } = await TextEnrichmentService.extractDisplayAndSnippet(
                 entry.name || entry.title,
                 entry.note || entry.text || entry.event
               );
               const displayOwner = TextEnrichmentService.stripToPlainText(entry.owner);
               const displaySubtitle = TextEnrichmentService.stripToPlainText(entry.subtitle);
-              entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, displayTitleHTML, snippetHTML, displayTitle: plainTitle, snippet: plainSnippet, displayOwner, displaySubtitle, enriched });
+              entries.push({ id, sourceTab: tabKey, ...entry, isTracked: trackedIds.includes(id), displayTitleHTML, snippetHTML, displayTitle: plainTitle, snippet: plainSnippet, displayOwner, displaySubtitle, enriched });
             }
           }
         }
       }
+
+      // Group search results by category
+      const CATEGORY_DEFS = {
+        npc: { label: game.i18n.localize("CLUEBOOK.Tabs.NPC") || "NPC", icon: "fas fa-user", order: 1 },
+        locations: { label: game.i18n.localize("CLUEBOOK.Tabs.Locations") || "Locations", icon: "fas fa-map-marked-alt", order: 2 },
+        notes: { label: game.i18n.localize("CLUEBOOK.Tabs.Notes") || "Notes", icon: "fas fa-sticky-note", order: 3 },
+        quests: { label: game.i18n.localize("CLUEBOOK.Tabs.Quests") || "Quests", icon: "fas fa-scroll", order: 4 },
+        timeline: { label: game.i18n.localize("CLUEBOOK.Tabs.Timeline") || "Timeline", icon: "fas fa-clock", order: 5 },
+        gallery: { label: game.i18n.localize("CLUEBOOK.Tabs.Gallery") || "Gallery", icon: "fas fa-camera-retro", order: 6 },
+        pins: { label: game.i18n.localize("CLUEBOOK.Tabs.Pins") || "Pins", icon: "fas fa-thumbtack", order: 7 },
+        labels: { label: game.i18n.localize("CLUEBOOK.Tabs.Labels") || "Labels", icon: "fas fa-font", order: 8 }
+      };
+
+      const groupedMap = new Map();
+      entries.forEach(item => {
+        const catKey = item.sourceTab || "notes";
+        if (!groupedMap.has(catKey)) {
+          groupedMap.set(catKey, []);
+        }
+        groupedMap.get(catKey).push(item);
+      });
+
+      const activeFilter = this.state.searchCategoryFilter || "all";
+      const categoryChips = [
+        { id: "all", label: game.i18n.localize("CLUEBOOK.Search.AllCategories") || "All", count: entries.length, active: activeFilter === "all", order: 0 }
+      ];
+
+      groupedMap.forEach((items, catKey) => {
+        const def = CATEGORY_DEFS[catKey] || { label: catKey, icon: "fas fa-tag", order: 99 };
+        categoryChips.push({
+          id: catKey,
+          label: def.label,
+          icon: def.icon,
+          count: items.length,
+          active: activeFilter === catKey,
+          order: def.order
+        });
+      });
+
+      categoryChips.sort((a, b) => a.order - b.order);
+      context.searchCategoryChips = categoryChips;
+
+      const searchGroups = [];
+      groupedMap.forEach((items, catKey) => {
+        if (activeFilter !== "all" && activeFilter !== catKey) return;
+        const def = CATEGORY_DEFS[catKey] || { label: catKey, icon: "fas fa-tag", order: 99 };
+        searchGroups.push({
+          tab: catKey,
+          label: def.label,
+          icon: def.icon,
+          count: items.length,
+          entries: items,
+          order: def.order
+        });
+      });
+
+      searchGroups.sort((a, b) => a.order - b.order);
+      context.searchGroups = searchGroups;
+      context.hasSearchResults = entries.length > 0;
       context.links = [];
     } else if (this.state.activeTab === "board") {
       for (const [tabKey, tabData] of Object.entries(data)) {
@@ -729,7 +795,7 @@ export class ClueBookApp extends BaseApp {
           if (entry.onBoard) {
             const enriched = await this._enrichEntry(entry);
             const displayTitle = TextEnrichmentService.stripToPlainText(entry.name || entry.title) || game.i18n.localize("CLUEBOOK.Entry.Untitled");
-            entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, displayTitle, displayTitleHTML: displayTitle, enriched });
+            entries.push({ id, sourceTab: tabKey, ...entry, isTracked: trackedIds.includes(id), displayTitle, displayTitleHTML: displayTitle, enriched });
           }
         }
       }
@@ -859,7 +925,7 @@ export class ClueBookApp extends BaseApp {
         const enriched = await this._enrichEntry(entry);
 
         // Auto-extract clean HTML title & snippet with clickable mentions for list/compact views
-        const { displayTitleHTML, snippetHTML, plainTitle, plainSnippet } = TextEnrichmentService.extractDisplayAndSnippet(
+        const { displayTitleHTML, snippetHTML, plainTitle, plainSnippet } = await TextEnrichmentService.extractDisplayAndSnippet(
           entry.name || entry.title,
           entry.note || entry.text || entry.event
         );
@@ -869,8 +935,8 @@ export class ClueBookApp extends BaseApp {
         entries.push({ 
           id, 
           sourceTab: this.state.activeTab, 
-          isTracked: trackedIds.includes(id), 
           ...entry, 
+          isTracked: trackedIds.includes(id), 
           displayTitleHTML,
           snippetHTML,
           displayTitle: plainTitle,
@@ -1182,31 +1248,35 @@ export class ClueBookApp extends BaseApp {
           return;
         }
 
-        if (this.state.selectedEntryId || this.state.selectedEntries.size > 0) {
-          if (ev.key === "Delete" || ev.key === "Backspace") {
+        if (ev.key === "Delete" || ev.key === "Backspace") {
+          const activeTag = document.activeElement?.tagName?.toLowerCase();
+          if (activeTag === 'input' || activeTag === 'textarea' || document.activeElement?.isContentEditable) return;
+
+          const selectedIds = Array.from(this.state.selectedEntries);
+          const singleId = selectedIds.length === 1 ? selectedIds[0] : (selectedIds.length === 0 ? this.state.selectedEntryId : null);
+
+          if (selectedIds.length > 1) {
             ev.preventDefault();
             if (this.state.isReadOnly) return;
-            
-            if (this.state.selectedEntries.size > 1) {
-              this._onDeleteGroup();
-            } else {
-              const id = this.state.selectedEntryId || Array.from(this.state.selectedEntries)[0];
-              const entryEl = html.querySelector(`[data-entry-id="${id}"]`);
-              if (entryEl) {
-                if (this.state.activeTab === "board") {
-                  this.constructor._onRemoveFromBoard.call(this, null, entryEl);
-                } else {
-                  this.constructor._onDeleteEntry.call(this, null, entryEl);
-                }
+            this._onDeleteGroup();
+          } else if (singleId) {
+            const entryEl = html.querySelector(`[data-entry-id="${singleId}"]`);
+            if (entryEl) {
+              ev.preventDefault();
+              if (this.state.isReadOnly) return;
+              if (this.state.activeTab === "board") {
+                this.constructor._onRemoveFromBoard.call(this, null, entryEl);
+              } else {
+                this.constructor._onDeleteEntry.call(this, null, entryEl);
               }
             }
-          } else if (ev.key === "Escape") {
-            ev.preventDefault();
-            this.state.selectedEntryId = null;
-            this.state.selectedEntries.clear();
-            html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
-            this._updateSelectionHUD();
           }
+        } else if (ev.key === "Escape") {
+          ev.preventDefault();
+          this.state.selectedEntryId = null;
+          this.state.selectedEntries.clear();
+          html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
+          this._updateSelectionHUD();
         }
       });
     }
@@ -1529,18 +1599,29 @@ export class ClueBookApp extends BaseApp {
     // Bind all mention links in the app window
     TextEnrichmentService.bindMentionClicks(html);
 
-    // Intercept Scene Links to offer View/Activate/Configure
+    // Intercept Content Links (both Scene action dialog and standard Foundry Documents)
     html.addEventListener('click', async (ev) => {
-      const sceneLink = ev.target.closest('a.content-link[data-type="Scene"]');
-      if (sceneLink) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        
-        const uuid = sceneLink.dataset.uuid;
-        const scene = await fromUuid(uuid);
-        if (!scene) return;
-        
-        new SceneActionDialog({ scene, id: `scene-dialog-${scene.id}` }).render(true);
+      const link = ev.target.closest('a.content-link');
+      if (link && !link.classList.contains('cb-mention-link')) {
+        const uuid = link.dataset.uuid || link.dataset.id;
+        const type = link.dataset.type;
+        if (type === "Scene" || uuid?.startsWith("Scene.")) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          const scene = await fromUuid(uuid);
+          if (scene) new SceneActionDialog({ scene, id: `scene-dialog-${scene.id}` }).render(true);
+        } else if (uuid) {
+          try {
+            const doc = await fromUuid(uuid);
+            if (doc?.sheet) {
+              ev.preventDefault();
+              ev.stopPropagation();
+              doc.sheet.render(true);
+            }
+          } catch(e) {
+            console.error("ClueBook | Failed to open document from UUID link:", e);
+          }
+        }
       }
     });
 
@@ -1586,6 +1667,9 @@ export class ClueBookApp extends BaseApp {
 
     // Setup Global Clipboard Paste (Ctrl+V)
     this._setupClipboardPaste(html);
+
+    // Setup Header Quick Board Switcher
+    this._renderHeaderBoards(html);
   }
 
   /**
@@ -1974,24 +2058,38 @@ export class ClueBookApp extends BaseApp {
 
     html.querySelectorAll('.cb-mention-link').forEach(link => {
       link.addEventListener('click', async (ev) => {
+        ev.preventDefault();
         ev.stopPropagation();
         const targetId = link.dataset.mentionId;
         if (!targetId) return;
         
-        // If target card is on the current board view, scroll and highlight it!
-        const targetCard = html.querySelector(`.cluebook-entry[data-entry-id="${targetId}"]`);
-        if (targetCard) {
-          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          targetCard.classList.add('is-highlighted');
-          setTimeout(() => targetCard.classList.remove('is-highlighted'), 2000);
-          return;
+        const data = this._getWorkspaceData();
+        let targetEntry = null;
+        let targetTab = null;
+
+        for (const [tabKey, tabData] of Object.entries(data)) {
+          if (tabKey === "links" || tabKey === "search" || tabKey === "board") continue;
+          if (tabData?.[targetId]) {
+            targetEntry = tabData[targetId];
+            targetTab = tabKey;
+            break;
+          }
         }
 
-        // Otherwise jump to linked entry via API
-        const api = game.modules.get("ClueBook")?.api;
-        if (api) {
-           await api.openApp({ focusId: targetId });
-        }
+        // Navigate directly to the entry's tab
+        this.state.activeTab = targetTab;
+        this.state.highlightedEntryId = targetId;
+        await game.user.setFlag("ClueBook", "lastTab", targetTab);
+        await this.render();
+
+        setTimeout(() => {
+          const card = this.element?.querySelector(`.cluebook-entry[data-entry-id="${targetId}"]`);
+          if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.add('is-highlighted');
+            setTimeout(() => card.classList.remove('is-highlighted'), 2000);
+          }
+        }, 100);
       });
     });
   }
@@ -2139,6 +2237,182 @@ export class ClueBookApp extends BaseApp {
         hidePopover();
       });
     });
+  }
+
+  /**
+   * Switches active workspace in 1 click without losing active tab
+   * @param {string} workspaceId 
+   */
+  async _switchWorkspace(workspaceId) {
+    if (!workspaceId || this.state.activeWorkspace === workspaceId) return;
+    this.flushDebouncedSaves();
+    this.state.activeWorkspace = workspaceId;
+    await game.user.setFlag("ClueBook", "lastWorkspace", workspaceId);
+    
+    // Refresh FAB menu immediately for new active board
+    const widget = document.getElementById("cluebook-widget");
+    if (widget && widget._buildMenu) {
+      const currentSettings = this.getSettings();
+      const menu = widget.querySelector(".cb-fab-menu");
+      if (menu) widget._buildMenu(currentSettings, menu);
+    }
+
+    this.render();
+  }
+
+  /**
+   * Injects quick board switcher chips directly into the window header
+   * @param {HTMLElement} html 
+   */
+  _renderHeaderBoards(html) {
+    const header = this.element?.querySelector('.window-header');
+    if (!header) return;
+
+    // Remove existing header boards container if re-rendered
+    header.querySelectorAll('.cb-header-boards').forEach(el => el.remove());
+
+    const titleEl = header.querySelector('.window-title');
+    if (!titleEl) return;
+
+    const favoriteIds = game.user?.getFlag("ClueBook", "favoriteWorkspaces") || [];
+    if (!favoriteIds || favoriteIds.length === 0) return;
+
+    const personalName = game.user?.getFlag("ClueBook", "personalWorkspaceName") || game.i18n.localize("CLUEBOOK.Workspace.Personal");
+
+    // Collect all accessible shared journals
+    const sharedJournals = game.journal.filter(j => 
+      j.getFlag("ClueBook", "isWorkspace") && 
+      (j.testUserPermission(game.user, "OBSERVER") || game.user.isGM)
+    ).map(j => ({ id: j.id, name: j.name, isShared: true }));
+
+    // Build all available boards
+    const allBoards = [
+      { id: "personal", name: personalName, isPersonal: true },
+      ...sharedJournals
+    ];
+
+    if (game.user.isGM) {
+      game.users.forEach(u => {
+        if (u.id !== game.user.id && !u.isGM) {
+          const uData = u.getFlag("ClueBook", "data") || {};
+          let isEmpty = true;
+          for (const [tabKey, tabData] of Object.entries(uData)) {
+            if (tabKey === "board" || tabKey === "links" || tabKey === "search") continue;
+            if (tabData && Object.keys(tabData).length > 0) {
+              isEmpty = false;
+              break;
+            }
+          }
+          if (!isEmpty) {
+            const uPersonalName = u.getFlag("ClueBook", "personalWorkspaceName") || game.i18n.format("CLUEBOOK.Workspace.PersonalUser", { user: u.name });
+            allBoards.push({ id: `personal_${u.id}`, name: game.i18n.format("CLUEBOOK.Workspace.Player", { user: uPersonalName }), isOtherPlayer: true });
+          }
+        }
+      });
+    }
+
+    // Determine which boards to show as chips in header (strictly favorite boards)
+    let displayedBoards = allBoards.filter(b => favoriteIds.includes(b.id));
+    if (!displayedBoards.length) return;
+
+    // Limit to max 5 chips to prevent header overcrowding
+    if (displayedBoards.length > 5) {
+      displayedBoards = displayedBoards.slice(0, 5);
+    }
+
+    const container = document.createElement('div');
+    container.className = 'cb-header-boards flexrow';
+
+    displayedBoards.forEach(b => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = `cb-header-board-chip ${this.state.activeWorkspace === b.id ? 'active' : ''}`;
+      chip.dataset.workspaceId = b.id;
+      chip.title = b.name;
+      
+      const iconClass = b.isPersonal ? 'fa-user' : (b.isOtherPlayer ? 'fa-user-secret' : 'fa-users');
+      chip.innerHTML = `<i class="fas ${iconClass}"></i><span class="cb-chip-label">${Handlebars.escapeExpression(b.name)}</span>`;
+      
+      // Stop propagation to prevent window dragging
+      chip.addEventListener('pointerdown', ev => ev.stopPropagation());
+      chip.addEventListener('mousedown', ev => ev.stopPropagation());
+      chip.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        await this._switchWorkspace(b.id);
+      });
+
+      container.appendChild(chip);
+    });
+
+    // Dropdown button for all boards
+    const dropdownBtn = document.createElement('button');
+    dropdownBtn.type = 'button';
+    dropdownBtn.className = 'cb-header-board-dropdown-btn';
+    dropdownBtn.title = game.i18n.localize('CLUEBOOK.Workspaces.AllBoards') || 'All Boards';
+    dropdownBtn.innerHTML = `<i class="fas fa-chevron-down"></i>`;
+    dropdownBtn.addEventListener('pointerdown', ev => ev.stopPropagation());
+    dropdownBtn.addEventListener('mousedown', ev => ev.stopPropagation());
+    dropdownBtn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      
+      const menuItems = allBoards.map(b => ({
+        id: b.id,
+        label: b.name,
+        icon: b.isPersonal ? 'fa-user' : (b.isOtherPlayer ? 'fa-user-secret' : 'fa-users'),
+        isActive: this.state.activeWorkspace === b.id
+      }));
+
+      menuItems.push({
+        id: '__manage__',
+        label: game.i18n.localize('CLUEBOOK.Workspaces.ManageBoardsLink') || 'Manage Boards...',
+        icon: 'fa-cog',
+        isDivider: true
+      });
+
+      UIService.showFloatingMenu({
+        target: dropdownBtn,
+        currentId: this.state.activeWorkspace,
+        minWidth: 220,
+        items: menuItems,
+        onSelect: async (item) => {
+          if (item.id === '__manage__') {
+            this.state.activeTab = 'workspaces';
+            this.render();
+          } else {
+            await this._switchWorkspace(item.id);
+          }
+        }
+      });
+    });
+
+    container.appendChild(dropdownBtn);
+    titleEl.after(container);
+  }
+
+  static async _onFilterSearchCategory(event, target) {
+    if (event?.preventDefault) event.preventDefault();
+    const category = target.dataset.category || "all";
+    this.state.searchCategoryFilter = category;
+    this.render({ parts: ["content"] });
+  }
+
+  static async _onToggleFavoriteWorkspace(event, target) {
+    if (event?.preventDefault) event.preventDefault();
+    if (event?.stopPropagation) event.stopPropagation();
+    const wsId = target.dataset.workspaceId || this.state.activeWorkspace;
+    if (!wsId) return;
+
+    let favorites = game.user.getFlag("ClueBook", "favoriteWorkspaces") || [];
+    if (favorites.includes(wsId)) {
+      favorites = favorites.filter(id => id !== wsId);
+    } else {
+      favorites.push(wsId);
+    }
+
+    await game.user.setFlag("ClueBook", "favoriteWorkspaces", favorites);
+    this.render();
   }
 
 }

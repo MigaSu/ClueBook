@@ -124,7 +124,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
 
     const activeWs = this.state.activeWorkspace || "personal";
     const cameras = game.user.getFlag("ClueBook", "boardCameras") || {};
-    const savedCam = cameras[activeWs] || (activeWs === "personal" ? game.user.getFlag("ClueBook", "boardCamera") : null) || { zoom: 1, panX: 0, panY: 0 };
+    const savedCam = this.state.camera || cameras[activeWs] || (activeWs === "personal" ? game.user.getFlag("ClueBook", "boardCamera") : null) || { zoom: 1, panX: 0, panY: 0 };
     
     this.state.camera = savedCam;
     currentZoom = Number(this.state.camera.zoom) || 1;
@@ -266,6 +266,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         board.querySelectorAll('.is-pin-card.is-popover-open').forEach(el => el.classList.remove('is-popover-open'));
         if (!ev.shiftKey) {
           this.state.selectedEntries.clear();
+          this.state.selectedEntryId = null;
           html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
           this._updateSelectionHUD();
         }
@@ -310,17 +311,42 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         return;
       }
 
-      // 2. Foundry documents (Actor / Item)
+      // 2. Foundry documents (Actor / Item / Scene / Journal)
       try {
         const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
         const data = TE.getDragEventData ? TE.getDragEventData(ev) : JSON.parse(ev.dataTransfer.getData('text/plain') || '{}');
         if (data?.uuid) {
           const doc = await fromUuid(data.uuid);
-          if (doc?.img && doc.img !== CONST.DEFAULT_TOKEN) {
-            await this._createQuickMediaEntry(doc.img, doc.name || "Entity", true, boardX, boardY);
+          if (doc) {
+            let imgPath = null;
+            let title = doc.name || "Entity";
+
+            if (doc.documentName === "Scene") {
+              imgPath = doc.background?.src || doc.thumb || doc.img;
+            } else if (doc.documentName === "JournalEntryPage" && doc.type === "image") {
+              imgPath = doc.src;
+            } else if (doc.documentName === "JournalEntry") {
+              const imagePage = doc.pages?.find(p => p.type === "image");
+              imgPath = imagePage?.src || doc.img || doc.thumb;
+            } else if (doc.img && doc.img !== CONST.DEFAULT_TOKEN) {
+              imgPath = doc.img;
+            } else if (doc.thumb) {
+              imgPath = doc.thumb;
+            }
+
+            if (imgPath) {
+              await this._createQuickMediaBatch([{
+                imgPath,
+                title,
+                sceneUuid: doc.documentName === "Scene" ? doc.uuid : undefined,
+                actorUuid: doc.documentName === "Actor" ? doc.uuid : undefined
+              }], true, boardX, boardY);
+            }
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error("ClueBook | Board drop document error:", e);
+      }
     });
 
     // Recenter Button (Fit all & center)
@@ -369,27 +395,65 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     let linkingSource = null;
     let tempLine = null;
 
+    const startInteractiveLinking = (sourceEntry) => {
+      if (this.state.isReadOnly || !sourceEntry) return;
+      linkingSource = sourceEntry;
+      this.state.isBoardInteracting = true;
+      sourceEntry.classList.add('linking-source');
+
+      const entryId = sourceEntry.dataset.entryId;
+      const card = cardMap.get(entryId);
+      const svg = board.querySelector('.board-svg') || board.querySelector('svg');
+      if (card && svg) {
+        const x1 = Math.round(card.x + card.w / 2);
+        const y1 = Math.round(card.y + card.h / 2);
+        if (tempLine) tempLine.remove();
+        tempLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        tempLine.setAttribute("x1", x1);
+        tempLine.setAttribute("y1", y1);
+        tempLine.setAttribute("x2", x1);
+        tempLine.setAttribute("y2", y1);
+        tempLine.setAttribute("stroke", "#ff3333");
+        tempLine.setAttribute("stroke-width", "3");
+        tempLine.setAttribute("stroke-dasharray", "6,6");
+        tempLine.setAttribute("class", "temp-linking-thread");
+        svg.appendChild(tempLine);
+        svg.style.zIndex = "9999";
+      }
+    };
+
     board.querySelectorAll('.btn-link').forEach(btn => {
+      btn.addEventListener('mousedown', (ev) => {
+        if (this.state.isReadOnly) return;
+        ev.stopPropagation();
+        const entry = ev.currentTarget.closest('.cluebook-entry');
+        if (entry) startInteractiveLinking(entry);
+      });
+
       btn.addEventListener('click', (ev) => {
         ev.stopPropagation();
         const entry = ev.currentTarget.closest('.cluebook-entry');
-        if (linkingSource === entry) {
+        if (linkingSource === entry && !tempLine) {
           linkingSource.classList.remove('linking-source');
           linkingSource = null;
           this.state.isBoardInteracting = false;
           return;
         }
         if (!linkingSource) {
-          linkingSource = entry;
-          this.state.isBoardInteracting = true;
-          entry.classList.add('linking-source');
-        } else {
+          startInteractiveLinking(entry);
+        } else if (linkingSource !== entry) {
           const targetId = entry.dataset.entryId;
           const sourceId = linkingSource.dataset.entryId;
+          if (tempLine) {
+            tempLine.remove();
+            tempLine = null;
+          }
+          const svg = board.querySelector('.board-svg');
+          if (svg) svg.style.zIndex = "1";
           linkingSource.classList.remove('linking-source');
           linkingSource = null;
           this.state.isBoardInteracting = false;
-          if (sourceId !== targetId) {
+          if (sourceId && targetId && sourceId !== targetId) {
             this._createLink(sourceId, targetId);
           }
         }
@@ -456,67 +520,47 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
 
       entry.addEventListener('contextmenu', (ev) => {
         if (this.state.isReadOnly) return;
-        if (this.state.selectedEntries.has(entryId) && this.state.selectedEntries.size > 1) {
-          ev.preventDefault();
-          ev.stopPropagation();
-          this._showBoardContextMenu(ev, entry);
-        }
-      });
-
-      entry.addEventListener('dblclick', (ev) => {
-        if (this.state.isReadOnly) return;
-        if (ev.target.closest('.cb-quest-status-wrapper, .cb-clickable-badge, [data-action="toggleQuestStatusMenu"]')) {
-          ev.preventDefault();
-          ev.stopPropagation();
-          return;
-        }
+        ev.preventDefault();
         ev.stopPropagation();
-        const sourceTab = entry.dataset.sourceTab;
-        const data = this._getWorkspaceData()?.[sourceTab]?.[entryId];
-        if (!data) return;
 
-        new ClueBookEditDialog({
-          entry: data,
-          sourceTab: sourceTab,
-          entryId: entryId,
-          onSave: async (savedData) => {
-            const flagUpdates = {};
-            for (const [key, value] of Object.entries(savedData)) {
-              flagUpdates[`flags.ClueBook.data.${sourceTab}.${entryId}.${key}`] = value;
-            }
-            await this._updateWorkspaceData(flagUpdates);
-            this.render({ parts: ["content"] });
-          }
-        }).render(true);
+        // If right-clicked entry is not part of multi-selection, select only this entry
+        if (!this.state.selectedEntries.has(entryId) || this.state.selectedEntries.size <= 1) {
+          this.state.selectedEntries.clear();
+          this.state.selectedEntries.add(entryId);
+          this.state.selectedEntryId = entryId;
+          cardElements.forEach(el => el.classList.toggle('is-selected', el.dataset.entryId === entryId));
+        }
+
+        this._showBoardContextMenu(ev, entry);
       });
 
       // --- Pin-specific Interactions (Hover Grace Delay & Clickable Links) ---
       if (entry.classList.contains('is-pin-card')) {
-        let pinHideTimeout = null;
-        entry.addEventListener('mouseenter', () => {
-          if (draggedEntry || isPanning || this.isLasso) return;
-          if (pinHideTimeout) {
-            clearTimeout(pinHideTimeout);
-            pinHideTimeout = null;
-          }
-          entry.classList.add('is-popover-hover');
-        });
-
-        entry.addEventListener('mouseleave', () => {
-          if (pinHideTimeout) clearTimeout(pinHideTimeout);
-          pinHideTimeout = setTimeout(() => {
-            entry.classList.remove('is-popover-hover');
-          }, 1000);
-        });
-
-        const badge = entry.querySelector('.cb-pin-badge');
-        badge?.addEventListener('click', (ev) => {
-          if (draggedEntry || this.state.isBoardInteracting) return;
-          entry.classList.toggle('is-popover-open');
-        });
-
         const popover = entry.querySelector('.cb-pin-popover');
         if (popover) {
+          let pinHideTimeout = null;
+          entry.addEventListener('mouseenter', () => {
+            if (draggedEntry || isPanning || this.isLasso) return;
+            if (pinHideTimeout) {
+              clearTimeout(pinHideTimeout);
+              pinHideTimeout = null;
+            }
+            entry.classList.add('is-popover-hover');
+          });
+
+          entry.addEventListener('mouseleave', () => {
+            if (pinHideTimeout) clearTimeout(pinHideTimeout);
+            pinHideTimeout = setTimeout(() => {
+              entry.classList.remove('is-popover-hover');
+            }, 1000);
+          });
+
+          const badge = entry.querySelector('.cb-pin-badge');
+          badge?.addEventListener('click', (ev) => {
+            if (draggedEntry || this.state.isBoardInteracting) return;
+            entry.classList.toggle('is-popover-open');
+          });
+
           popover.addEventListener('mousedown', (ev) => ev.stopPropagation());
           popover.addEventListener('click', async (ev) => {
             const link = ev.target.closest('a.content-link, .cb-mention-link, [data-uuid]');
@@ -527,7 +571,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
               const doc = await fromUuid(uuid);
               doc?.sheet?.render(true);
             } else if (link.dataset.mentionId) {
-              this._jumpToEntryOnBoard(link.dataset.mentionId);
+              this._navigateToEntryTab(link.dataset.mentionId);
             }
           });
         }
@@ -567,8 +611,16 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         if (this._hoverTimer) clearTimeout(this._hoverTimer);
         this._resetHighlight();
         
-        // Ctrl+Click / Shift+Click / Meta+Click: Toggle Multi-select
-        if (ev.shiftKey || ev.ctrlKey || ev.metaKey) {
+        // Ctrl / Meta + Drag: Connect cards with thread
+        if ((ev.ctrlKey || ev.metaKey) && !ev.shiftKey && !this.state.isReadOnly) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          startInteractiveLinking(entry);
+          return;
+        }
+
+        // Shift+Click: Toggle Multi-select
+        if (ev.shiftKey) {
           if (this.state.selectedEntries.has(entryId)) {
             this.state.selectedEntries.delete(entryId);
             entry.classList.remove('is-selected');
@@ -744,15 +796,21 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
           tempLine.remove();
           tempLine = null;
         }
+        const svg = board.querySelector('.board-svg');
+        if (svg) svg.style.zIndex = "1";
+
         linkingSource.classList.remove('linking-source');
         
         const targetEntry = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.cluebook-entry');
         if (targetEntry && targetEntry !== linkingSource) {
           const sourceId = linkingSource.dataset.entryId;
           const targetId = targetEntry.dataset.entryId;
-          this._createLink(sourceId, targetId);
+          if (sourceId && targetId) {
+            this._createLink(sourceId, targetId);
+          }
         }
         linkingSource = null;
+        this.state.isBoardInteracting = false;
       }
 
       if (this.isLasso) {
@@ -843,28 +901,74 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     const existingMenu = document.querySelector('.cb-context-menu');
     if (existingMenu) existingMenu.remove();
 
+    const selectedCount = this.state.selectedEntries.size;
+    const entryId = clickedEntry?.dataset?.entryId || Array.from(this.state.selectedEntries)[0];
+    const sourceTab = clickedEntry?.dataset?.sourceTab;
+    const entryData = this._getWorkspaceData()?.[sourceTab]?.[entryId];
+
     const menu = document.createElement('div');
     menu.className = 'cb-context-menu';
-    const rawHTML = `
-      <div class="cb-menu-item" data-action="align-left"><i class="fas fa-align-left"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignLeft")}</div>
-      <div class="cb-menu-item" data-action="align-center"><i class="fas fa-align-center"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignCenter")}</div>
-      <div class="cb-menu-item" data-action="align-right"><i class="fas fa-align-right"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignRight")}</div>
-      <div class="cb-menu-separator"></div>
-      <div class="cb-menu-item" data-action="distribute-vertical"><i class="fas fa-arrows-alt-v"></i> ${game.i18n.localize("CLUEBOOK.Board.DistributeVertical")}</div>
-      <div class="cb-menu-separator"></div>
-      <div class="cb-menu-item" data-action="pin-group"><i class="fas fa-thumbtack"></i> ${game.i18n.localize("CLUEBOOK.Board.PinGroup")}</div>
-      <div class="cb-menu-item" data-action="unpin-group"><i class="fas fa-unlock"></i> ${game.i18n.localize("CLUEBOOK.Board.UnpinGroup")}</div>
-      <div class="cb-menu-separator"></div>
-      <div class="cb-menu-item danger" data-action="remove-board"><i class="fas fa-times"></i> ${game.i18n.localize("CLUEBOOK.Entry.RemoveFromBoard")}</div>
-    `;
-    menu.replaceChildren(...new DOMParser().parseFromString(rawHTML, "text/html").body.childNodes);
 
+    let rawHTML = '';
+
+    if (selectedCount > 1) {
+      rawHTML = `
+        <div class="cb-menu-item" data-action="align-left"><i class="fas fa-align-left"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignLeft")}</div>
+        <div class="cb-menu-item" data-action="align-center"><i class="fas fa-align-center"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignCenter")}</div>
+        <div class="cb-menu-item" data-action="align-right"><i class="fas fa-align-right"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignRight")}</div>
+        <div class="cb-menu-separator"></div>
+        <div class="cb-menu-item" data-action="distribute-vertical"><i class="fas fa-arrows-alt-v"></i> ${game.i18n.localize("CLUEBOOK.Board.DistributeVertical")}</div>
+        <div class="cb-menu-separator"></div>
+        <div class="cb-menu-item" data-action="pin-group"><i class="fas fa-thumbtack"></i> ${game.i18n.localize("CLUEBOOK.Board.PinGroup")}</div>
+        <div class="cb-menu-item" data-action="unpin-group"><i class="fas fa-unlock"></i> ${game.i18n.localize("CLUEBOOK.Board.UnpinGroup")}</div>
+        <div class="cb-menu-item" data-action="reset-rotation-group"><i class="fas fa-square"></i> ${game.i18n.localize("CLUEBOOK.Board.ResetRotationGroup")}</div>
+        <div class="cb-menu-separator"></div>
+        <div class="cb-menu-item danger" data-action="remove-board"><i class="fas fa-times"></i> ${game.i18n.localize("CLUEBOOK.Entry.RemoveFromBoard")} (${selectedCount})</div>
+      `;
+    } else if (entryData) {
+      // Single Card Context Menu
+      const isPinned = entryData.pinned;
+      const isHidden = entryData.isHidden;
+      const isGM = game.user.isGM;
+
+      rawHTML += `<div class="cb-menu-item" data-action="edit"><i class="fas fa-pencil-alt"></i> ${game.i18n.localize("CLUEBOOK.Entry.Edit")}</div>`;
+      rawHTML += `<div class="cb-menu-item" data-action="toggle-pin"><i class="fas ${isPinned ? 'fa-unlock' : 'fa-thumbtack'}"></i> ${isPinned ? game.i18n.localize("CLUEBOOK.Entry.Unpin") : game.i18n.localize("CLUEBOOK.Entry.Pin")}</div>`;
+
+      if (sourceTab === "gallery" || entryData.rotation !== undefined) {
+        const hasTilt = entryData.rotation !== undefined && entryData.rotation !== 0;
+        rawHTML += `<div class="cb-menu-item" data-action="toggle-rotation"><i class="fas ${hasTilt ? 'fa-square' : 'fa-sync-alt'}"></i> ${hasTilt ? game.i18n.localize("CLUEBOOK.Board.ResetRotation") : game.i18n.localize("CLUEBOOK.Board.RandomTilt")}</div>`;
+      }
+
+      if (isGM) {
+        rawHTML += `<div class="cb-menu-item" data-action="toggle-visibility"><i class="fas ${isHidden ? 'fa-eye' : 'fa-eye-slash'}"></i> ${isHidden ? game.i18n.localize("CLUEBOOK.Entry.Show") : game.i18n.localize("CLUEBOOK.Entry.Hide")}</div>`;
+        if (sourceTab !== "labels" && sourceTab !== "pins") {
+          rawHTML += `<div class="cb-menu-item" data-action="share-overlay"><i class="fas fa-broadcast-tower"></i> ${game.i18n.localize("CLUEBOOK.Entry.ShareOverlay")}</div>`;
+        }
+      }
+
+      if (entryData.actorUuid) {
+        rawHTML += `<div class="cb-menu-item" data-action="open-actor"><i class="fas fa-user-ninja"></i> ${game.i18n.localize("CLUEBOOK.Entry.ActorSheet")}</div>`;
+      }
+
+      if (entryData.sceneUuid) {
+        rawHTML += `<div class="cb-menu-item" data-action="activate-scene"><i class="fas fa-map"></i> ${game.i18n.localize("CLUEBOOK.Entry.ViewScene")}</div>`;
+      }
+
+      rawHTML += `<div class="cb-menu-separator"></div>`;
+      rawHTML += `<div class="cb-menu-item" data-action="remove-board"><i class="fas fa-times"></i> ${game.i18n.localize("CLUEBOOK.Entry.RemoveFromBoard")}</div>`;
+      rawHTML += `<div class="cb-menu-item danger" data-action="delete"><i class="fas fa-trash"></i> ${game.i18n.localize("CLUEBOOK.Entry.Delete")}</div>`;
+    }
+
+    if (!rawHTML) return;
+
+    menu.replaceChildren(...new DOMParser().parseFromString(rawHTML, "text/html").body.childNodes);
     document.body.appendChild(menu);
 
     menu.style.left = `${ev.clientX}px`;
     menu.style.top = `${ev.clientY}px`;
 
-    const closeMenu = () => {
+    const closeMenu = (e) => {
+      if (e && e.target && e.target.closest && e.target.closest('.cb-context-menu')) return;
       menu.remove();
       document.removeEventListener('click', closeMenu);
       document.removeEventListener('contextmenu', closeMenu);
@@ -881,16 +985,87 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       if (!actionEl) return;
       
       const action = actionEl.dataset.action;
-      await this._executeBoardContextMenuAction(action);
       closeMenu();
+      await this._executeBoardContextMenuAction(action, clickedEntry, menuEv);
     });
   }
 
-  async _executeBoardContextMenuAction(action) {
+  async _executeBoardContextMenuAction(action, clickedEntry = null, event = null) {
     const board = this.element.querySelector('.board-canvas');
     if (!board || !this._boardIndex) return;
 
     const selectedIds = Array.from(this.state.selectedEntries);
+    const isSingle = selectedIds.length <= 1;
+    const entryId = isSingle ? (clickedEntry?.dataset?.entryId || selectedIds[0]) : null;
+    const sourceTab = clickedEntry?.dataset?.sourceTab;
+    const entryData = (entryId && sourceTab) ? this._getWorkspaceData()?.[sourceTab]?.[entryId] : null;
+
+    if (isSingle && entryId && sourceTab && entryData) {
+      const entryEl = clickedEntry || this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
+
+      if (action === 'edit') {
+        new ClueBookEditDialog({
+          entry: entryData,
+          sourceTab: sourceTab,
+          entryId: entryId,
+          workspace: this.state.activeWorkspace,
+          onSave: async (savedData) => {
+            const flagUpdates = {};
+            for (const [key, value] of Object.entries(savedData)) {
+              flagUpdates[`flags.ClueBook.data.${sourceTab}.${entryId}.${key}`] = value;
+            }
+            await this._updateWorkspaceData(flagUpdates);
+            this.render({ parts: ["content"] });
+          }
+        }).render(true);
+        return;
+      } else if (action === 'toggle-pin') {
+        const isPinned = !!entryData.pinned;
+        await this._updateWorkspaceData({
+          [`flags.ClueBook.data.${sourceTab}.${entryId}.pinned`]: !isPinned
+        });
+        this.render({ parts: ["content"] });
+        return;
+      } else if (action === 'toggle-rotation') {
+        const hasTilt = entryData.rotation !== undefined && entryData.rotation !== 0;
+        const newRot = hasTilt ? 0 : getRandomPhotoTilt();
+        await this._updateWorkspaceData({
+          [`flags.ClueBook.data.${sourceTab}.${entryId}.rotation`]: newRot
+        });
+        this.render({ parts: ["content"] });
+        return;
+      } else if (action === 'toggle-visibility') {
+        if (entryEl) {
+          return this.constructor._onToggleVisibility.call(this, event, entryEl);
+        }
+      } else if (action === 'share-overlay') {
+        if (entryEl) {
+          return this.constructor._onShareOverlay.call(this, event, entryEl);
+        }
+      } else if (action === 'open-actor') {
+        if (entryData.actorUuid) {
+          const actor = await fromUuid(entryData.actorUuid);
+          if (actor?.sheet) actor.sheet.render(true);
+        }
+        return;
+      } else if (action === 'activate-scene') {
+        if (entryData.sceneUuid) {
+          const scene = await fromUuid(entryData.sceneUuid);
+          if (scene) scene.view();
+        }
+        return;
+      } else if (action === 'remove-board') {
+        if (entryEl) {
+          return this.constructor._onRemoveFromBoard.call(this, event, entryEl);
+        }
+      } else if (action === 'delete') {
+        if (entryEl) {
+          return this.constructor._onDeleteEntry.call(this, event, entryEl);
+        }
+      }
+    }
+
+    // Multi-selection operations
     const elements = selectedIds.map(id => this._boardIndex.cardMap.get(id)).filter(item => item);
     if (elements.length < 2) return;
 
@@ -944,6 +1119,10 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         item.isPinned = false;
         updates[`flags.ClueBook.data.${item.tab}.${item.id}.pinned`] = false;
       });
+    } else if (action === 'reset-rotation-group') {
+      elements.forEach(item => {
+        updates[`flags.ClueBook.data.${item.tab}.${item.id}.rotation`] = 0;
+      });
     } else if (action === 'remove-board') {
       const nonPinnedElements = elements.filter(item => !item.isPinned);
       if (nonPinnedElements.length === 0) {
@@ -972,6 +1151,38 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       await this._updateWorkspaceData(updates);
       this.render({ parts: ["content"] });
     }
+  }
+
+  async _navigateToEntryTab(targetId) {
+    if (!targetId) return;
+    const data = this._getWorkspaceData();
+    let targetEntry = null;
+    let targetTab = null;
+
+    for (const [tabKey, tabData] of Object.entries(data)) {
+      if (tabKey === "links" || tabKey === "search" || tabKey === "board") continue;
+      if (tabData?.[targetId]) {
+        targetEntry = tabData[targetId];
+        targetTab = tabKey;
+        break;
+      }
+    }
+
+    if (!targetEntry) return;
+
+    this.state.activeTab = targetTab;
+    this.state.highlightedEntryId = targetId;
+    await game.user.setFlag("ClueBook", "lastTab", targetTab);
+    await this.render();
+
+    setTimeout(() => {
+      const card = this.element?.querySelector(`.cluebook-entry[data-entry-id="${targetId}"]`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('is-highlighted');
+        setTimeout(() => card.classList.remove('is-highlighted'), 2000);
+      }
+    }, 100);
   }
 
   _showBoardCreateContextMenu(ev, currentZoom, currentPanX, currentPanY) {
@@ -1046,6 +1257,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         entry: data,
         sourceTab: targetTab,
         entryId: id,
+        workspace: this.state.activeWorkspace,
         onSave: async (savedData) => {
           const flagUpdates = {};
           for (const [key, value] of Object.entries(savedData)) {

@@ -14,7 +14,7 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
     let data = this._getWorkspaceData();
     
     const entry = data[sourceTab]?.[entryId];
-    if (!entry) return;
+    if (!entry || sourceTab === "labels" || sourceTab === "pins") return;
     
     // Check if players have observer access to the board
     let canPlayersSee = false;

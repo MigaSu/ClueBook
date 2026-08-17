@@ -97,46 +97,74 @@ export class TextEnrichmentService {
    * @param {number} [maxSnippetLen=140] 
    * @returns {{ displayTitleHTML: string, snippetHTML: string, plainTitle: string, plainSnippet: string }}
    */
-  static extractDisplayAndSnippet(name, noteText, maxTitleLen = 80, maxSnippetLen = 140) {
+  static async extractDisplayAndSnippet(name, noteText, maxTitleLen = 80, maxSnippetLen = 140) {
     const rawName = String(name || "").trim();
     const rawNote = String(noteText || "").trim();
 
     let titleRaw = rawName;
     let snippetRaw = "";
 
-    if (!titleRaw && rawNote) {
-      // Find the first sentence without splitting inside mentions
-      // Split on first period, question mark, exclamation, or newline outside of [[...]]
+    // Clean html block wrappers when splitting sentences
+    const cleanNoteForSplit = rawNote
+      .replace(/<\/p>|<br\s*\/?>|<\/div>/gi, ' ')
+      .replace(/<p[^>]*>|<div[^>]*>/gi, '')
+      .trim();
+
+    if (!titleRaw && cleanNoteForSplit) {
       let splitIdx = -1;
       let insideMention = false;
-      for (let i = 0; i < rawNote.length; i++) {
-        if (rawNote.startsWith('[[', i)) insideMention = true;
-        if (rawNote.startsWith(']]', i)) insideMention = false;
-        if (!insideMention && (rawNote[i] === '\n' || (['.', '!', '?'].includes(rawNote[i]) && (i === rawNote.length - 1 || /\s/.test(rawNote[i + 1]))))) {
+      for (let i = 0; i < cleanNoteForSplit.length; i++) {
+        if (cleanNoteForSplit.startsWith('[[', i)) insideMention = true;
+        if (cleanNoteForSplit.startsWith(']]', i)) insideMention = false;
+        if (!insideMention && (cleanNoteForSplit[i] === '\n' || (['.', '!', '?'].includes(cleanNoteForSplit[i]) && (i === cleanNoteForSplit.length - 1 || /\s/.test(cleanNoteForSplit[i + 1]))))) {
           splitIdx = i + 1;
           break;
         }
       }
 
       if (splitIdx !== -1) {
-        titleRaw = rawNote.substring(0, splitIdx).trim();
-        snippetRaw = rawNote.substring(splitIdx).replace(/^[\n.!?\s]+/, '').trim();
+        titleRaw = cleanNoteForSplit.substring(0, splitIdx).trim();
+        snippetRaw = cleanNoteForSplit.substring(splitIdx).replace(/^[\n.!?\s]+/, '').trim();
       } else {
-        titleRaw = rawNote;
+        titleRaw = cleanNoteForSplit;
         snippetRaw = "";
       }
-    } else if (rawNote) {
-      snippetRaw = rawNote;
+    } else if (cleanNoteForSplit) {
+      snippetRaw = cleanNoteForSplit;
     }
 
     const plainTitle = this.stripToPlainText(titleRaw);
     const plainSnippet = this.stripToPlainText(snippetRaw);
 
     const defaultTitle = game.i18n ? game.i18n.localize("CLUEBOOK.Entry.Untitled") : "(Untitled)";
-    
-    // Enrich mentions in both title and snippet
-    let displayTitleHTML = titleRaw ? this.enrichMentionsToHTML(titleRaw) : defaultTitle;
-    let snippetHTML = snippetRaw ? this.enrichMentionsToHTML(snippetRaw) : "";
+    const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
+
+    const processText = (t) => {
+      if (!t) return "";
+      let withUUIDs = this.wrapBareUUIDs(t);
+      return this.enrichMentionsToHTML(withUUIDs);
+    };
+
+    // Enrich HTML and strip block wrapper tags to keep inline layout in table and list
+    let displayTitleHTML = defaultTitle;
+    if (titleRaw) {
+      try {
+        const enriched = await TE.enrichHTML(processText(titleRaw), { async: true });
+        displayTitleHTML = enriched.replace(/^<p\b[^>]*>/i, '').replace(/<\/p>$/i, '').trim() || defaultTitle;
+      } catch (e) {
+        displayTitleHTML = processText(titleRaw);
+      }
+    }
+
+    let snippetHTML = "";
+    if (snippetRaw) {
+      try {
+        const enriched = await TE.enrichHTML(processText(snippetRaw), { async: true });
+        snippetHTML = enriched.replace(/<p\b[^>]*>/gi, '').replace(/<\/p>/gi, ' ').trim();
+      } catch (e) {
+        snippetHTML = processText(snippetRaw);
+      }
+    }
 
     return {
       displayTitleHTML,

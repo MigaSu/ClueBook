@@ -30,12 +30,21 @@ export class TimeService {
         console.error("ClueBook | TimeService Hook Error:", e);
       }
     };
-    const provider = this.getProvider();
-    if (provider === "simple-calendar" && window.SimpleCalendar?.Hooks?.DateTimeChange) {
+    
+    // 1. Standard Foundry world time hook
+    Hooks.on("updateWorldTime", safeCallback);
+
+    // 2. Simple Calendar Hooks
+    Hooks.on("simple-calendar-date-time-change", safeCallback);
+    Hooks.on("simple-calendar-clock-start-stop", safeCallback);
+    if (window.SimpleCalendar?.Hooks?.DateTimeChange) {
       Hooks.on(window.SimpleCalendar.Hooks.DateTimeChange, safeCallback);
     }
-    // Fallback: listen to default Foundry time changes
-    Hooks.on("updateWorldTime", safeCallback);
+
+    // 3. Calendaria Hooks
+    Hooks.on("calendaria.dateTimeChange", safeCallback);
+    Hooks.on("calendaria.clockTick", safeCallback);
+    Hooks.on("calendaria.timeAdvance", safeCallback);
   }
 
   /**

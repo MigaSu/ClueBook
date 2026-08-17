@@ -118,13 +118,7 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
         `;
       });
 
-      accessHTML = `
-            <div class="form-group" style="margin-top: 12px;">
-              <label style="font-size: 13px; font-weight: 500; margin-bottom: 6px; display: block; color: var(--cb-text);">${game.i18n.localize("CLUEBOOK.AppActions.WhoHasAccess")}</label>
-              <div style="max-height: 140px; overflow-y: auto; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.12); padding: 10px; border-radius: 6px; font-size: 13px;">
-                ${userCheckboxes || `<span style="opacity:0.6; color:#cbd5e1;">${game.i18n.localize("CLUEBOOK.AppActions.NoOtherPlayers")}</span>`}
-              </div>
-            </div>
+      const readOnlyHTML = game.user.isGM ? `
             <div class="setting-row flex-checkbox" style="margin-top: 14px;">
               <label for="cb-edit-ws-readonly">${game.i18n.localize("CLUEBOOK.AppActions.ReadOnlyForPlayers")}</label>
               <div class="cb-toggle">
@@ -132,11 +126,21 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
                 <label for="cb-edit-ws-readonly"></label>
               </div>
             </div>
+      ` : '';
+
+      accessHTML = `
+            <div class="form-group" style="margin-top: 12px;">
+              <label style="font-size: 13px; font-weight: 500; margin-bottom: 6px; display: block; color: var(--cb-text);">${game.i18n.localize("CLUEBOOK.AppActions.WhoHasAccess")}</label>
+              <div style="max-height: 140px; overflow-y: auto; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.12); padding: 10px; border-radius: 6px; font-size: 13px;">
+                ${userCheckboxes || `<span style="opacity:0.6; color:#cbd5e1;">${game.i18n.localize("CLUEBOOK.AppActions.NoOtherPlayers")}</span>`}
+              </div>
+            </div>
+            ${readOnlyHTML}
       `;
     }
 
     const content = `
-      <form class="cluebook-board-settings-form">
+      <div class="cluebook-board-settings-form">
         <div class="settings-grid cluebook-custom-scrollbar" style="grid-template-columns: 1fr; padding: 4px;">
           <!-- Access & General -->
           <div class="settings-card">
@@ -282,33 +286,6 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
             </div>
           </div>
 
-          <!-- Board Appearance -->
-          <div class="settings-card">
-            <h3><i class="fas fa-project-diagram"></i> ${game.i18n.localize("CLUEBOOK.Settings.CategoryBoardAppearance")}</h3>
-            
-            <div class="setting-row">
-              <label>${game.i18n.localize("CLUEBOOK.Settings.LinkColor")}</label>
-              <input type="color" name="theme_linkColor" value="${settingsObj.theme?.linkColor || '#ff5252'}" style="height: 30px; cursor: pointer;" class="setting-input">
-            </div>
-            
-            <div class="setting-row">
-              <label>${game.i18n.localize("CLUEBOOK.Settings.LinkStyle")}</label>
-              <select name="theme_linkStyle" class="setting-input cluebook-input">
-                <option value="solid" ${(settingsObj.theme?.linkStyle === "solid") ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleSolid")}</option>
-                <option value="6,4" ${(!settingsObj.theme?.linkStyle || settingsObj.theme?.linkStyle === "6,4") ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleDashed")}</option>
-                <option value="2,4" ${(settingsObj.theme?.linkStyle === "2,4") ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleDotted")}</option>
-              </select>
-            </div>
-            
-            <div class="setting-row flex-checkbox">
-              <label for="cb-sw-grid">${game.i18n.localize("CLUEBOOK.Settings.SnapToGrid")}</label>
-              <div class="cb-toggle">
-                <input type="checkbox" name="theme_snapToGrid" id="cb-sw-grid" ${settingsObj.theme?.snapToGrid ? 'checked' : ''}>
-                <label for="cb-sw-grid"></label>
-              </div>
-            </div>
-          </div>
-
           <!-- Interaction -->
           <div class="settings-card">
             <h3><i class="fas fa-mouse-pointer"></i> ${game.i18n.localize("CLUEBOOK.Settings.CategoryInteraction")}</h3>
@@ -330,52 +307,8 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
               <input type="number" name="theme_highlightDuration" value="${settingsObj.theme?.highlightDuration ?? 2}" min="1" max="10" step="1" class="setting-input cluebook-input" style="width:80px;">
             </div>
           </div>
-
-          <!-- Data / Colors -->
-          <div class="settings-card">
-            <h3><i class="fas fa-database"></i> ${game.i18n.localize("CLUEBOOK.Settings.CategoryData")}</h3>
-            
-            <h4 style="margin: 0 0 5px 0; font-size: 13px; color: var(--cb-text-muted); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom:3px;">${game.i18n.localize("CLUEBOOK.Settings.DefaultColors")}</h4>
-            
-            <div class="setting-row">
-              <label>${game.i18n.localize("CLUEBOOK.Settings.Notes")}</label>
-              <select name="dc_notes" class="setting-input cluebook-input">
-                ${["yellow","green","blue","red","purple","orange","teal","pink","brown"].map(c => `<option value="${c}" ${(settingsObj.defaultColors?.notes === c || (!settingsObj.defaultColors?.notes && c === "yellow")) ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Colors." + c.charAt(0).toUpperCase() + c.slice(1))}</option>`).join('')}
-              </select>
-            </div>
-            <div class="setting-row">
-              <label>${game.i18n.localize("CLUEBOOK.Settings.Characters")}</label>
-              <select name="dc_npc" class="setting-input cluebook-input">
-                ${["yellow","green","blue","red","purple","orange","teal","pink","brown"].map(c => `<option value="${c}" ${(settingsObj.defaultColors?.npc === c || (!settingsObj.defaultColors?.npc && c === "green")) ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Colors." + c.charAt(0).toUpperCase() + c.slice(1))}</option>`).join('')}
-              </select>
-            </div>
-            <div class="setting-row">
-              <label>${game.i18n.localize("CLUEBOOK.Settings.Locations")}</label>
-              <select name="dc_locations" class="setting-input cluebook-input">
-                ${["yellow","green","blue","red","purple","orange","teal","pink","brown"].map(c => `<option value="${c}" ${(settingsObj.defaultColors?.locations === c || (!settingsObj.defaultColors?.locations && c === "blue")) ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Colors." + c.charAt(0).toUpperCase() + c.slice(1))}</option>`).join('')}
-              </select>
-            </div>
-            <div class="setting-row">
-              <label>${game.i18n.localize("CLUEBOOK.Settings.Quests")}</label>
-              <select name="dc_quests" class="setting-input cluebook-input">
-                ${["yellow","green","blue","red","purple","orange","teal","pink","brown"].map(c => `<option value="${c}" ${(settingsObj.defaultColors?.quests === c || (!settingsObj.defaultColors?.quests && c === "purple")) ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Colors." + c.charAt(0).toUpperCase() + c.slice(1))}</option>`).join('')}
-              </select>
-            </div>
-            <div class="setting-row">
-              <label>${game.i18n.localize("CLUEBOOK.Settings.Timeline")}</label>
-              <select name="dc_timeline" class="setting-input cluebook-input">
-                ${["yellow","green","blue","red","purple","orange","teal","pink","brown"].map(c => `<option value="${c}" ${(settingsObj.defaultColors?.timeline === c || (!settingsObj.defaultColors?.timeline && c === "red")) ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Colors." + c.charAt(0).toUpperCase() + c.slice(1))}</option>`).join('')}
-              </select>
-            </div>
-            <div class="setting-row">
-              <label>${game.i18n.localize("CLUEBOOK.Tabs.Gallery")}</label>
-              <select name="dc_gallery" class="setting-input cluebook-input">
-                ${["yellow","green","blue","red","purple","orange","teal","pink","brown"].map(c => `<option value="${c}" ${(settingsObj.defaultColors?.gallery === c || (!settingsObj.defaultColors?.gallery && c === "teal")) ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Colors." + c.charAt(0).toUpperCase() + c.slice(1))}</option>`).join('')}
-              </select>
-            </div>
-          </div>
         </div>
-      </form>
+      </div>
     `;
 
     new foundry.applications.api.DialogV2({
@@ -385,7 +318,7 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
         icon: "fas fa-cog",
         resizable: true
       },
-      position: { width: 620, height: 680 },
+      position: { width: 620, height: 620 },
       content: content,
       buttons: [
         {
@@ -393,12 +326,12 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
           label: game.i18n.localize("CLUEBOOK.AppActions.Save"),
           icon: "fas fa-save",
           default: true,
-          callback: async (event, button, dialog) => {
+          callback: (event, button, dialog) => {
             const form = button.form;
             const newName = form.elements.workspaceName?.value?.trim();
             if (!newName) return;
 
-            const isReadOnly = form.elements.readOnly?.checked ?? false;
+            const isReadOnly = game.user.isGM ? (form.elements.readOnly?.checked ?? false) : (settingsObj.readOnly ?? false);
             const hideEditBtn = !(form.elements.showBtnEdit?.checked ?? true);
             const hideSendToBoardBtn = !(form.elements.showBtnBoard?.checked ?? true);
             const hideTrackerBtn = !(form.elements.showBtnTrack?.checked ?? true);
@@ -431,30 +364,18 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
                 },
                 theme: {
                   ...(settingsObj.theme || {}),
-                  linkColor: form.elements.theme_linkColor?.value || '#ff5252',
-                  linkStyle: form.elements.theme_linkStyle?.value || '6,4',
-                  snapToGrid: form.elements.theme_snapToGrid?.checked ?? false,
-                  hoverHighlight: form.elements.theme_hoverHighlight?.checked ?? true,
-                  hoverDelay: parseInt(form.elements.theme_hoverDelay?.value) || 1000,
-                  highlightDuration: parseInt(form.elements.theme_highlightDuration?.value) || 2
+                  hoverHighlight: form.elements.theme_hoverHighlight?.checked ?? (settingsObj.theme?.hoverHighlight ?? true),
+                  hoverDelay: parseInt(form.elements.theme_hoverDelay?.value) || (settingsObj.theme?.hoverDelay ?? 1000),
+                  highlightDuration: parseInt(form.elements.theme_highlightDuration?.value) || (settingsObj.theme?.highlightDuration ?? 2)
                 },
                 defaultColors: {
-                  ...(settingsObj.defaultColors || {}),
-                  notes: form.elements.dc_notes?.value || "yellow",
-                  npc: form.elements.dc_npc?.value || "green",
-                  locations: form.elements.dc_locations?.value || "blue",
-                  quests: form.elements.dc_quests?.value || "purple",
-                  timeline: form.elements.dc_timeline?.value || "red",
-                  gallery: form.elements.dc_gallery?.value || "teal"
+                  ...(settingsObj.defaultColors || {})
                 }
             };
 
-            if (isPersonal) {
-              await game.user.setFlag("ClueBook", "personalWorkspaceName", newName);
-              await game.user.setFlag("ClueBook", "settings", updatedSettings);
-            } else {
-              const ownership = { default: journal.ownership.default || 0 };
-              ownership[game.user.id] = 3;
+            let ownership = null;
+            if (!isPersonal) {
+              ownership = { default: journal.ownership.default || 0, [game.user.id]: 3 };
               game.users.filter(u => u.isGM).forEach(gm => ownership[gm.id] = 3);
   
               form.querySelectorAll('input[type="checkbox"]').forEach(input => {
@@ -465,24 +386,36 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
                   }
                 }
               });
-  
-              const updates = { 
-                "flags.ClueBook.isWorkspace": true,
-                "flags.ClueBook.settings": updatedSettings
-              };
-              await journal.update(updates);
-              ClueBookSocket.updateBoard(journal.id, newName, ownership);
             }
 
-            // Update FAB menu if widget exists
-            const widget = document.getElementById("cluebook-widget");
-            if (widget && widget._buildMenu) {
-              const currentSettings = this.getSettings();
-              const menu = widget.querySelector(".cb-fab-menu");
-              if (menu) widget._buildMenu(currentSettings, menu);
-            }
+            // Perform async DB/Socket updates in background without delaying modal close
+            (async () => {
+              try {
+                if (isPersonal) {
+                  await game.user.setFlag("ClueBook", "personalWorkspaceName", newName);
+                  await game.user.setFlag("ClueBook", "settings", updatedSettings);
+                } else {
+                  const updates = { 
+                    "flags.ClueBook.isWorkspace": true,
+                    "flags.ClueBook.settings": updatedSettings
+                  };
+                  await journal.update(updates);
+                  ClueBookSocket.updateBoard(journal.id, newName, ownership);
+                }
 
-            this.render({ parts: ["tabs", "content"] });
+                // Update FAB menu if widget exists
+                const widget = document.getElementById("cluebook-widget");
+                if (widget && widget._buildMenu) {
+                  const currentSettings = this.getSettings();
+                  const menu = widget.querySelector(".cb-fab-menu");
+                  if (menu) widget._buildMenu(currentSettings, menu);
+                }
+
+                this.render({ parts: ["tabs", "content"] });
+              } catch(err) {
+                console.error("ClueBook | Error saving board settings:", err);
+              }
+            })();
           }
         },
         {

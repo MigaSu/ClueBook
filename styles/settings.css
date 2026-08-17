@@ -230,6 +230,7 @@
   border-radius: 12px !important;
   display: flex !important;
   flex-direction: column !important;
+  max-height: 90vh !important;
 }
 
 .cluebook-window.cluebook-board-settings-dialog .window-content {
@@ -239,14 +240,17 @@
   flex-direction: column !important;
   flex: 1 1 auto !important;
   min-height: 0 !important;
+  height: 100% !important;
   overflow: hidden !important;
 }
 
-.cluebook-window.cluebook-board-settings-dialog .dialog-content {
+.cluebook-window.cluebook-board-settings-dialog .dialog-content,
+.cluebook-window.cluebook-board-settings-dialog .standard-form {
   display: flex !important;
   flex-direction: column !important;
   flex: 1 1 auto !important;
   min-height: 0 !important;
+  height: 100% !important;
   overflow: hidden !important;
   padding: 0 !important;
   margin: 0 !important;
@@ -257,6 +261,7 @@
   flex-direction: column !important;
   flex: 1 1 auto !important;
   min-height: 0 !important;
+  height: 100% !important;
   overflow: hidden !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -268,9 +273,37 @@
   gap: 14px !important;
   flex: 1 1 auto !important;
   min-height: 0 !important;
+  height: 100% !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   padding-right: 6px !important;
+  overscroll-behavior: contain !important;
+}
+
+.cluebook-window.cluebook-board-settings-dialog .settings-grid::-webkit-scrollbar,
+.cluebook-window.cluebook-board-settings-dialog .cluebook-custom-scrollbar::-webkit-scrollbar,
+.cluebook-custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cluebook-window.cluebook-board-settings-dialog .settings-grid::-webkit-scrollbar-track,
+.cluebook-window.cluebook-board-settings-dialog .cluebook-custom-scrollbar::-webkit-scrollbar-track,
+.cluebook-custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.cluebook-window.cluebook-board-settings-dialog .settings-grid::-webkit-scrollbar-thumb,
+.cluebook-window.cluebook-board-settings-dialog .cluebook-custom-scrollbar::-webkit-scrollbar-thumb,
+.cluebook-custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(123, 97, 255, 0.4);
+  border-radius: 3px;
+}
+
+.cluebook-window.cluebook-board-settings-dialog .settings-grid::-webkit-scrollbar-thumb:hover,
+.cluebook-window.cluebook-board-settings-dialog .cluebook-custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.cluebook-custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(123, 97, 255, 0.7);
 }
 
 .cluebook-window.cluebook-board-settings-dialog .dialog-buttons,

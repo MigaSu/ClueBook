@@ -305,26 +305,36 @@ Hooks.once("ready", async () => {
 
   const settings = game.user.getFlag("ClueBook", "settings") || {};
   
-  let lastTimeStr = null;
-  TimeService.registerHook(() => {
-    const dt = TimeService.getCurrentDateTime();
-    const newTimeStr = dt ? dt.fullStr : null;
-    
-    // If the displayed game time (down to the minute) hasn't changed, skip render
-    if (lastTimeStr === newTimeStr) return;
-    lastTimeStr = newTimeStr;
+  let lastWorldMinute = null;
+  const triggerTimeUpdate = () => {
+    const currentWorldTime = game.time?.worldTime;
+    if (currentWorldTime === undefined || currentWorldTime === null) return;
+
+    // Convert world time in seconds to whole minutes (protection against 1-second clock ticks)
+    const currentWorldMinute = Math.floor(currentWorldTime / 60);
+    if (lastWorldMinute === currentWorldMinute) return;
+    lastWorldMinute = currentWorldMinute;
 
     try {
-      if (clueBookApp && clueBookApp.rendered && !clueBookApp.state.editingEntryId) {
+      if (clueBookApp && clueBookApp.rendered) {
         clueBookApp.render({ parts: ["content"] });
       }
       if (trackerWidgetApp && trackerWidgetApp.rendered) {
-        trackerWidgetApp.render({ force: true });
+        trackerWidgetApp.render();
       }
     } catch (e) {
       console.error("ClueBook | Time update render error:", e);
     }
-  });
+  };
+
+  TimeService.registerHook(triggerTimeUpdate);
+
+  // Periodic check every 5 seconds to ensure live countdowns remain synchronized when a minute turns
+  setInterval(() => {
+    if ((clueBookApp && clueBookApp.rendered) || (trackerWidgetApp && trackerWidgetApp.rendered)) {
+      triggerTimeUpdate();
+    }
+  }, 5000);
 
   // Inject floating widget on ready
   injectWidget = () => {

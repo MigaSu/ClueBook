@@ -6,51 +6,50 @@ import { getForcedDeletion } from "../data-models.js";
 export const ClueBookBoardActionsMixin = (Base) => class extends Base {
   static async _onJumpToBoard(event, target) {
     const entry = target.closest('.cluebook-entry');
-    const entryId = entry.dataset.entryId;
-    const sourceTab = entry.dataset.sourceTab || this.state.activeTab;
+    const entryId = entry?.dataset?.entryId;
+    const sourceTab = entry?.dataset?.sourceTab || this.state.activeTab;
+    if (!entryId) return;
     
     let data = this._getWorkspaceData();
-    
     const entryData = data[sourceTab]?.[entryId];
     if (!entryData || !entryData.onBoard) return;
     
     const bx = entryData.boardX || 0;
     const by = entryData.boardY || 0;
+    const cardW = entryData.boardW || 280;
+    const cardH = entryData.boardH || 160;
     
-    const zoom = 0.7; // Fixed zoom
-    const W = this.position.width;
-    const H = this.position.height - 50; // offset for tabs
+    const zoom = Math.max(0.6, this.state.camera?.zoom || 0.7);
+    const W = this.position.width || 900;
+    const H = (this.position.height || 650) - 50; // offset for tabs
     
-    // Calculate card center dynamically from DOM if card exists
-    const cardEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
-    const cardW = cardEl?.offsetWidth || 280;
-    const cardH = cardEl?.offsetHeight || 160;
     const cardCenterX = bx + (cardW / 2);
     const cardCenterY = by + (cardH / 2);
     
-    const panX = W / 2 - (cardCenterX * zoom);
-    const panY = H / 2 - (cardCenterY * zoom);
+    const panX = Math.round((W / 2) - (cardCenterX * zoom));
+    const panY = Math.round((H / 2) - (cardCenterY * zoom));
     
     this.state.camera = { zoom, panX, panY };
     this.state.activeTab = "board";
     this.state.highlightedEntryId = entryId;
     
-    // Update DB with new camera for active workspace
+    // Update DB with new camera and lastTab for active workspace
     const ws = this.state.activeWorkspace || "personal";
     const allCameras = { ...(game.user.getFlag("ClueBook", "boardCameras") || {}), [ws]: this.state.camera };
-    game.user.update({ 
+    await game.user.update({ 
       "flags.ClueBook.boardCameras": allCameras,
-      "flags.ClueBook.boardCamera": this.state.camera 
+      "flags.ClueBook.boardCamera": this.state.camera,
+      "flags.ClueBook.lastTab": "board"
     });
     
-    this.render({ parts: ["content"] });
+    await this.render();
     
     const settings = this.getSettings();
     const durationMs = (settings.theme.highlightDuration || 2) * 1000;
     setTimeout(() => {
        if (this.state.highlightedEntryId === entryId) {
           this.state.highlightedEntryId = null;
-          const el = this.element.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
+          const el = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
           if (el) el.classList.remove('is-highlighted');
        }
     }, durationMs);
@@ -77,31 +76,8 @@ export const ClueBookBoardActionsMixin = (Base) => class extends Base {
 
     if (!targetEntry) return;
 
-    // Smart Jump Logic
-    if (targetEntry.onBoard) {
-      const bx = targetEntry.boardX || 0;
-      const by = targetEntry.boardY || 0;
-      const zoom = 0.7; 
-      const W = this.position.width;
-      const H = this.position.height - 50;
-      const cardEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${targetId}"]`);
-      const cardW = cardEl?.offsetWidth || 280;
-      const cardH = cardEl?.offsetHeight || 160;
-      const panX = W / 2 - ((bx + (cardW / 2)) * zoom);
-      const panY = H / 2 - ((by + (cardH / 2)) * zoom);
-      
-      this.state.camera = { zoom, panX, panY };
-      this.state.activeTab = "board";
-      const ws = this.state.activeWorkspace || "personal";
-      const allCameras = { ...(game.user.getFlag("ClueBook", "boardCameras") || {}), [ws]: this.state.camera };
-      game.user.update({ 
-        "flags.ClueBook.boardCameras": allCameras,
-        "flags.ClueBook.boardCamera": this.state.camera 
-      });
-    } else {
-      this.state.activeTab = targetTab;
-    }
-    
+    // Navigate directly to the entry's tab
+    this.state.activeTab = targetTab;
     await game.user.setFlag("ClueBook", "lastTab", this.state.activeTab);
     this.state.highlightedEntryId = targetId;
     // Full render so the tabs nav also updates to the new active tab

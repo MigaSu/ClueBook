@@ -206,6 +206,15 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
       tracked.push(entryId);
     }
     await game.user.setFlag("ClueBook", "trackedEvents", tracked);
+    this.render({ parts: ["content"] });
+
+    if (foundry.applications?.instances) {
+      for (const app of foundry.applications.instances.values()) {
+        if (app.constructor.name === "TrackerWidget") {
+          app.render();
+        }
+      }
+    }
   }
 
   static async _onAddTime(event, target) {

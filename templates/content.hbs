@@ -29,6 +29,18 @@
       {{/each}}
     </div>
     {{/if}}
+
+    {{#if searchCategoryChips.length}}
+    <div class="cb-search-category-chips">
+      {{#each searchCategoryChips}}
+      <button type="button" class="cb-filter-pill {{#if this.active}}active{{/if}}" data-action="filterSearchCategory" data-category="{{this.id}}">
+        {{#if this.icon}}<i class="{{this.icon}}"></i> {{/if}}
+        <span>{{this.label}}</span>
+        <span class="cb-filter-count">{{this.count}}</span>
+      </button>
+      {{/each}}
+    </div>
+    {{/if}}
   </div>
   {{/if}}
 
@@ -101,7 +113,24 @@
   <div class="entries-list {{#if (eq currentViewMode 'compact')}}is-compact-view{{else if (eq currentViewMode 'list')}}is-list-view{{else}}is-grid-view{{/if}}">
     {{> "modules/ClueBook/templates/partials/tab-board.hbs"}}
 
-    {{#unless isBoardView}}
+    {{#if (eq activeTab "search")}}
+      {{#each searchGroups}}
+      <div class="cb-search-group">
+        <div class="cb-search-group-header">
+          <div class="cb-search-group-title-wrap">
+            <i class="{{this.icon}} cb-search-group-icon"></i>
+            <span class="cb-search-group-title">{{this.label}}</span>
+            <span class="cb-search-group-badge">{{this.count}}</span>
+          </div>
+        </div>
+        <div class="cb-search-group-entries">
+          {{#each this.entries}}
+            {{> "modules/ClueBook/templates/partials/entry-card.hbs"}}
+          {{/each}}
+        </div>
+      </div>
+      {{/each}}
+    {{else if (not isBoardView)}}
       {{#each foldersTop}}
       <div class="cb-folder-section color-{{this.color}} {{#if this.isCollapsed}}is-collapsed{{/if}}" data-folder-id="{{this.id}}" {{#if this.customStyle}}style="{{this.customStyle}}"{{/if}}>
         <div class="cb-folder-header" draggable="true" data-action="toggleFolderCollapse" data-folder-id="{{this.id}}">
@@ -195,7 +224,7 @@
       {{#each entries}}
         {{> "modules/ClueBook/templates/partials/entry-card.hbs"}}
       {{/each}}
-    {{/unless}}
+    {{/if}}
   </div>
 
   {{#unless isWorkspaces}}

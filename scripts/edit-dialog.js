@@ -72,6 +72,10 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
     let globalTags = {};
     if (this.workspace === "personal") {
       globalTags = game.user.getFlag("ClueBook", "settings")?.tags || {};
+    } else if (this.workspace?.startsWith("personal_")) {
+      const uId = this.workspace.split("_")[1];
+      const u = game.users.get(uId);
+      if (u) globalTags = u.getFlag("ClueBook", "settings")?.tags || {};
     } else {
       const journal = game.journal.get(this.workspace);
       if (journal) {
@@ -93,6 +97,10 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
     let foldersData = {};
     if (this.workspace === "personal") {
       foldersData = game.user.getFlag("ClueBook", "data")?.folders || {};
+    } else if (this.workspace?.startsWith("personal_")) {
+      const uId = this.workspace.split("_")[1];
+      const u = game.users.get(uId);
+      if (u) foldersData = u.getFlag("ClueBook", "data")?.folders || {};
     } else {
       const journal = game.journal.get(this.workspace);
       if (journal) {
@@ -256,13 +264,32 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
           currentSettings.tags = currentSettings.tags || {};
           currentSettings.tags[tagId] = newTag;
           await game.user.setFlag("ClueBook", "settings", currentSettings);
+        } else if (this.workspace?.startsWith("personal_")) {
+          const uId = this.workspace.split("_")[1];
+          const u = game.users.get(uId);
+          if (u && game.user.isGM) {
+            currentSettings = u.getFlag("ClueBook", "settings") || {};
+            currentSettings.tags = currentSettings.tags || {};
+            currentSettings.tags[tagId] = newTag;
+            await u.setFlag("ClueBook", "settings", currentSettings);
+          }
         } else {
           const journal = game.journal.get(this.workspace);
           if (journal) {
-            currentSettings = journal.getFlag("ClueBook", "settings") || {};
-            currentSettings.tags = currentSettings.tags || {};
-            currentSettings.tags[tagId] = newTag;
-            await journal.setFlag("ClueBook", "settings", currentSettings);
+            if (journal.isOwner) {
+              currentSettings = journal.getFlag("ClueBook", "settings") || {};
+              currentSettings.tags = currentSettings.tags || {};
+              currentSettings.tags[tagId] = newTag;
+              await journal.setFlag("ClueBook", "settings", currentSettings);
+            } else {
+              game.socket.emit("module.ClueBook", {
+                action: "updateBoardData",
+                journalId: journal.id,
+                updateData: {
+                  [`flags.ClueBook.settings.tags.${tagId}`]: newTag
+                }
+              });
+            }
           }
         }
       }
@@ -573,19 +600,20 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
       });
     });
 
-    // Remove links
-    const removeLinks = html.querySelectorAll('[data-action="remove-link"]');
-    removeLinks.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const type = btn.dataset.type; // sceneUuid or actorUuid
-        let input = html.querySelector(`input[name="${type}"]`);
-        if (input) input.value = "";
-        btn.remove(); // hide badge
-        const placeholder = html.querySelector('.cb-drop-placeholder');
-        if (placeholder) placeholder.style.display = 'inline';
-        const dropzone = html.querySelector('.cb-entity-dropzone');
-        if (dropzone) dropzone.style.display = 'none';
-      });
+    // Remove links via event delegation (works for both initial and newly dropped badges)
+    html.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action="remove-link"]');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const type = btn.dataset.type; // sceneUuid or actorUuid
+      let input = html.querySelector(`input[name="${type}"]`);
+      if (input) input.value = "";
+      btn.remove(); // hide badge
+      const placeholder = html.querySelector('.cb-drop-placeholder');
+      if (placeholder) placeholder.style.display = 'inline';
+      const dropzone = html.querySelector('.cb-entity-dropzone');
+      if (dropzone) dropzone.style.display = 'flex';
     });
 
     const textareas = html.querySelectorAll('textarea.cluebook-input, input[name="owner"], input[name="subtitle"], input[name="location"]');
