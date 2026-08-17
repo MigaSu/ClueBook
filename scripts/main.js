@@ -11,6 +11,30 @@ let clueBookApp = null;
 let trackerWidgetApp = null;
 let injectWidget = null;
 
+// Helper to retrieve active board merged settings
+export function getActiveBoardSettings() {
+  const app = clueBookApp || game.modules?.get("ClueBook")?.api?.getApp?.();
+  if (app && typeof app.getSettings === "function") {
+    return app.getSettings();
+  }
+  const activeWs = app?.state?.activeWorkspace || game.user?.getFlag("ClueBook", "lastWorkspace") || game.user?.getFlag("ClueBook", "settings")?.theme?.defaultWorkspace || "personal";
+  let activeSettings = {};
+  if (activeWs !== "personal" && !activeWs.startsWith("personal_")) {
+    const journal = game.journal.get(activeWs);
+    activeSettings = journal ? (journal.getFlag("ClueBook", "settings") || {}) : {};
+  } else {
+    activeSettings = game.user?.getFlag("ClueBook", "settings") || {};
+  }
+  const userSettings = game.user?.getFlag("ClueBook", "settings") || {};
+  return {
+    ...userSettings,
+    ...activeSettings,
+    hiddenTabs: activeSettings.hiddenTabs || userSettings.hiddenTabs || {},
+    widget: userSettings.widget || {},
+    features: { ...(userSettings.features || {}), ...(activeSettings.features || {}) }
+  };
+}
+
 Hooks.once("init", async () => {
   try {
   console.log("ClueBook V14 | Initializing...");
@@ -301,29 +325,6 @@ Hooks.once("ready", async () => {
       console.error("ClueBook | Time update render error:", e);
     }
   });
-
-  const getActiveBoardSettings = () => {
-    const app = clueBookApp || game.modules.get("ClueBook")?.api?.getApp?.();
-    if (app && typeof app.getSettings === "function") {
-      return app.getSettings();
-    }
-    const activeWs = app?.state?.activeWorkspace || game.user?.getFlag("ClueBook", "lastWorkspace") || game.user?.getFlag("ClueBook", "settings")?.theme?.defaultWorkspace || "personal";
-    let activeSettings = {};
-    if (activeWs !== "personal" && !activeWs.startsWith("personal_")) {
-      const journal = game.journal.get(activeWs);
-      activeSettings = journal ? (journal.getFlag("ClueBook", "settings") || {}) : {};
-    } else {
-      activeSettings = game.user?.getFlag("ClueBook", "settings") || {};
-    }
-    const userSettings = game.user?.getFlag("ClueBook", "settings") || {};
-    return {
-      ...userSettings,
-      ...activeSettings,
-      hiddenTabs: activeSettings.hiddenTabs || userSettings.hiddenTabs || {},
-      widget: userSettings.widget || {},
-      features: { ...(userSettings.features || {}), ...(activeSettings.features || {}) }
-    };
-  };
 
   // Inject floating widget on ready
   injectWidget = () => {

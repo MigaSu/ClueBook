@@ -605,7 +605,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
       return this._onDeleteGroup();
     } else if (action === 'single-edit') {
       const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
-      if (entryEl) this.constructor._onEditEntry.call(this, null, entryEl);
+      if (entryEl) this.constructor._onToggleEdit.call(this, null, entryEl);
     } else if (action === 'open-actor') {
       if (entry?.actorUuid) {
         const actor = await fromUuid(entry.actorUuid);
