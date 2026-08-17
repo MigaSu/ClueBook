@@ -9,13 +9,23 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     }
     if (this.state.isReadOnly) return;
 
-    const PRESET_COLORS = ["purple", "blue", "teal", "green", "yellow", "orange", "red", "pink", "brown"];
+    const PRESET_COLORS = [
+      { id: "purple", hex: "#d47aec" },
+      { id: "blue", hex: "#6bccff" },
+      { id: "teal", hex: "#51e0d3" },
+      { id: "green", hex: "#7add80" },
+      { id: "yellow", hex: "#ffd940" },
+      { id: "orange", hex: "#ffb642" },
+      { id: "red", hex: "#ff6b6b" },
+      { id: "pink", hex: "#ff80b3" },
+      { id: "brown", hex: "#b99384" }
+    ];
 
     const colorOptionsHTML = `
-      <div class="color-palette" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+      <div class="color-palette" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; align-items: center;">
         ${PRESET_COLORS.map(c => `
-          <label class="color-swatch color-${c}" style="cursor: pointer; position: relative;">
-            <input type="radio" name="folderColor" value="${c}" ${c === "purple" ? "checked" : ""} style="display:none;">
+          <label class="color-swatch color-${c.id}" style="cursor: pointer; width: 24px; height: 24px; border-radius: 50%; background: ${c.hex}; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid rgba(0,0,0,0.2);">
+            <input type="radio" name="folderColor" value="${c.id}" ${c.id === "purple" ? "checked" : ""} style="display:none;">
           </label>
         `).join("")}
       </div>
@@ -48,6 +58,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     `;
 
     const result = await foundry.applications.api.DialogV2.wait({
+      classes: ["cluebook-window", "cb-folder-dialog"],
       window: { title: game.i18n.localize("CLUEBOOK.Folder.CreateTitle") },
       content: content,
       buttons: [
@@ -109,15 +120,25 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     const folder = data?.folders?.[folderId];
     if (!folder) return;
 
-    const PRESET_COLORS = ["purple", "blue", "teal", "green", "yellow", "orange", "red", "pink", "brown"];
+    const PRESET_COLORS = [
+      { id: "purple", hex: "#d47aec" },
+      { id: "blue", hex: "#6bccff" },
+      { id: "teal", hex: "#51e0d3" },
+      { id: "green", hex: "#7add80" },
+      { id: "yellow", hex: "#ffd940" },
+      { id: "orange", hex: "#ffb642" },
+      { id: "red", hex: "#ff6b6b" },
+      { id: "pink", hex: "#ff80b3" },
+      { id: "brown", hex: "#b99384" }
+    ];
     const currentColor = folder.color || "purple";
     const currentPosition = folder.position || "top";
 
     const colorOptionsHTML = `
-      <div class="color-palette" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+      <div class="color-palette" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; align-items: center;">
         ${PRESET_COLORS.map(c => `
-          <label class="color-swatch color-${c}" style="cursor: pointer; position: relative;">
-            <input type="radio" name="folderColor" value="${c}" ${c === currentColor ? "checked" : ""} style="display:none;">
+          <label class="color-swatch color-${c.id}" style="cursor: pointer; width: 24px; height: 24px; border-radius: 50%; background: ${c.hex}; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.3); border: 2px solid rgba(0,0,0,0.2);">
+            <input type="radio" name="folderColor" value="${c.id}" ${c.id === currentColor ? "checked" : ""} style="display:none;">
           </label>
         `).join("")}
       </div>
@@ -150,6 +171,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     `;
 
     const result = await foundry.applications.api.DialogV2.wait({
+      classes: ["cluebook-window", "cb-folder-dialog"],
       window: { title: game.i18n.localize("CLUEBOOK.Folder.EditTitle") },
       content: content,
       buttons: [
@@ -225,6 +247,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     if (!folder) return;
 
     const proceed = await foundry.applications.api.DialogV2.confirm({
+      classes: ["cluebook-window"],
       window: { title: game.i18n.localize("CLUEBOOK.Folder.DeleteTitle") },
       content: `<p>${game.i18n.format("CLUEBOOK.Folder.DeletePrompt", { name: folder.name })}</p>`,
       yes: { icon: "fas fa-trash", label: game.i18n.localize("CLUEBOOK.Folder.DeleteBtn") }

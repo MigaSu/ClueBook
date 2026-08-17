@@ -159,17 +159,32 @@
   justify-content: center;
 }
 .cluebook-window .color-swatch,
-.cb-edit-dialog .color-swatch {
+.cb-edit-dialog .color-swatch,
+.cb-folder-dialog .color-swatch,
+.cb-folder-form .color-swatch {
   width: 24px;
   height: 24px;
   border-radius: 50%;
   cursor: pointer;
   border: 2px solid rgba(0,0,0,0.2);
-  transition: transform 0.2s;
+  transition: transform 0.2s, outline 0.2s;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  display: inline-block;
+  box-sizing: border-box;
 }
 .cluebook-window .color-swatch:hover,
-.cb-edit-dialog .color-swatch:hover {
+.cb-edit-dialog .color-swatch:hover,
+.cb-folder-dialog .color-swatch:hover,
+.cb-folder-form .color-swatch:hover {
+  transform: scale(1.2);
+}
+.cluebook-window .color-swatch:has(input:checked),
+.cb-edit-dialog .color-swatch:has(input:checked),
+.cb-folder-dialog .color-swatch:has(input:checked),
+.cb-folder-form .color-swatch:has(input:checked) {
+  outline: 2px solid #ffffff !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
   transform: scale(1.2);
 }
 .color-swatch.color-yellow { background: #ffd940; }
