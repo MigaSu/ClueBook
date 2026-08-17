@@ -68,6 +68,56 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     }).render(true);
   }
 
+  static async _onToggleQuestStatusMenu(event, target) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (this.state.isReadOnly) return;
+    const wrapper = target.closest('.cb-quest-status-wrapper');
+    if (!wrapper) return;
+    const dropdown = wrapper.querySelector('.cb-quest-status-dropdown');
+    if (!dropdown) return;
+
+    const isVisible = dropdown.style.display === 'flex';
+    // Close all other dropdowns
+    this.element.querySelectorAll('.cb-quest-status-dropdown').forEach(d => d.style.display = 'none');
+    dropdown.style.display = isVisible ? 'none' : 'flex';
+
+    if (!isVisible) {
+      const closeDropdown = (ev) => {
+        if (!wrapper.contains(ev.target)) {
+          dropdown.style.display = 'none';
+          document.removeEventListener('click', closeDropdown);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+    }
+  }
+
+  static async _onSetQuestStatus(event, target) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (this.state.isReadOnly) return;
+    const entryEl = target.closest('.cluebook-entry');
+    if (!entryEl) return;
+
+    const entryId = entryEl.dataset.entryId;
+    const sourceTab = entryEl.dataset.sourceTab || "quests";
+    const status = target.dataset.status;
+    if (!entryId || !status) return;
+
+    // Close all status dropdowns
+    this.element.querySelectorAll('.cb-quest-status-dropdown').forEach(d => d.style.display = 'none');
+
+    await this._updateWorkspaceData({
+      [`flags.ClueBook.data.${sourceTab}.${entryId}.status`]: status
+    });
+    this.render({ parts: ["content"] });
+  }
+
   static async _onTogglePin(event, target) {
     if (event) {
       event.preventDefault();

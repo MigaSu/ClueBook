@@ -49,9 +49,13 @@ All notable changes, refactoring, and bug fixes are documented in this file.
 * **Strict CSS Scoping:** Enforced 100% selector scoping under module roots (`.cluebook-window`, `.cb-tracker-widget`, `.cb-edit-dialog`, `.cb-tag-manager`).
 * **Full Multilingual Localization:** Updated translations across English, Russian, German, and French.
 
-### 🎛️ Smart Status Filters
+### 🎛️ Smart Status Filters & Ergonomics
 * **Quest Status Filter:** Interactive pill buttons in the quest tab header `[ All | ⏳ In Progress | ✅ Completed | ❌ Failed ]` with dynamic count badges for organizing hundreds of tasks.
 * **NPC Life Status Filter:** Quick life status filtering for characters `[ All | 💚 Alive | 💀 Dead | ❓ Unknown ]` with real-time counters.
+* **1-Click Quick Quest Status Switcher:** Clicking the quest status badge directly opens a rapid dropdown `[ ⏳ In Progress | ✅ Completed | ❌ Failed ]` to update task progress without opening the edit dialog.
+* **Deadline Freeze & Visual De-clutter on Done/Failed Quests:** When a quest is completed or failed, the large countdown timer box is automatically hidden from the card face to eliminate noise.
+* **Rich Status Popover on Hover:** Hovering over a completed/failed quest badge displays a floating tooltip with assigned deadline details and completion timestamps.
+* **Optional Completion Time:** Added an optional "Specify completion time" field in the quest edit modal.
 
 ### 🎨 UI/UX Fixes & Stability
 * **Dangling Link Labels Fix:** Connection lines and label badges are now strictly isolated to render only when both linked cards are actively visible on the board canvas.

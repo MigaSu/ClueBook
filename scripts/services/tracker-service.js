@@ -89,7 +89,7 @@ export class TrackerService {
     // Quests
     if (data.quests) {
       for (const [id, q] of Object.entries(data.quests)) {
-        if (q && q.status === "active" && trackedIds.includes(id)) {
+        if (q && (q.status === "active" || !q.status) && trackedIds.includes(id)) {
           let ts = q.deadlineTimestamp;
           let enrichedName = await enrich(q.text);
           this.#pushEvent(outputArray, id, enrichedName, ts, currentTs, workspaceId, workspaceName, "quests", q.color || "purple");

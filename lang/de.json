@@ -357,14 +357,19 @@
     "Quest": {
       "Active": "AKTIV",
       "Assigned": "ZUGEWIESEN",
+      "ChangeStatusHint": "Klicken, um den Status schnell zu ändern",
       "Completed": "ABGESCHLOSSEN",
+      "CompletedAt": "Abgeschlossen am",
+      "CompletionTimePlaceholder": "z.B. 14. Mai, Abend / Nach dem Kampf",
       "Deadline": "FRIST",
+      "Failed": "FEHLGESCHLAGEN",
       "In": "IN",
       "Left": "VERBLEIBEND",
       "LeftTime": "Verbleibende Zeit",
       "Overdue": "ÜBERFÄLLIG",
       "Passed": "VERGANGEN",
-      "Scheduled": "Geplant"
+      "Scheduled": "Geplant",
+      "SpecifyCompletionTime": "Abschlusszeit angeben"
     },
     "Scene": {
       "ActionPrompt": "<p style=\"text-align: center; margin-bottom: 10px;\">Was tun mit der Szene <strong>{name}</strong>?</p>",

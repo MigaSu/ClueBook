@@ -37,6 +37,7 @@ export class ClueBookEntryModel extends foundry.abstract.DataModel {
       isDead: new BooleanField({ initial: false }), // Для NPC (совместимость)
       status: new StringField({ initial: "active" }), // Для Квестов (active, completed, failed)
       deadline: new StringField({ initial: "" }), // Для Квестов
+      completedTime: new StringField({ initial: "" }), // Для Квестов (фактическое время выполнения)
       time: new StringField({ initial: "" }), // Для Событий (timeline)
       event: new HTMLField({ initial: "" }), // Для Событий
       subtitle: new HTMLField({ initial: "" }), // Для Локаций

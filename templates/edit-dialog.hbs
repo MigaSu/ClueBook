@@ -137,6 +137,18 @@
         <input type="text" name="deadline" value="{{entry.deadline}}" class="cluebook-input" placeholder="{{localize 'CLUEBOOK.Time.InputPlaceholder'}}">
       </fieldset>
     {{/if}}
+
+    <fieldset class="cb-completed-time-fieldset" style="border: 1px solid rgba(76, 175, 80, 0.3); padding: 10px; border-radius: 4px; margin-top: 8px; {{#unless (eq entry.status 'completed')}}display: none;{{/unless}}">
+      <legend style="padding: 0 5px; font-size: 13px; font-weight: bold; color: #81c784;">
+        <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <input type="checkbox" name="hasCompletedTime" {{#if entry.completedTime}}checked{{/if}}>
+          ✅ {{localize 'CLUEBOOK.Quest.SpecifyCompletionTime'}}
+        </label>
+      </legend>
+      <div class="cb-completed-time-input" {{#unless entry.completedTime}}style="display:none;"{{/unless}}>
+        <input type="text" name="completedTime" value="{{entry.completedTime}}" class="cluebook-input" placeholder="{{localize 'CLUEBOOK.Quest.CompletionTimePlaceholder'}}">
+      </div>
+    </fieldset>
   {{/if}}
 
   {{#if (eq sourceTab "timeline")}}

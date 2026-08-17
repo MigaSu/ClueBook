@@ -374,6 +374,24 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
       });
     }
 
+    // Toggle Completed Time fieldset when status changes to 'completed'
+    const statusSelect = html.querySelector('select[name="status"]');
+    const completedFieldset = html.querySelector('.cb-completed-time-fieldset');
+    const completedCheck = html.querySelector('[name="hasCompletedTime"]');
+    const completedInputGroup = html.querySelector('.cb-completed-time-input');
+
+    if (statusSelect && completedFieldset) {
+      statusSelect.addEventListener('change', (e) => {
+        completedFieldset.style.display = e.target.value === 'completed' ? 'block' : 'none';
+      });
+    }
+
+    if (completedCheck && completedInputGroup) {
+      completedCheck.addEventListener('change', (e) => {
+        completedInputGroup.style.display = e.target.checked ? 'block' : 'none';
+      });
+    }
+
     const endRadios = html.querySelectorAll('input[name="endMode"]');
     if (endRadios.length) {
       endRadios.forEach(r => {
@@ -884,6 +902,7 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
       updateData.status = data.status;
       updateData.text = data.text;
       updateData.timeMode = data.timeMode || "by";
+      updateData.completedTime = (data.status === "completed" && data.hasCompletedTime) ? (data.completedTime || "") : "";
       
       if (TimeService.isActive()) {
         if (data.hasDeadline) {

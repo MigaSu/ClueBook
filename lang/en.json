@@ -363,14 +363,19 @@
     "Quest": {
       "Active": "ACTIVE",
       "Assigned": "ASSIGNED",
+      "ChangeStatusHint": "Click to quickly change status",
       "Completed": "COMPLETED",
+      "CompletedAt": "Completed at",
+      "CompletionTimePlaceholder": "e.g. 14 May, Evening / After the battle",
       "Deadline": "DEADLINE",
+      "Failed": "FAILED",
       "In": "IN",
       "Left": "LEFT",
       "LeftTime": "Time left",
       "Overdue": "OVERDUE",
       "Passed": "PASSED",
-      "Scheduled": "SCHEDULED"
+      "Scheduled": "SCHEDULED",
+      "SpecifyCompletionTime": "Specify completion time"
     },
     "Scene": {
       "ActionPrompt": "<p style=\"text-align: center; margin-bottom: 10px;\">What to do with the scene <strong>{name}</strong>?</p>",

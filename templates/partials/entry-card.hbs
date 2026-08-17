@@ -126,39 +126,78 @@
 
       {{#if (eq this.sourceTab "quests")}}
         <div style="display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 5px; gap: 5px; width: 100%;">
-          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-            <div class="display-badge badge-{{this.status}}">{{this.translatedStatus}}</div>
+          <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; position: relative;">
+            <div class="cb-quest-status-wrapper">
+              <div class="display-badge badge-{{this.status}} cb-clickable-badge" data-action="toggleQuestStatusMenu" title="{{localize 'CLUEBOOK.Quest.ChangeStatusHint'}}">
+                {{#if (eq this.status "completed")}}✅{{else if (eq this.status "failed")}}❌{{else}}⏳{{/if}}
+                <span>{{this.translatedStatus}}</span>
+                <i class="fas fa-chevron-down cb-badge-chevron"></i>
+              </div>
+
+              {{#if (or (eq this.status "completed") (eq this.status "failed"))}}
+                {{#if (or this.formattedDeadline this.deadline this.completedTime)}}
+                <div class="cb-status-popover">
+                  {{#if (or this.formattedDeadline this.deadline)}}
+                    <div class="cb-popover-row">
+                      <i class="fas fa-hourglass-half"></i>
+                      <span><strong>{{localize "CLUEBOOK.Quest.Deadline"}}:</strong> {{#if this.formattedDeadlineDate}}{{this.formattedDeadlineDate}} {{this.formattedDeadlineTime}}{{else}}{{this.deadline}}{{/if}}</span>
+                    </div>
+                  {{/if}}
+                  {{#if this.completedTime}}
+                    <div class="cb-popover-row">
+                      <i class="fas fa-check-circle" style="color: #4caf50;"></i>
+                      <span><strong>{{localize "CLUEBOOK.Quest.CompletedAt"}}:</strong> {{this.completedTime}}</span>
+                    </div>
+                  {{/if}}
+                </div>
+                {{/if}}
+              {{/if}}
+
+              <div class="cb-quest-status-dropdown" style="display: none;">
+                <div class="cb-dropdown-item {{#if (or (eq this.status 'active') (not this.status))}}selected{{/if}}" data-action="setQuestStatus" data-status="active">
+                  <span>⏳</span> {{localize "CLUEBOOK.Quest.Active"}}
+                </div>
+                <div class="cb-dropdown-item {{#if (eq this.status 'completed')}}selected{{/if}}" data-action="setQuestStatus" data-status="completed">
+                  <span>✅</span> {{localize "CLUEBOOK.Quest.Completed"}}
+                </div>
+                <div class="cb-dropdown-item {{#if (eq this.status 'failed')}}selected{{/if}}" data-action="setQuestStatus" data-status="failed">
+                  <span>❌</span> {{localize "CLUEBOOK.Quest.Failed"}}
+                </div>
+              </div>
+            </div>
             {{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>{{/if}}
           </div>
-          {{#if this.formattedDeadline}}
-            <div class="cb-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}} {{#if this.isOverdue}}is-overdue{{/if}}" title="{{#if (eq this.timeMode 'at')}}{{localize 'CLUEBOOK.Quest.Scheduled'}}{{else}}{{localize 'CLUEBOOK.Quest.LeftTime'}}{{/if}}">
-              <div class="qtb-icon">
-                {{#if (eq this.timeMode 'at')}}<i class="fas fa-calendar-check"></i>{{else}}<i class="fas fa-hourglass-half"></i>{{/if}}
-              </div>
-              <div class="qtb-content">
-                <div class="qtb-left-block">
-                  <div class="qtb-label-small">{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.Assigned"}}{{else}}{{localize "CLUEBOOK.Quest.Deadline"}}{{/if}}</div>
-                  <div class="qtb-value-text">{{this.formattedDeadlineDate}}</div>
-                  <div class="qtb-value-text">{{this.formattedDeadlineTime}}</div>
+          {{#if (or (eq this.status "active") (not this.status))}}
+            {{#if this.formattedDeadline}}
+              <div class="cb-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}} {{#if this.isOverdue}}is-overdue{{/if}}" title="{{#if (eq this.timeMode 'at')}}{{localize 'CLUEBOOK.Quest.Scheduled'}}{{else}}{{localize 'CLUEBOOK.Quest.LeftTime'}}{{/if}}">
+                <div class="qtb-icon">
+                  {{#if (eq this.timeMode 'at')}}<i class="fas fa-calendar-check"></i>{{else}}<i class="fas fa-hourglass-half"></i>{{/if}}
                 </div>
-                <div class="qtb-right-block">
-                  <div class="qtb-label-small" style="text-align: center;">{{#if this.isOverdue}}{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.Passed"}}{{else}}{{localize "CLUEBOOK.Quest.Overdue"}}{{/if}}{{else}}{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.In"}}{{else}}{{localize "CLUEBOOK.Quest.Left"}}{{/if}}{{/if}}</div>
-                  <div class="qtb-value">{{this.timeStr}}</div>
-                </div>
-              </div>
-            </div>
-          {{else if (and this.deadline (not @root.isSimpleCalendarActive))}}
-            <div class="cb-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}}">
-              <div class="qtb-icon">
-                {{#if (eq this.timeMode 'at')}}<i class="fas fa-calendar-check"></i>{{else}}<i class="fas fa-hourglass-half"></i>{{/if}}
-              </div>
-              <div class="qtb-content">
-                <div class="qtb-left-block">
-                  <div class="qtb-label-small">{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.Scheduled"}}{{else}}{{localize "CLUEBOOK.Quest.Deadline"}}{{/if}}</div>
-                  <div class="qtb-value-text">{{this.deadline}}</div>
+                <div class="qtb-content">
+                  <div class="qtb-left-block">
+                    <div class="qtb-label-small">{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.Assigned"}}{{else}}{{localize "CLUEBOOK.Quest.Deadline"}}{{/if}}</div>
+                    <div class="qtb-value-text">{{this.formattedDeadlineDate}}</div>
+                    <div class="qtb-value-text">{{this.formattedDeadlineTime}}</div>
+                  </div>
+                  <div class="qtb-right-block">
+                    <div class="qtb-label-small" style="text-align: center;">{{#if this.isOverdue}}{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.Passed"}}{{else}}{{localize "CLUEBOOK.Quest.Overdue"}}{{/if}}{{else}}{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.In"}}{{else}}{{localize "CLUEBOOK.Quest.Left"}}{{/if}}{{/if}}</div>
+                    <div class="qtb-value">{{this.timeStr}}</div>
+                  </div>
                 </div>
               </div>
-            </div>
+            {{else if (and this.deadline (not @root.isSimpleCalendarActive))}}
+              <div class="cb-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}}">
+                <div class="qtb-icon">
+                  {{#if (eq this.timeMode 'at')}}<i class="fas fa-calendar-check"></i>{{else}}<i class="fas fa-hourglass-half"></i>{{/if}}
+                </div>
+                <div class="qtb-content">
+                  <div class="qtb-left-block">
+                    <div class="qtb-label-small">{{#if (eq this.timeMode 'at')}}{{localize "CLUEBOOK.Quest.Scheduled"}}{{else}}{{localize "CLUEBOOK.Quest.Deadline"}}{{/if}}</div>
+                    <div class="qtb-value-text">{{this.deadline}}</div>
+                  </div>
+                </div>
+              </div>
+            {{/if}}
           {{/if}}
         </div>
         <div class="display-text">{{{this.enriched.text}}}</div>

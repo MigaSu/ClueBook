@@ -363,15 +363,19 @@
     "Quest": {
       "Active": "АКТИВНО",
       "Assigned": "НАЗНАЧЕНО",
+      "ChangeStatusHint": "Нажмите, чтобы быстро изменить статус",
       "Completed": "ВЫПОЛНЕНО",
+      "CompletedAt": "Завершено",
+      "CompletionTimePlaceholder": "Например: 14 мая, вечер / После битвы",
       "Deadline": "ДЕДЛАЙН",
-      "Failed": "Echec",
+      "Failed": "ПРОВАЛЕНО",
       "In": "ЧЕРЕЗ",
       "Left": "ОСТАЛОСЬ",
-      "LeftTime": "Осталось времени",
+      "LeftTime": "ВРЕМЯ ДО ДЕДЛАЙНА",
       "Overdue": "ПРОСРОЧЕНО",
       "Passed": "ПРОШЛО",
-      "Scheduled": "Запланировано"
+      "Scheduled": "НАЗНАЧЕННОЕ ВРЕМЯ",
+      "SpecifyCompletionTime": "Указать время завершения"
     },
     "Scene": {
       "ActionPrompt": "<p style=\"text-align: center; margin-bottom: 10px;\">Что сделать со сценой <strong>{name}</strong>?</p>",

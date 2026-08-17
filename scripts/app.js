@@ -179,7 +179,9 @@ export class ClueBookApp extends BaseApp {
       openActor: ClueBookApp._onOpenActor,
       manageTags: ClueBookApp._onManageTags,
       viewImage: ClueBookApp._onViewImage,
-      uploadBatchGallery: ClueBookApp._onUploadBatchGallery
+      uploadBatchGallery: ClueBookApp._onUploadBatchGallery,
+      toggleQuestStatusMenu: ClueBookApp._onToggleQuestStatusMenu,
+      setQuestStatus: ClueBookApp._onSetQuestStatus
     }
   };
 
