@@ -58,12 +58,73 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
         setTimeout(() => entry.classList.add('is-dragging'), 0);
       });
 
+      entry.addEventListener('dragover', (ev) => {
+        if (draggedEntry && draggedEntry !== entry) {
+          ev.preventDefault();
+          if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+        }
+      });
+
+      entry.addEventListener('dragenter', (ev) => {
+        if (!draggedEntry || draggedEntry === entry || this.state.isReadOnly) return;
+        ev.preventDefault();
+
+        const container = entry.parentNode;
+        if (!container) return;
+
+        const siblings = Array.from(container.children).filter(c => c.classList?.contains('cluebook-entry'));
+        const draggedIndex = siblings.indexOf(draggedEntry);
+        const targetIndex = siblings.indexOf(entry);
+
+        if (draggedIndex !== -1 && targetIndex !== -1) {
+          if (draggedIndex < targetIndex) {
+            container.insertBefore(draggedEntry, entry.nextSibling);
+          } else {
+            container.insertBefore(draggedEntry, entry);
+          }
+        } else {
+          container.insertBefore(draggedEntry, entry);
+        }
+      });
+
       entry.addEventListener('dragend', async () => {
         if (!draggedEntry) return;
         listContainer.classList.remove('is-dragging-list');
         draggedEntry.classList.remove('is-dragging');
         html.querySelectorAll('.cb-folder-section').forEach(f => f.classList.remove('is-dragover'));
+
+        if (this.state.isReadOnly) {
+          draggedEntry = null;
+          return;
+        }
+
+        // Switch active sort to manual if in quests or timeline
+        if (this.state.activeTab === "quests" && this.state.questSortMode !== "manual") {
+          this.state.questSortMode = "manual";
+        }
+        if (this.state.activeTab === "timeline" && this.state.timelineSortMode !== "manual") {
+          this.state.timelineSortMode = "manual";
+        }
+
+        // Save new order and folder assignment across all cards in the tab
+        const allCardElements = Array.from(listContainer.querySelectorAll('.cluebook-entry'));
+        const sourceTab = this.state.activeTab;
+        const updates = {};
+
+        allCardElements.forEach((el, index) => {
+          const entryId = el.dataset.entryId;
+          if (!entryId) return;
+
+          const folderSection = el.closest('.cb-folder-section');
+          const targetFolderId = folderSection ? (folderSection.dataset.folderId || "") : "";
+
+          updates[`flags.ClueBook.data.${sourceTab}.${entryId}.sort`] = index;
+          updates[`flags.ClueBook.data.${sourceTab}.${entryId}.folderId`] = targetFolderId;
+        });
+
         draggedEntry = null;
+        await this._updateWorkspaceData(updates);
+        this.render({ parts: ["content"] });
       });
     });
 
@@ -96,6 +157,11 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
         const sourceTab = draggedEntry.dataset.sourceTab || this.state.activeTab;
         if (!entryId) return;
 
+        const entriesContainer = folderEl.querySelector('.cb-folder-entries');
+        if (entriesContainer && draggedEntry.parentNode !== entriesContainer) {
+          entriesContainer.appendChild(draggedEntry);
+        }
+
         await this._saveDataRaw(sourceTab, entryId, "folderId", folderId);
         this.render({ parts: ["content"] });
       });
@@ -113,13 +179,15 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
 
       rootContainer.addEventListener('drop', async (ev) => {
         if (!draggedEntry || this.state.isReadOnly) return;
+        ev.preventDefault();
+        ev.stopPropagation();
         const entryId = draggedEntry.dataset.entryId;
         const sourceTab = draggedEntry.dataset.sourceTab || this.state.activeTab;
-        const currentFolderId = draggedEntry.closest('.cb-folder-section')?.dataset.folderId;
 
-        if (entryId && currentFolderId) {
-          ev.preventDefault();
-          ev.stopPropagation();
+        if (entryId) {
+          if (draggedEntry.parentNode !== rootContainer) {
+            rootContainer.appendChild(draggedEntry);
+          }
           await this._saveDataRaw(sourceTab, entryId, "folderId", "");
           this.render({ parts: ["content"] });
         }
