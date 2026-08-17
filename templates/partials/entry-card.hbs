@@ -43,8 +43,8 @@
             <span class="cb-row-badge is-unknown">❓ {{localize "CLUEBOOK.Filter.Unknown"}}</span>
           {{/if}}
         {{else if (eq this.sourceTab "locations")}}
-          {{#if this.owner}}
-            <span class="cb-row-info"><i class="fas fa-user"></i> {{this.owner}}</span>
+          {{#if (or this.displayOwner this.owner)}}
+            <span class="cb-row-info"><i class="fas fa-user"></i> {{#if this.displayOwner}}{{this.displayOwner}}{{else}}{{this.owner}}{{/if}}</span>
           {{/if}}
         {{else if (eq this.sourceTab "timeline")}}
           {{#if this.timelineIntervalPrecise}}
@@ -132,8 +132,8 @@
                 <span class="cb-row-badge is-unknown">❓ {{localize "CLUEBOOK.Filter.Unknown"}}</span>
               {{/if}}
             {{else if (eq this.sourceTab "locations")}}
-              {{#if this.owner}}
-                <span class="cb-row-info"><i class="fas fa-user"></i> {{this.owner}}</span>
+              {{#if (or this.displayOwner this.owner)}}
+                <span class="cb-row-info"><i class="fas fa-user"></i> {{#if this.displayOwner}}{{this.displayOwner}}{{else}}{{this.owner}}{{/if}}</span>
               {{/if}}
             {{else if (eq this.sourceTab "timeline")}}
               {{#if this.timelineIntervalPrecise}}

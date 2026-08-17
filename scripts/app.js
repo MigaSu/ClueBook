@@ -210,6 +210,66 @@ export class ClueBookApp extends BaseApp {
     };
   }
 
+  /**
+   * Cleans mentions, UUID links, HTML tags, and secret blocks into clean plain text for row labels and snippets.
+   * @param {string} str 
+   * @returns {string}
+   */
+  static _cleanPlainText(str) {
+    if (!str) return "";
+    let res = String(str);
+    // Remove secret blocks if any
+    res = res.replace(/<section\s+class="secret"[^>]*>[\s\S]*?<\/section>/gi, ' ');
+    res = res.replace(/\[\[\/gm\s+[\s\S]*?\]\]/gi, ' ');
+    // Parse ClueBook quick mentions: [[qnmention:id:Name]]{CustomText} or [[qnmention:id:Name]]
+    res = res.replace(/\[\[qnmention:[^:]+:([^\]]+)\]\](?:\{([^}]*)\})?/g, (m, name, cText) => (cText && cText.trim()) || name || "");
+    // Parse Foundry document links: @UUID[...]{Label} or @Actor[...]{Label}
+    res = res.replace(/@\w+\[[^\]]*\](?:\{([^}]*)\})?/g, (m, label) => (label && label.trim()) || "");
+    // Strip HTML tags
+    res = res.replace(/<[^>]*>?/gm, ' ');
+    // Clean HTML entities
+    res = res.replace(/&nbsp;/g, ' ')
+             .replace(/&amp;/g, '&')
+             .replace(/&lt;/g, '<')
+             .replace(/&gt;/g, '>')
+             .replace(/&quot;/g, '"')
+             .replace(/&#39;/g, "'");
+    // Normalize extra whitespace
+    res = res.replace(/\s+/g, ' ').trim();
+    return res;
+  }
+
+  /**
+   * Extracts display title and snippet from entry name and note text.
+   * @param {string} name 
+   * @param {string} noteText 
+   * @param {number} maxTitleLen 
+   * @param {number} maxSnippetLen 
+   * @returns {{ displayTitle: string, snippet: string }}
+   */
+  static _extractTitleAndSnippet(name, noteText, maxTitleLen = 80, maxSnippetLen = 140) {
+    const rawNote = ClueBookApp._cleanPlainText(noteText);
+    const rawName = ClueBookApp._cleanPlainText(name);
+    
+    let displayTitle = rawName;
+    let snippet = "";
+    
+    if (!displayTitle && rawNote) {
+      // Split by sentence ending (. ! ? \n)
+      const match = rawNote.match(/^([^\n.!?]+[\n.!?]?)/);
+      const firstSentence = (match ? match[1] : rawNote).trim();
+      displayTitle = firstSentence.length > maxTitleLen ? firstSentence.substring(0, maxTitleLen - 3) + '...' : firstSentence;
+      const rest = rawNote.substring(firstSentence.length).replace(/^[\n.!?\s]+/, '').trim();
+      snippet = rest.length > maxSnippetLen ? rest.substring(0, maxSnippetLen - 3) + '...' : rest;
+    } else if (rawNote) {
+      snippet = rawNote.length > maxSnippetLen ? rawNote.substring(0, maxSnippetLen - 3) + '...' : rawNote;
+    } else if (!displayTitle) {
+      displayTitle = game.i18n.localize("CLUEBOOK.Entry.Untitled");
+    }
+    
+    return { displayTitle, snippet };
+  }
+
   bringToFront() {
     super.bringToFront();
     if (foundry.applications?.instances) {
@@ -600,24 +660,13 @@ export class ClueBookApp extends BaseApp {
 
             if (matchText && matchTags) {
               const enriched = await this._enrichEntry(entry);
-              const rawNoteText = (entry.note || entry.text || entry.event || "")
-                .replace(/<[^>]*>?/gm, ' ')
-                .replace(/&nbsp;/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-              let displayTitle = (entry.name || entry.title || "").trim();
-              let snippet = "";
-              if (!displayTitle && rawNoteText) {
-                const firstSentence = rawNoteText.split(/[.\n!?]/)[0].trim() || rawNoteText;
-                displayTitle = firstSentence.length > 50 ? firstSentence.substring(0, 47) + '...' : firstSentence;
-                const rest = rawNoteText.substring(displayTitle.replace('...', '').length).trim();
-                snippet = rest.length > 100 ? rest.substring(0, 97) + '...' : rest;
-              } else if (rawNoteText) {
-                snippet = rawNoteText.length > 100 ? rawNoteText.substring(0, 97) + '...' : rawNoteText;
-              } else if (!displayTitle) {
-                displayTitle = game.i18n.localize("CLUEBOOK.Entry.Untitled");
-              }
-              entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, displayTitle, snippet, enriched });
+              const { displayTitle, snippet } = ClueBookApp._extractTitleAndSnippet(
+                entry.name || entry.title,
+                entry.note || entry.text || entry.event
+              );
+              const displayOwner = ClueBookApp._cleanPlainText(entry.owner);
+              const displaySubtitle = ClueBookApp._cleanPlainText(entry.subtitle);
+              entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, displayTitle, snippet, displayOwner, displaySubtitle, enriched });
             }
           }
         }
@@ -630,7 +679,7 @@ export class ClueBookApp extends BaseApp {
           if (!entry || !isEntryVisible(entry)) continue;
           if (entry.onBoard) {
             const enriched = await this._enrichEntry(entry);
-            const displayTitle = (entry.name || entry.title || "").trim() || game.i18n.localize("CLUEBOOK.Entry.Untitled");
+            const displayTitle = ClueBookApp._cleanPlainText(entry.name || entry.title) || game.i18n.localize("CLUEBOOK.Entry.Untitled");
             entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, displayTitle, enriched });
           }
         }
@@ -756,26 +805,13 @@ export class ClueBookApp extends BaseApp {
         if (!entry || !isEntryVisible(entry)) continue;
         const enriched = await this._enrichEntry(entry);
 
-        // Auto-extract title & snippet for list/compact views
-        const rawNoteText = (entry.note || entry.text || entry.event || "")
-          .replace(/<[^>]*>?/gm, ' ')
-          .replace(/&nbsp;/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-          
-        let displayTitle = (entry.name || entry.title || "").trim();
-        let snippet = "";
-        
-        if (!displayTitle && rawNoteText) {
-          const firstSentence = rawNoteText.split(/[.\n!?]/)[0].trim() || rawNoteText;
-          displayTitle = firstSentence.length > 50 ? firstSentence.substring(0, 47) + '...' : firstSentence;
-          const rest = rawNoteText.substring(displayTitle.replace('...', '').length).trim();
-          snippet = rest.length > 100 ? rest.substring(0, 97) + '...' : rest;
-        } else if (rawNoteText) {
-          snippet = rawNoteText.length > 100 ? rawNoteText.substring(0, 97) + '...' : rawNoteText;
-        } else if (!displayTitle) {
-          displayTitle = game.i18n.localize("CLUEBOOK.Entry.Untitled");
-        }
+        // Auto-extract clean title & snippet for list/compact views
+        const { displayTitle, snippet } = ClueBookApp._extractTitleAndSnippet(
+          entry.name || entry.title,
+          entry.note || entry.text || entry.event
+        );
+        const displayOwner = ClueBookApp._cleanPlainText(entry.owner);
+        const displaySubtitle = ClueBookApp._cleanPlainText(entry.subtitle);
 
         entries.push({ 
           id, 
@@ -784,6 +820,8 @@ export class ClueBookApp extends BaseApp {
           ...entry, 
           displayTitle,
           snippet,
+          displayOwner,
+          displaySubtitle,
           enriched 
         });
       }
