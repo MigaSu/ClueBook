@@ -52,6 +52,11 @@
     <button type="button" class="cb-filter-pill {{#if (eq activeQuestFilter 'failed')}}active{{/if}}" data-action="filterQuestStatus" data-status="failed">
       ❌ {{localize "CLUEBOOK.Filter.Failed"}} <span class="cb-filter-count">{{questCounts.failed}}</span>
     </button>
+    <div class="cb-filter-spacer"></div>
+    <button type="button" class="cb-filter-pill cb-archive-toggle-pill {{#if isArchiveGroupingEnabled}}active{{/if}}" data-action="toggleArchiveGrouping" title="{{localize 'CLUEBOOK.Archive.ToggleGrouping'}}">
+      <i class="fas fa-box-archive"></i>
+      <span>{{localize "CLUEBOOK.Archive.GroupArchive"}}</span>
+    </button>
   </div>
   {{/if}}
 
@@ -68,6 +73,11 @@
     </button>
     <button type="button" class="cb-filter-pill {{#if (eq activeNpcFilter 'unknown')}}active{{/if}}" data-action="filterNpcStatus" data-status="unknown">
       ❓ {{localize "CLUEBOOK.Filter.Unknown"}} <span class="cb-filter-count">{{npcCounts.unknown}}</span>
+    </button>
+    <div class="cb-filter-spacer"></div>
+    <button type="button" class="cb-filter-pill cb-archive-toggle-pill {{#if isArchiveGroupingEnabled}}active{{/if}}" data-action="toggleArchiveGrouping" title="{{localize 'CLUEBOOK.Archive.ToggleGrouping'}}">
+      <i class="fas fa-box-archive"></i>
+      <span>{{localize "CLUEBOOK.Archive.GroupArchive"}}</span>
     </button>
   </div>
   {{/if}}

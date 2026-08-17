@@ -183,7 +183,8 @@ export class ClueBookApp extends BaseApp {
       toggleQuestStatusMenu: ClueBookApp._onToggleQuestStatusMenu,
       setQuestStatus: ClueBookApp._onSetQuestStatus,
       toggleQuestArchive: ClueBookApp._onToggleQuestArchive,
-      toggleNpcArchive: ClueBookApp._onToggleNpcArchive
+      toggleNpcArchive: ClueBookApp._onToggleNpcArchive,
+      toggleArchiveGrouping: ClueBookApp._onToggleArchiveGrouping
     }
   };
 
@@ -362,7 +363,27 @@ export class ClueBookApp extends BaseApp {
     this._processTags(context, entries);
     this._processDates(context, entries);
 
-    context.entries = entries;
+    const groupArchive = this.state.groupArchive ?? (this.getSettings()?.features?.groupArchive !== false);
+    context.isArchiveGroupingEnabled = groupArchive;
+
+    if (groupArchive) {
+      if (this.state.activeTab === "quests" && (!this.state.questFilter || this.state.questFilter === "all")) {
+        context.archivedQuestEntries = entries.filter(e => e.status === "completed" || e.status === "failed");
+        context.entries = entries.filter(e => e.status !== "completed" && e.status !== "failed");
+      } else if (this.state.activeTab === "npc" && (!this.state.npcFilter || this.state.npcFilter === "all")) {
+        context.archivedNpcEntries = entries.filter(e => e.lifeStatus === "dead" || e.isDead);
+        context.entries = entries.filter(e => e.lifeStatus !== "dead" && !e.isDead);
+      } else {
+        context.entries = entries;
+        context.archivedQuestEntries = [];
+        context.archivedNpcEntries = [];
+      }
+    } else {
+      context.entries = entries;
+      context.archivedQuestEntries = [];
+      context.archivedNpcEntries = [];
+    }
+
     context.showAddBtn = this.state.activeTab !== "board" && this.state.activeTab !== "search";
     context.isBoardView = this.state.activeTab === "board";
     context.editingEntryId = this.state.editingEntryId;
@@ -576,22 +597,7 @@ export class ClueBookApp extends BaseApp {
         context.activeQuestFilter = questFilter;
         context.isQuestArchiveOpen = this.state.isQuestArchiveOpen ?? false;
 
-        if (questFilter === "all") {
-          const activeList = [];
-          const archiveList = [];
-          for (const [id, entry] of sortedEntries) {
-            if (!entry || !isEntryVisible(entry)) continue;
-            const enriched = await this._enrichEntry(entry);
-            const item = { id, sourceTab: "quests", isTracked: trackedIds.includes(id), ...entry, enriched };
-            if (entry.status === "completed" || entry.status === "failed") {
-              archiveList.push(item);
-            } else {
-              activeList.push(item);
-            }
-          }
-          context.archivedQuestEntries = archiveList;
-          return activeList;
-        } else if (questFilter === "active") {
+        if (questFilter === "active") {
           sortedEntries = sortedEntries.filter(([id, e]) => e.status === "active" || !e.status);
         } else if (questFilter === "completed") {
           sortedEntries = sortedEntries.filter(([id, e]) => e.status === "completed");
@@ -613,22 +619,7 @@ export class ClueBookApp extends BaseApp {
         context.activeNpcFilter = npcFilter;
         context.isNpcArchiveOpen = this.state.isNpcArchiveOpen ?? false;
 
-        if (npcFilter === "all") {
-          const livingList = [];
-          const deadList = [];
-          for (const [id, entry] of sortedEntries) {
-            if (!entry || !isEntryVisible(entry)) continue;
-            const enriched = await this._enrichEntry(entry);
-            const item = { id, sourceTab: "npc", isTracked: trackedIds.includes(id), ...entry, enriched };
-            if (entry.lifeStatus === "dead" || entry.isDead) {
-              deadList.push(item);
-            } else {
-              livingList.push(item);
-            }
-          }
-          context.archivedNpcEntries = deadList;
-          return livingList;
-        } else if (npcFilter === "alive") {
+        if (npcFilter === "alive") {
           sortedEntries = sortedEntries.filter(([id, e]) => e.lifeStatus === "alive" || (!e.lifeStatus && !e.isDead));
         } else if (npcFilter === "dead") {
           sortedEntries = sortedEntries.filter(([id, e]) => e.lifeStatus === "dead" || e.isDead);

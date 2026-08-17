@@ -169,6 +169,16 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     this.render({ parts: ["content"] });
   }
 
+  static async _onToggleArchiveGrouping(event, target) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    const current = this.state.groupArchive ?? (this.getSettings()?.features?.groupArchive !== false);
+    this.state.groupArchive = !current;
+    this.render({ parts: ["content"] });
+  }
+
   static async _onTogglePin(event, target) {
     if (event) {
       event.preventDefault();

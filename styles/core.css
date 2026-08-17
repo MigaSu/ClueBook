@@ -196,6 +196,28 @@
   color: #ffffff;
 }
 
+.cluebook-window .cb-filter-spacer {
+  flex: 1;
+}
+
+.cluebook-window .cb-archive-toggle-pill {
+  margin-left: auto;
+  gap: 6px;
+  opacity: 0.85;
+}
+
+.cluebook-window .cb-archive-toggle-pill.active {
+  opacity: 1;
+  border-color: rgba(123, 97, 255, 0.6);
+  background: rgba(123, 97, 255, 0.25);
+  color: #ffffff;
+}
+
+.cluebook-window .cb-archive-toggle-pill:not(.active) {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
 /* --- Collapsible Archive Section --- */
 .cluebook-window .cb-archive-section {
   width: 100%;

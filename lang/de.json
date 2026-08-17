@@ -89,7 +89,9 @@
     },
     "Archive": {
       "CompletedQuests": "Archiv abgeschlossener Aufgaben",
-      "DeadNPC": "Archiv verstorbener Charaktere"
+      "DeadNPC": "Archiv verstorbener Charaktere",
+      "GroupArchive": "Archiv",
+      "ToggleGrouping": "Archivgruppierung umschalten"
     },
     "Board": {
       "AlignCenter": "Zentrieren",
