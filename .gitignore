@@ -1,5 +1,5 @@
 .agents/
-# .github/
+.github/
 *.zip
 scratch/
 ARCHITECTURE.md
