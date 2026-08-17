@@ -231,6 +231,15 @@
       "VisibilityTitle": "Настройки видимости",
       "VisibleToAll": "Видно всем игрокам"
     },
+    "Filter": {
+      "All": "Все",
+      "Active": "В процессе",
+      "Completed": "Выполнено",
+      "Failed": "Провалено",
+      "Alive": "Живые",
+      "Dead": "Мертвые",
+      "Unknown": "Неизвестно"
+    },
     "EntryDetails": {
       "DefaultEntry": "Запись",
       "Link": "Ссылка",

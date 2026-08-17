@@ -49,7 +49,12 @@ All notable changes, refactoring, and bug fixes are documented in this file.
 * **Strict CSS Scoping:** Enforced 100% selector scoping under module roots (`.cluebook-window`, `.cb-tracker-widget`, `.cb-edit-dialog`, `.cb-tag-manager`).
 * **Full Multilingual Localization:** Updated translations across English, Russian, German, and French.
 
-### 🎨 UI/UX Fixes
+### 🎛️ Smart Status Filters
+* **Quest Status Filter:** Interactive pill buttons in the quest tab header `[ All | ⏳ In Progress | ✅ Completed | ❌ Failed ]` with dynamic count badges for organizing hundreds of tasks.
+* **NPC Life Status Filter:** Quick life status filtering for characters `[ All | 💚 Alive | 💀 Dead | ❓ Unknown ]` with real-time counters.
+
+### 🎨 UI/UX Fixes & Stability
+* **Dangling Link Labels Fix:** Connection lines and label badges are now strictly isolated to render only when both linked cards are actively visible on the board canvas.
 * **Smooth Geometric Zoom & Sync:** Upgraded board zoom to scale geometrically with full camera synchronization, impervious to concurrent data updates during mouse wheel rolling.
 * **Natural Link Word-Wrapping:** Fixed mid-word line breaking (`word-break: normal; overflow-wrap: break-word;`), ensuring links wrap between whole words rather than breaking arbitrary syllables across letters.
 * **Card Controls Visibility:** Fixed card action buttons (`.entry-controls`) clipping against card boundaries.

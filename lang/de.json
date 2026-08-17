@@ -225,6 +225,15 @@
       "VisibilityTitle": "Sichtbarkeitseinstellungen",
       "VisibleToAll": "Für alle Spieler sichtbar"
     },
+    "Filter": {
+      "All": "Alle",
+      "Active": "In Bearbeitung",
+      "Completed": "Abgeschlossen",
+      "Failed": "Fehlgeschlagen",
+      "Alive": "Lebendig",
+      "Dead": "Tot",
+      "Unknown": "Unbekannt"
+    },
     "EntryDetails": {
       "DefaultEntry": "Eintrag",
       "Link": "Link",

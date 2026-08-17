@@ -231,6 +231,15 @@
       "VisibilityTitle": "Paramètres de Visibilité",
       "VisibleToAll": "Visible pour tous les joueurs"
     },
+    "Filter": {
+      "All": "Tous",
+      "Active": "En cours",
+      "Completed": "Terminé",
+      "Failed": "Échoué",
+      "Alive": "Vivant",
+      "Dead": "Mort",
+      "Unknown": "Inconnu"
+    },
     "EntryDetails": {
       "DefaultEntry": "Entrée",
       "Link": "Lien",

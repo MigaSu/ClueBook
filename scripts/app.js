@@ -232,6 +232,8 @@ export class ClueBookApp extends BaseApp {
     selectedEntryId: null,
     selectedEntries: new Set(),
     searchTags: [],
+    questFilter: "all",
+    npcFilter: "all",
     camera: { zoom: 1, panX: 0, panY: 0 }
   };
 
@@ -484,7 +486,7 @@ export class ClueBookApp extends BaseApp {
     };
 
     if (this.state.activeTab === "search") {
-      const q = this.state.searchQuery.toLowerCase();
+      const q = (this.state.searchQuery || "").toLowerCase();
       const tagsFilter = this.state.searchTags || [];
       if (q || tagsFilter.length > 0) {
         for (const [tabKey, tabData] of Object.entries(data)) {
@@ -554,6 +556,49 @@ export class ClueBookApp extends BaseApp {
       } else {
         sortedEntries = Object.entries(tabData).sort((a, b) => (a[1].sort || 0) - (b[1].sort || 0));
       }
+
+      // Status filters for Quests
+      if (this.state.activeTab === "quests") {
+        const questFilter = this.state.questFilter || "all";
+        const allTabEntries = Object.values(tabData).filter(isEntryVisible);
+        context.questCounts = {
+          all: allTabEntries.length,
+          active: allTabEntries.filter(e => e.status === "active" || !e.status).length,
+          completed: allTabEntries.filter(e => e.status === "completed").length,
+          failed: allTabEntries.filter(e => e.status === "failed").length
+        };
+        context.activeQuestFilter = questFilter;
+
+        if (questFilter === "active") {
+          sortedEntries = sortedEntries.filter(([id, e]) => e.status === "active" || !e.status);
+        } else if (questFilter === "completed") {
+          sortedEntries = sortedEntries.filter(([id, e]) => e.status === "completed");
+        } else if (questFilter === "failed") {
+          sortedEntries = sortedEntries.filter(([id, e]) => e.status === "failed");
+        }
+      }
+
+      // Status filters for NPC
+      if (this.state.activeTab === "npc") {
+        const npcFilter = this.state.npcFilter || "all";
+        const allTabEntries = Object.values(tabData).filter(isEntryVisible);
+        context.npcCounts = {
+          all: allTabEntries.length,
+          alive: allTabEntries.filter(e => e.lifeStatus === "alive" || (!e.lifeStatus && !e.isDead)).length,
+          dead: allTabEntries.filter(e => e.lifeStatus === "dead" || e.isDead).length,
+          unknown: allTabEntries.filter(e => e.lifeStatus === "unknown").length
+        };
+        context.activeNpcFilter = npcFilter;
+
+        if (npcFilter === "alive") {
+          sortedEntries = sortedEntries.filter(([id, e]) => e.lifeStatus === "alive" || (!e.lifeStatus && !e.isDead));
+        } else if (npcFilter === "dead") {
+          sortedEntries = sortedEntries.filter(([id, e]) => e.lifeStatus === "dead" || e.isDead);
+        } else if (npcFilter === "unknown") {
+          sortedEntries = sortedEntries.filter(([id, e]) => e.lifeStatus === "unknown");
+        }
+      }
+
       for (const [id, entry] of sortedEntries) {
         if (!entry || !isEntryVisible(entry)) continue;
         const enriched = await this._enrichEntry(entry);
@@ -911,14 +956,20 @@ export class ClueBookApp extends BaseApp {
     // Bind search input
     const searchInput = html.querySelector('#cluebook-search');
     if (searchInput) {
+      let searchDebounceTimeout = null;
       searchInput.addEventListener('input', (ev) => {
-        this.state.searchQuery = ev.target.value;
-        this.render({ parts: ["content"] });
+        const val = ev.target.value;
+        clearTimeout(searchDebounceTimeout);
+        searchDebounceTimeout = setTimeout(() => {
+          this.state.searchQuery = val;
+          this.render({ parts: ["content"] });
+        }, 120);
       });
-      // Restore focus
-      if (this.state.searchQuery !== "") {
+
+      // Restore focus & cursor position
+      if (this.state.searchQuery) {
         searchInput.focus();
-        searchInput.selectionStart = searchInput.value.length;
+        searchInput.selectionStart = searchInput.selectionEnd = searchInput.value.length;
       }
     }
 
@@ -956,6 +1007,26 @@ export class ClueBookApp extends BaseApp {
         } else {
           this.state.searchTags.push(tagId);
         }
+        this.render({ parts: ["content"] });
+      });
+    });
+
+    // Bind Quest Status Filter Buttons
+    html.querySelectorAll('[data-action="filterQuestStatus"]').forEach(btn => {
+      btn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const status = ev.currentTarget.dataset.status;
+        this.state.questFilter = status;
+        this.render({ parts: ["content"] });
+      });
+    });
+
+    // Bind NPC Status Filter Buttons
+    html.querySelectorAll('[data-action="filterNpcStatus"]').forEach(btn => {
+      btn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const status = ev.currentTarget.dataset.status;
+        this.state.npcFilter = status;
         this.render({ parts: ["content"] });
       });
     });
