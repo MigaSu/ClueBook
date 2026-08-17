@@ -137,7 +137,7 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
 
     const content = `
       <form class="cluebook-board-settings-form">
-        <div class="settings-grid" style="grid-template-columns: 1fr; max-height: 60vh; overflow-y: auto; padding: 4px;">
+        <div class="settings-grid cluebook-custom-scrollbar" style="grid-template-columns: 1fr; padding: 4px;">
           <!-- Access & General -->
           <div class="settings-card">
             <h3><i class="fas fa-lock"></i> ${game.i18n.localize("CLUEBOOK.Settings.CategoryAccess")}</h3>
@@ -385,7 +385,7 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
         icon: "fas fa-cog",
         resizable: true
       },
-      position: { width: 620, height: "auto" },
+      position: { width: 620, height: 680 },
       content: content,
       buttons: [
         {
