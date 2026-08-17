@@ -560,36 +560,8 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         if (this._hoverTimer) clearTimeout(this._hoverTimer);
         this._resetHighlight();
         
-        // Ctrl+Click: Quick thread creation
-        if (ev.ctrlKey || ev.metaKey) {
-          if (linkingSource) return;
-          linkingSource = entry;
-          this.state.isBoardInteracting = true;
-          entry.classList.add('linking-source');
-          
-          tempLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-          tempLine.setAttribute("stroke", this.getSettings().theme.linkColor || "white");
-          tempLine.setAttribute("stroke-width", "3");
-          tempLine.setAttribute("stroke-dasharray", "5,5");
-          tempLine.style.pointerEvents = "none";
-          
-          const sItem = cardMap.get(entryId) || { x: parseInt(entry.style.left) || 0, y: parseInt(entry.style.top) || 0, w: 300, h: 180 };
-          const sX = Math.round(sItem.x + (sItem.w / 2));
-          const sY = Math.round(sItem.y + (sItem.h / 2));
-          tempLine.setAttribute("x1", sX);
-          tempLine.setAttribute("y1", sY);
-          tempLine.setAttribute("x2", sX);
-          tempLine.setAttribute("y2", sY);
-          
-          const svg = board.querySelector('.board-svg');
-          if (svg) svg.appendChild(tempLine);
-          
-          ev.preventDefault();
-          return;
-        }
-
-        // Shift+Click: Multi-select
-        if (ev.shiftKey) {
+        // Ctrl+Click / Shift+Click / Meta+Click: Toggle Multi-select
+        if (ev.shiftKey || ev.ctrlKey || ev.metaKey) {
           if (this.state.selectedEntries.has(entryId)) {
             this.state.selectedEntries.delete(entryId);
             entry.classList.remove('is-selected');
