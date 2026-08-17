@@ -151,34 +151,6 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     }, 10);
   }
 
-  static async _onToggleQuestArchive(event, target) {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    this.state.isQuestArchiveOpen = !this.state.isQuestArchiveOpen;
-    this.render({ parts: ["content"] });
-  }
-
-  static async _onToggleNpcArchive(event, target) {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    this.state.isNpcArchiveOpen = !this.state.isNpcArchiveOpen;
-    this.render({ parts: ["content"] });
-  }
-
-  static async _onToggleArchiveGrouping(event, target) {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    const current = this.state.groupArchive ?? (this.getSettings()?.features?.groupArchive !== false);
-    this.state.groupArchive = !current;
-    this.render({ parts: ["content"] });
-  }
-
   static async _onTogglePin(event, target) {
     if (event) {
       event.preventDefault();

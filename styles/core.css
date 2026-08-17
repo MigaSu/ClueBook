@@ -196,75 +196,83 @@
   color: #ffffff;
 }
 
-.cluebook-window .cb-filter-spacer {
-  flex: 1;
-}
-
-.cluebook-window .cb-archive-toggle-pill {
-  margin-left: auto;
-  gap: 6px;
-  opacity: 0.85;
-}
-
-.cluebook-window .cb-archive-toggle-pill.active {
-  opacity: 1;
-  border-color: rgba(123, 97, 255, 0.6);
-  background: rgba(123, 97, 255, 0.25);
-  color: #ffffff;
-}
-
-.cluebook-window .cb-archive-toggle-pill:not(.active) {
-  opacity: 0.55;
-  border-style: dashed;
-}
-
-/* --- Collapsible Archive Section --- */
-.cluebook-window .cb-archive-section {
+/* --- Universal Collapsible Folder Section --- */
+.cluebook-window .cb-folder-section {
   width: 100%;
   grid-column: 1 / -1;
-  margin-top: 20px;
-  margin-bottom: 12px;
-  display: flex;
-  flex-direction: column;
-  border-top: 1px dashed rgba(255, 255, 255, 0.14);
-  padding-top: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  margin-bottom: 16px;
+  padding: 8px 12px 14px 12px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
 }
 
-.cluebook-window .cb-archive-header {
+/* Subtle Semi-Transparent Color Backgrounds for Folders */
+.cluebook-window .cb-folder-section.color-purple { background: rgba(123, 97, 255, 0.06); border-color: rgba(123, 97, 255, 0.28); }
+.cluebook-window .cb-folder-section.color-blue   { background: rgba(74, 144, 226, 0.06); border-color: rgba(74, 144, 226, 0.28); }
+.cluebook-window .cb-folder-section.color-teal   { background: rgba(38, 166, 154, 0.06); border-color: rgba(38, 166, 154, 0.28); }
+.cluebook-window .cb-folder-section.color-green  { background: rgba(102, 187, 106, 0.06); border-color: rgba(102, 187, 106, 0.28); }
+.cluebook-window .cb-folder-section.color-yellow { background: rgba(255, 213, 79, 0.06); border-color: rgba(255, 213, 79, 0.28); }
+.cluebook-window .cb-folder-section.color-orange { background: rgba(255, 152, 0, 0.06); border-color: rgba(255, 152, 0, 0.28); }
+.cluebook-window .cb-folder-section.color-red    { background: rgba(239, 83, 80, 0.06); border-color: rgba(239, 83, 80, 0.28); }
+.cluebook-window .cb-folder-section.color-pink   { background: rgba(236, 64, 122, 0.06); border-color: rgba(236, 64, 122, 0.28); }
+.cluebook-window .cb-folder-section.color-brown  { background: rgba(141, 110, 99, 0.06); border-color: rgba(141, 110, 99, 0.28); }
+
+.cluebook-window .cb-folder-section:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+.cluebook-window .cb-folder-section.is-dragover {
+  border: 2px dashed var(--cb-accent, #7b61ff) !important;
+  background: rgba(123, 97, 255, 0.15) !important;
+  box-shadow: 0 0 16px rgba(123, 97, 255, 0.35);
+}
+
+.cluebook-window .cb-folder-section.is-folder-dragover {
+  border-top: 3px solid var(--cb-accent, #7b61ff) !important;
+}
+
+.cluebook-window .cb-folder-section.is-folder-dragging {
+  opacity: 0.4;
+}
+
+.cluebook-window .cb-folder-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 8px;
   border-radius: 8px;
-  cursor: pointer;
+  cursor: grab;
   user-select: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: background 0.15s ease;
 }
 
-.cluebook-window .cb-archive-header:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transform: translateY(-1px);
+.cluebook-window .cb-folder-header:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.cluebook-window .cb-archive-title {
+.cluebook-window .cb-folder-title-wrap {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.cluebook-window .cb-archive-header:hover .cb-archive-title {
-  color: #ffffff;
+.cluebook-window .cb-folder-icon {
+  font-size: 15px;
+  color: var(--cb-accent, #7b61ff);
 }
 
-.cluebook-window .cb-archive-badge {
+.cluebook-window .cb-folder-name {
+  letter-spacing: 0.3px;
+}
+
+.cluebook-window .cb-folder-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -279,27 +287,82 @@
   box-sizing: border-box;
 }
 
-.cluebook-window .cb-archive-chevron {
+.cluebook-window .cb-folder-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cluebook-window .cb-folder-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.55);
+  padding: 5px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cluebook-window .cb-folder-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.cluebook-window .cb-folder-btn.btn-delete-folder:hover {
+  background: rgba(255, 82, 82, 0.25);
+  color: #ff5252;
+}
+
+.cluebook-window .cb-folder-chevron {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.5);
+  margin-left: 6px;
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.cluebook-window .cb-archive-section.is-open .cb-archive-chevron {
-  transform: rotate(180deg);
-  color: var(--cb-accent, #7b61ff);
+.cluebook-window .cb-folder-section.is-collapsed .cb-folder-chevron {
+  transform: rotate(-90deg);
 }
 
-.cluebook-window .cb-archive-content {
-  display: none;
+.cluebook-window .cb-folder-entries {
+  display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
-  margin-top: 14px;
-  animation: cbFadeIn 0.2s ease-out;
+  margin-top: 12px;
+  padding-top: 4px;
 }
 
-.cluebook-window .cb-archive-section.is-open .cb-archive-content {
+.cluebook-window .cb-folder-section.is-collapsed .cb-folder-entries {
+  display: none;
+}
+
+.cluebook-window .cb-folder-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  font-style: italic;
+  user-select: none;
+}
+
+.cluebook-window .cb-root-entries {
+  grid-column: 1 / -1;
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  width: 100%;
+  margin-top: 4px;
 }
 
 .board-recenter-btn {
@@ -410,35 +473,50 @@ select.cluebook-input {
   z-index: 100;
   display: flex;
   justify-content: center;
+  gap: 12px;
   pointer-events: none; /* Let clicks pass through container */
 }
 
 .cluebook-content .add-entry-btn-container button {
   pointer-events: auto; /* Re-enable clicks for button */
   width: auto;
-  min-width: 220px;
+  min-width: 170px;
   background: var(--cb-accent);
   color: white;
   border: none;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   border-radius: 30px;
-  padding: 12px 24px;
-  font-size: 15px;
+  padding: 10px 22px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 8px;
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(8px);
 }
 
 .cluebook-content .add-entry-btn-container button:hover {
   background: white;
   color: var(--cb-accent);
   box-shadow: 0 6px 25px var(--cb-accent-glow);
-  transform: translateY(-3px) scale(1.02);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.cluebook-content .add-entry-btn-container button.cb-folder-add-btn {
+  background: rgba(30, 30, 45, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.cluebook-content .add-entry-btn-container button.cb-folder-add-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
 .cluebook-window .flexrow {

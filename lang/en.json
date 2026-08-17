@@ -87,11 +87,26 @@
       "WhoHasAccess": "Who has access (You and GM always have access):",
       "WhoHasAccessPrompt": "Who has access (You and GM always have access):"
     },
-    "Archive": {
-      "CompletedQuests": "Completed Tasks Archive",
-      "DeadNPC": "Deceased Characters Archive",
-      "GroupArchive": "Archive",
-      "ToggleGrouping": "Toggle grouping into archive"
+    "Folder": {
+      "AddEntry": "Create card in this folder",
+      "AddFolder": "Add Folder",
+      "CancelBtn": "Cancel",
+      "ColorLabel": "Color Theme",
+      "CreateBtn": "Create",
+      "CreateTitle": "Create Folder",
+      "DefaultName": "New Folder",
+      "Delete": "Delete Folder",
+      "DeleteBtn": "Delete",
+      "DeletePrompt": "Are you sure you want to delete folder \"{name}\"? Cards inside will remain and return to the main list.",
+      "DeleteTitle": "Delete Folder",
+      "Edit": "Edit Folder",
+      "EditTitle": "Edit Folder",
+      "EmptyHint": "Folder is empty. Drag cards here or click +",
+      "NameLabel": "Folder",
+      "NoFolder": "— No Folder (in main list) —",
+      "SaveBtn": "Save",
+      "SendToBoard": "Send all cards in folder to board",
+      "SentToBoardSuccess": "Sent {count} cards from folder to board!"
     },
     "Board": {
       "AlignCenter": "Align center",

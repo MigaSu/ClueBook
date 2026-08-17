@@ -52,11 +52,6 @@
     <button type="button" class="cb-filter-pill {{#if (eq activeQuestFilter 'failed')}}active{{/if}}" data-action="filterQuestStatus" data-status="failed">
       ❌ {{localize "CLUEBOOK.Filter.Failed"}} <span class="cb-filter-count">{{questCounts.failed}}</span>
     </button>
-    <div class="cb-filter-spacer"></div>
-    <button type="button" class="cb-filter-pill cb-archive-toggle-pill {{#if isArchiveGroupingEnabled}}active{{/if}}" data-action="toggleArchiveGrouping" title="{{localize 'CLUEBOOK.Archive.ToggleGrouping'}}">
-      <i class="fas fa-box-archive"></i>
-      <span>{{localize "CLUEBOOK.Archive.GroupArchive"}}</span>
-    </button>
   </div>
   {{/if}}
 
@@ -74,61 +69,67 @@
     <button type="button" class="cb-filter-pill {{#if (eq activeNpcFilter 'unknown')}}active{{/if}}" data-action="filterNpcStatus" data-status="unknown">
       ❓ {{localize "CLUEBOOK.Filter.Unknown"}} <span class="cb-filter-count">{{npcCounts.unknown}}</span>
     </button>
-    <div class="cb-filter-spacer"></div>
-    <button type="button" class="cb-filter-pill cb-archive-toggle-pill {{#if isArchiveGroupingEnabled}}active{{/if}}" data-action="toggleArchiveGrouping" title="{{localize 'CLUEBOOK.Archive.ToggleGrouping'}}">
-      <i class="fas fa-box-archive"></i>
-      <span>{{localize "CLUEBOOK.Archive.GroupArchive"}}</span>
-    </button>
   </div>
   {{/if}}
 
   <div class="entries-list">
     {{> "modules/ClueBook/templates/partials/tab-board.hbs"}}
 
-    {{#each entries}}
-      {{> "modules/ClueBook/templates/partials/entry-card.hbs"}}
-    {{/each}}
-
-    {{#if archivedQuestEntries.length}}
-    <div class="cb-archive-section {{#if isQuestArchiveOpen}}is-open{{/if}}">
-      <div class="cb-archive-header" data-action="toggleQuestArchive">
-        <div class="cb-archive-title">
-          <i class="fas fa-box-archive"></i>
-          <span>{{localize "CLUEBOOK.Archive.CompletedQuests"}}</span>
-          <span class="cb-archive-badge">{{archivedQuestEntries.length}}</span>
+    {{#unless isBoardView}}
+      {{#each folders}}
+      <div class="cb-folder-section color-{{this.color}} {{#if this.isCollapsed}}is-collapsed{{/if}}" data-folder-id="{{this.id}}">
+        <div class="cb-folder-header" draggable="true" data-action="toggleFolderCollapse" data-folder-id="{{this.id}}">
+          <div class="cb-folder-title-wrap">
+            <i class="fas {{#if this.isCollapsed}}fa-folder{{else}}fa-folder-open{{/if}} cb-folder-icon"></i>
+            <span class="cb-folder-name">{{this.name}}</span>
+            <span class="cb-folder-badge">{{this.count}}</span>
+          </div>
+          <div class="cb-folder-controls">
+            {{#unless @root.isReadOnly}}
+            <button type="button" class="cb-folder-btn btn-add-entry" data-action="addEntryToFolder" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.AddEntry'}}">
+              <i class="fas fa-plus"></i>
+            </button>
+            <button type="button" class="cb-folder-btn btn-send-board" data-action="sendFolderToBoard" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.SendToBoard'}}">
+              <i class="fas fa-project-diagram"></i>
+            </button>
+            <button type="button" class="cb-folder-btn btn-edit-folder" data-action="editFolder" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.Edit'}}">
+              <i class="fas fa-pencil-alt"></i>
+            </button>
+            <button type="button" class="cb-folder-btn btn-delete-folder" data-action="deleteFolder" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.Delete'}}">
+              <i class="fas fa-trash"></i>
+            </button>
+            {{/unless}}
+            <i class="fas fa-chevron-down cb-folder-chevron"></i>
+          </div>
         </div>
-        <i class="fas fa-chevron-down cb-archive-chevron"></i>
+        <div class="cb-folder-entries">
+          {{#each this.entries}}
+            {{> "modules/ClueBook/templates/partials/entry-card.hbs"}}
+          {{else}}
+            <div class="cb-folder-empty">
+              <i class="fas fa-inbox"></i>
+              <span>{{localize "CLUEBOOK.Folder.EmptyHint"}}</span>
+            </div>
+          {{/each}}
+        </div>
       </div>
-      <div class="cb-archive-content">
-        {{#each archivedQuestEntries}}
+      {{/each}}
+
+      <div class="cb-root-entries">
+        {{#each rootEntries}}
           {{> "modules/ClueBook/templates/partials/entry-card.hbs"}}
         {{/each}}
       </div>
-    </div>
-    {{/if}}
-
-    {{#if archivedNpcEntries.length}}
-    <div class="cb-archive-section {{#if isNpcArchiveOpen}}is-open{{/if}}">
-      <div class="cb-archive-header" data-action="toggleNpcArchive">
-        <div class="cb-archive-title">
-          <i class="fas fa-skull"></i>
-          <span>{{localize "CLUEBOOK.Archive.DeadNPC"}}</span>
-          <span class="cb-archive-badge">{{archivedNpcEntries.length}}</span>
-        </div>
-        <i class="fas fa-chevron-down cb-archive-chevron"></i>
-      </div>
-      <div class="cb-archive-content">
-        {{#each archivedNpcEntries}}
-          {{> "modules/ClueBook/templates/partials/entry-card.hbs"}}
-        {{/each}}
-      </div>
-    </div>
-    {{/if}}
+    {{else}}
+      {{#each entries}}
+        {{> "modules/ClueBook/templates/partials/entry-card.hbs"}}
+      {{/each}}
+    {{/unless}}
   </div>
 
   {{#unless isWorkspaces}}
   {{#unless isSettings}}
-  {{#unless (or entries.length archivedQuestEntries.length archivedNpcEntries.length)}}
+  {{#unless entries.length}}
     {{#if (or (ne activeTab "search") searchQuery)}}
     <div class="cb-empty-state-wrapper" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 5;">
       <div class="cb-empty-state">
@@ -152,8 +153,11 @@
   {{#unless isReadOnly}}
   {{#if showAddBtn}}
   <div class="add-entry-btn-container">
-    <button type="button" data-action="addEntry">
+    <button type="button" class="cb-main-add-btn" data-action="addEntry">
       <i class="fas fa-plus"></i> {{localize "CLUEBOOK.Entry.Add"}}
+    </button>
+    <button type="button" class="cb-folder-add-btn" data-action="createFolder" title="{{localize 'CLUEBOOK.Folder.CreateTitle'}}">
+      <i class="fas fa-folder-plus"></i> {{localize "CLUEBOOK.Folder.AddFolder"}}
     </button>
     {{#if (eq activeTab "gallery")}}
     <button type="button" data-action="uploadBatchGallery" class="cb-btn-batch-upload" style="background: linear-gradient(135deg, #00acc1 0%, #00838f 100%);" title="{{localize "CLUEBOOK.Gallery.BatchUploadHint"}}">

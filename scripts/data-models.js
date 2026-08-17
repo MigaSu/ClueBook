@@ -14,6 +14,7 @@ export class ClueBookEntryModel extends foundry.abstract.DataModel {
       tags: new ArrayField(new StringField(), { initial: [] }),
       sort: new NumberField({ initial: 0 }),
       pinned: new BooleanField({ initial: false }),
+      folderId: new StringField({ initial: "" }),
       
       // Поля для доски (Board)
       onBoard: new BooleanField({ initial: false }),
@@ -84,6 +85,21 @@ export class ClueBookLinkModel extends foundry.abstract.DataModel {
       label: new StringField({ initial: "" }),
       style: new StringField({ initial: "solid" }), // solid, dashed, dotted
       color: new StringField({ initial: "" }) // Пустая строка означает использование цвета по умолчанию
+    };
+  }
+}
+
+/**
+ * Data Model for a Folder / Section in ClueBook.
+ */
+export class ClueBookFolderModel extends foundry.abstract.DataModel {
+  static defineSchema() {
+    return {
+      name: new StringField({ required: true, initial: "Новая папка" }),
+      tab: new StringField({ required: true, initial: "notes" }),
+      color: new StringField({ initial: "purple" }),
+      sort: new NumberField({ initial: 0 }),
+      isCollapsed: new BooleanField({ initial: false })
     };
   }
 }

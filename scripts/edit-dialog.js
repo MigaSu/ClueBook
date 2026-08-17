@@ -88,6 +88,24 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
       context.entry.tags = [];
     }
 
+    // --- Folders System ---
+    let foldersData = {};
+    if (this.workspace === "personal") {
+      foldersData = game.user.getFlag("ClueBook", "data")?.folders || {};
+    } else {
+      const journal = game.journal.get(this.workspace);
+      if (journal) {
+        foldersData = journal.getFlag("ClueBook", "data")?.folders || {};
+      }
+    }
+    context.availableFolders = Object.entries(foldersData)
+      .filter(([fId, f]) => f && f.tab === this.sourceTab)
+      .map(([fId, f]) => ({
+        id: fId,
+        name: f.name,
+        isSelected: context.entry.folderId === fId
+      }));
+
     if (context.isSimpleCalendarActive) {
       const currentTimestamp = game.time.worldTime;
       const allMonths = TimeService.getMonths();
@@ -879,6 +897,7 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
       updateData.textColor = data.textColor;
     }
     if (data.gmNotes !== undefined) updateData.gmNotes = data.gmNotes;
+    if (data.folderId !== undefined) updateData.folderId = data.folderId;
     
     // Process Tags
     if (data.tags !== undefined) {

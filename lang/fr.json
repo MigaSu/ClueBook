@@ -87,11 +87,26 @@
       "WhoHasAccess": "Qui a accès (Vous et le MJ ont toujours accès):",
       "WhoHasAccessPrompt": "Qui a accès (Vous et le MJ ont toujours accès):"
     },
-    "Archive": {
-      "CompletedQuests": "Archives des tâches terminées",
-      "DeadNPC": "Archives des personnages décédés",
-      "GroupArchive": "Archive",
-      "ToggleGrouping": "Basculer le groupement d'archives"
+    "Folder": {
+      "AddEntry": "Créer une carte dans ce dossier",
+      "AddFolder": "Ajouter un dossier",
+      "CancelBtn": "Annuler",
+      "ColorLabel": "Thème de couleur",
+      "CreateBtn": "Créer",
+      "CreateTitle": "Créer un dossier",
+      "DefaultName": "Nouveau dossier",
+      "Delete": "Supprimer le dossier",
+      "DeleteBtn": "Supprimer",
+      "DeletePrompt": "Voulez-vous vraiment supprimer le dossier «{name}» ? Les cartes à l'intérieur resteront et retourneront à la liste principale.",
+      "DeleteTitle": "Suppression du dossier",
+      "Edit": "Modifier le dossier",
+      "EditTitle": "Modifier le dossier",
+      "EmptyHint": "Le dossier est vide. Glissez des cartes ici ou cliquez sur +",
+      "NameLabel": "Dossier",
+      "NoFolder": "— Sans dossier (liste principale) —",
+      "SaveBtn": "Enregistrer",
+      "SendToBoard": "Envoyer toutes les cartes du dossier sur le tableau",
+      "SentToBoardSuccess": "{count} cartes du dossier envoyées sur le tableau!"
     },
     "Board": {
       "AlignCenter": "Aligner au centre",

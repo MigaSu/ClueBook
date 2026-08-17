@@ -11,6 +11,7 @@ import { ClueBookWorkspaceActionsMixin } from "./actions/workspace-actions.js";
 import { ClueBookIntegrationActionsMixin } from "./actions/integration-actions.js";
 import { ClueBookBoardActionsMixin } from "./actions/board-actions.js";
 import { ClueBookDragDropMixin } from "./actions/app-dragdrop.js";
+import { ClueBookFolderActionsMixin } from "./actions/folder-actions.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -108,14 +109,16 @@ class SceneActionDialog extends ApplicationV2 {
   }
 }
 
-const BaseApp = ClueBookDragDropMixin(
-  ClueBookEntryActionsMixin(
-    ClueBookWorkspaceActionsMixin(
-      ClueBookIntegrationActionsMixin(
-        ClueBookBoardActionsMixin(
-          ClueBookBoardMixin(
-            ClueBookDataMixin(
-              HandlebarsApplicationMixin(ApplicationV2)
+const BaseApp = ClueBookFolderActionsMixin(
+  ClueBookDragDropMixin(
+    ClueBookEntryActionsMixin(
+      ClueBookWorkspaceActionsMixin(
+        ClueBookIntegrationActionsMixin(
+          ClueBookBoardActionsMixin(
+            ClueBookBoardMixin(
+              ClueBookDataMixin(
+                HandlebarsApplicationMixin(ApplicationV2)
+              )
             )
           )
         )
@@ -182,9 +185,12 @@ export class ClueBookApp extends BaseApp {
       uploadBatchGallery: ClueBookApp._onUploadBatchGallery,
       toggleQuestStatusMenu: ClueBookApp._onToggleQuestStatusMenu,
       setQuestStatus: ClueBookApp._onSetQuestStatus,
-      toggleQuestArchive: ClueBookApp._onToggleQuestArchive,
-      toggleNpcArchive: ClueBookApp._onToggleNpcArchive,
-      toggleArchiveGrouping: ClueBookApp._onToggleArchiveGrouping
+      createFolder: ClueBookApp._onCreateFolder,
+      editFolder: ClueBookApp._onEditFolder,
+      deleteFolder: ClueBookApp._onDeleteFolder,
+      toggleFolderCollapse: ClueBookApp._onToggleFolderCollapse,
+      addEntryToFolder: ClueBookApp._onAddEntryToFolder,
+      sendFolderToBoard: ClueBookApp._onSendFolderToBoard
     }
   };
 
@@ -363,26 +369,31 @@ export class ClueBookApp extends BaseApp {
     this._processTags(context, entries);
     this._processDates(context, entries);
 
-    const groupArchive = this.state.groupArchive ?? (this.getSettings()?.features?.groupArchive !== false);
-    context.isArchiveGroupingEnabled = groupArchive;
+    // Group entries by folders for the active tab
+    const allFolders = data.folders || {};
+    const tabFolders = Object.entries(allFolders)
+      .filter(([fId, f]) => f && f.tab === this.state.activeTab)
+      .sort((a, b) => (a[1].sort || 0) - (b[1].sort || 0));
 
-    if (groupArchive) {
-      if (this.state.activeTab === "quests" && (!this.state.questFilter || this.state.questFilter === "all")) {
-        context.archivedQuestEntries = entries.filter(e => e.status === "completed" || e.status === "failed");
-        context.entries = entries.filter(e => e.status !== "completed" && e.status !== "failed");
-      } else if (this.state.activeTab === "npc" && (!this.state.npcFilter || this.state.npcFilter === "all")) {
-        context.archivedNpcEntries = entries.filter(e => e.lifeStatus === "dead" || e.isDead);
-        context.entries = entries.filter(e => e.lifeStatus !== "dead" && !e.isDead);
-      } else {
-        context.entries = entries;
-        context.archivedQuestEntries = [];
-        context.archivedNpcEntries = [];
-      }
-    } else {
-      context.entries = entries;
-      context.archivedQuestEntries = [];
-      context.archivedNpcEntries = [];
-    }
+    const foldersList = tabFolders.map(([fId, f]) => {
+      const folderEntries = entries.filter(e => e.folderId === fId);
+      return {
+        id: fId,
+        name: f.name,
+        tab: f.tab,
+        color: f.color || "purple",
+        sort: f.sort || 0,
+        isCollapsed: f.isCollapsed ?? false,
+        entries: folderEntries,
+        count: folderEntries.length
+      };
+    });
+
+    const rootEntries = entries.filter(e => !e.folderId || !allFolders[e.folderId]);
+
+    context.folders = foldersList;
+    context.rootEntries = rootEntries;
+    context.entries = entries; // For empty states and backward compatibility
 
     context.showAddBtn = this.state.activeTab !== "board" && this.state.activeTab !== "search";
     context.isBoardView = this.state.activeTab === "board";

@@ -48,6 +48,18 @@
   </div>
   {{/unless}}
 
+  {{#if availableFolders.length}}
+  <div class="form-group" style="display: flex; gap: 8px; align-items: center; background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px 10px;">
+    <i class="fas fa-folder" style="color: var(--cb-accent); font-size: 14px;"></i>
+    <label style="font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); margin: 0; min-width: 50px;">{{localize 'CLUEBOOK.Folder.NameLabel'}}:</label>
+    <select name="folderId" class="cluebook-input" style="flex: 1; padding: 4px 8px; height: auto; border-radius: 4px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); color: #fff;">
+      <option value="" {{#unless entry.folderId}}selected{{/unless}}>{{localize 'CLUEBOOK.Folder.NoFolder'}}</option>
+      {{#each availableFolders}}
+        <option value="{{this.id}}" {{#if this.isSelected}}selected{{/if}}>📁 {{this.name}}</option>
+      {{/each}}
+    </select>
+  </div>
+  {{/if}}
 
   {{#unless isMassEdit}}
 

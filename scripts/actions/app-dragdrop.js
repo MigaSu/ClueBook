@@ -3,19 +3,19 @@ import { getRandomPhotoTilt } from "../data-models.js";
 
 export const ClueBookDragDropMixin = (Base) => class extends Base {
   _setupListDragDrop(html) {
-    let draggedItem = null;
+    let draggedEntry = null;
+    let draggedFolder = null;
     const listContainer = html.querySelector('.entries-list');
     if (!listContainer) return;
 
     listContainer.addEventListener('dragover', ev => {
       ev.preventDefault();
-      if (ev.dataTransfer) ev.dataTransfer.dropEffect = "copy";
+      if (ev.dataTransfer) ev.dataTransfer.dropEffect = "move";
     });
 
     listContainer.addEventListener('drop', async (ev) => {
-      // If we are dragging an internal entry for re-sorting, let the entry drop handler handle it
-      if (draggedItem) return;
       if (this.state.isReadOnly) return;
+      if (draggedEntry || draggedFolder) return;
 
       ev.preventDefault();
       ev.stopPropagation();
@@ -44,50 +44,148 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
       } catch (e) {}
     });
 
+    // 1. Cards Drag & Drop (into folders, root, or re-sorting)
     html.querySelectorAll('.entries-list .cluebook-entry').forEach(entry => {
       entry.addEventListener('dragstart', (ev) => {
         if (ev.target.closest('.entry-controls') || ev.target.closest('.edit-mode')) {
           ev.preventDefault();
           return;
         }
-        draggedItem = entry;
-
+        draggedEntry = entry;
+        ev.dataTransfer.setData('text/plain', entry.dataset.entryId);
+        ev.dataTransfer.effectAllowed = 'move';
         listContainer.classList.add('is-dragging-list');
         setTimeout(() => entry.classList.add('is-dragging'), 0);
       });
 
       entry.addEventListener('dragend', async () => {
-        if (!draggedItem) return;
+        if (!draggedEntry) return;
         listContainer.classList.remove('is-dragging-list');
-        draggedItem.classList.remove('is-dragging');
-        draggedItem = null;
+        draggedEntry.classList.remove('is-dragging');
+        html.querySelectorAll('.cb-folder-section').forEach(f => f.classList.remove('is-dragover'));
+        draggedEntry = null;
+      });
+    });
 
-        // Save the new sort order
-        const allEntries = Array.from(listContainer.querySelectorAll('.cluebook-entry'));
-        const updates = {};
-        
-        allEntries.forEach((el, index) => {
-          const id = el.dataset.entryId;
-          const flagPath = `flags.ClueBook.data.${this.state.activeTab}.${id}.sort`;
-          updates[flagPath] = index;
-        });
+    // 2. Folder Dropzones (Drop card into folder)
+    html.querySelectorAll('.cb-folder-section').forEach(folderEl => {
+      const folderId = folderEl.dataset.folderId;
 
-        await this._updateWorkspaceData(updates);
+      folderEl.addEventListener('dragover', (ev) => {
+        if (draggedEntry) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          folderEl.classList.add('is-dragover');
+          if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+        }
       });
 
-      entry.addEventListener('dragenter', (ev) => {
-        ev.preventDefault();
-        if (!draggedItem || draggedItem === entry) return;
-
-        const allEntries = Array.from(listContainer.children);
-        const draggedIndex = allEntries.indexOf(draggedItem);
-        const targetIndex = allEntries.indexOf(entry);
-
-        if (draggedIndex < targetIndex) {
-          listContainer.insertBefore(draggedItem, entry.nextSibling);
-        } else {
-          listContainer.insertBefore(draggedItem, entry);
+      folderEl.addEventListener('dragleave', (ev) => {
+        if (!folderEl.contains(ev.relatedTarget)) {
+          folderEl.classList.remove('is-dragover');
         }
+      });
+
+      folderEl.addEventListener('drop', async (ev) => {
+        if (!draggedEntry || this.state.isReadOnly) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        folderEl.classList.remove('is-dragover');
+
+        const entryId = draggedEntry.dataset.entryId;
+        const sourceTab = draggedEntry.dataset.sourceTab || this.state.activeTab;
+        if (!entryId) return;
+
+        await this._saveDataRaw(sourceTab, entryId, "folderId", folderId);
+        this.render({ parts: ["content"] });
+      });
+    });
+
+    // 3. Root Dropzone (Drop card out of folder back to root)
+    const rootContainer = html.querySelector('.cb-root-entries');
+    if (rootContainer) {
+      rootContainer.addEventListener('dragover', (ev) => {
+        if (draggedEntry) {
+          ev.preventDefault();
+          if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+        }
+      });
+
+      rootContainer.addEventListener('drop', async (ev) => {
+        if (!draggedEntry || this.state.isReadOnly) return;
+        const entryId = draggedEntry.dataset.entryId;
+        const sourceTab = draggedEntry.dataset.sourceTab || this.state.activeTab;
+        const currentFolderId = draggedEntry.closest('.cb-folder-section')?.dataset.folderId;
+
+        if (entryId && currentFolderId) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          await this._saveDataRaw(sourceTab, entryId, "folderId", "");
+          this.render({ parts: ["content"] });
+        }
+      });
+    }
+
+    // 4. Folder Header Drag & Drop (Reordering folders)
+    html.querySelectorAll('.cb-folder-header[draggable="true"]').forEach(header => {
+      const folderSection = header.closest('.cb-folder-section');
+
+      header.addEventListener('dragstart', (ev) => {
+        if (ev.target.closest('.cb-folder-controls')) {
+          ev.preventDefault();
+          return;
+        }
+        draggedFolder = folderSection;
+        ev.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => folderSection.classList.add('is-folder-dragging'), 0);
+      });
+
+      header.addEventListener('dragend', async () => {
+        if (!draggedFolder) return;
+        draggedFolder.classList.remove('is-folder-dragging');
+        html.querySelectorAll('.cb-folder-section').forEach(f => f.classList.remove('is-folder-dragover'));
+        draggedFolder = null;
+      });
+
+      header.addEventListener('dragover', (ev) => {
+        if (draggedFolder && draggedFolder !== folderSection) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          folderSection.classList.add('is-folder-dragover');
+        }
+      });
+
+      header.addEventListener('dragleave', () => {
+        folderSection.classList.remove('is-folder-dragover');
+      });
+
+      header.addEventListener('drop', async (ev) => {
+        if (!draggedFolder || draggedFolder === folderSection || this.state.isReadOnly) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        folderSection.classList.remove('is-folder-dragover');
+
+        const parent = folderSection.parentNode;
+        const allFolders = Array.from(parent.querySelectorAll('.cb-folder-section'));
+        const draggedIdx = allFolders.indexOf(draggedFolder);
+        const targetIdx = allFolders.indexOf(folderSection);
+
+        if (draggedIdx < targetIdx) {
+          parent.insertBefore(draggedFolder, folderSection.nextSibling);
+        } else {
+          parent.insertBefore(draggedFolder, folderSection);
+        }
+
+        // Save new folder sort order
+        const updatedFolders = Array.from(parent.querySelectorAll('.cb-folder-section'));
+        const updates = {};
+        updatedFolders.forEach((el, index) => {
+          const fId = el.dataset.folderId;
+          if (fId) {
+            updates[`flags.ClueBook.data.folders.${fId}.sort`] = index;
+          }
+        });
+        await this._updateWorkspaceData(updates);
       });
     });
   }

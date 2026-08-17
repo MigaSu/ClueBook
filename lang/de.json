@@ -87,11 +87,26 @@
       "WhoHasAccess": "Wer hat Zugang (Sie und der SL haben immer Zugang):",
       "WhoHasAccessPrompt": "Wer hat Zugang (Sie und der SL haben immer Zugang):"
     },
-    "Archive": {
-      "CompletedQuests": "Archiv abgeschlossener Aufgaben",
-      "DeadNPC": "Archiv verstorbener Charaktere",
-      "GroupArchive": "Archiv",
-      "ToggleGrouping": "Archivgruppierung umschalten"
+    "Folder": {
+      "AddEntry": "Karte in diesem Ordner erstellen",
+      "AddFolder": "Ordner hinzufügen",
+      "CancelBtn": "Abbrechen",
+      "ColorLabel": "Farbthema",
+      "CreateBtn": "Erstellen",
+      "CreateTitle": "Ordner erstellen",
+      "DefaultName": "Neuer Ordner",
+      "Delete": "Ordner löschen",
+      "DeleteBtn": "Löschen",
+      "DeletePrompt": "Möchten Sie den Ordner \"{name}\" wirklich löschen? Die enthaltenen Karten bleiben erhalten und kehren zur Hauptliste zurück.",
+      "DeleteTitle": "Ordner löschen",
+      "Edit": "Ordner bearbeiten",
+      "EditTitle": "Ordner bearbeiten",
+      "EmptyHint": "Ordner ist leer. Karten hierher ziehen oder + klicken",
+      "NameLabel": "Ordner",
+      "NoFolder": "— Kein Ordner (in Hauptliste) —",
+      "SaveBtn": "Speichern",
+      "SendToBoard": "Alle Karten im Ordner an die Pinnwand senden",
+      "SentToBoardSuccess": "{count} Karten aus dem Ordner an die Pinnwand gesendet!"
     },
     "Board": {
       "AlignCenter": "Zentrieren",
