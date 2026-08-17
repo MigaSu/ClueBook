@@ -387,8 +387,8 @@ export class ClueBookApp extends BaseApp {
         const r = parseInt(hex.substring(0, 2), 16) || 123;
         const g = parseInt(hex.substring(2, 4), 16) || 97;
         const b = parseInt(hex.substring(4, 6), 16) || 255;
-        customStyle = `background: rgba(${r}, ${g}, ${b}, 0.07); border-color: rgba(${r}, ${g}, ${b}, 0.35); --cb-folder-color: ${f.color};`;
-        customIconStyle = `color: ${f.color};`;
+        customStyle = `background: rgba(${r}, ${g}, ${b}, 0.12) !important; border-color: rgba(${r}, ${g}, ${b}, 0.4) !important; --cb-folder-color: ${f.color};`;
+        customIconStyle = `color: ${f.color} !important;`;
       }
       return {
         id: fId,

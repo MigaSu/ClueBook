@@ -211,15 +211,15 @@
 }
 
 /* Subtle Semi-Transparent Color Backgrounds for Folders */
-.cluebook-window .cb-folder-section.color-purple { background: rgba(123, 97, 255, 0.06); border-color: rgba(123, 97, 255, 0.28); }
-.cluebook-window .cb-folder-section.color-blue   { background: rgba(74, 144, 226, 0.06); border-color: rgba(74, 144, 226, 0.28); }
-.cluebook-window .cb-folder-section.color-teal   { background: rgba(38, 166, 154, 0.06); border-color: rgba(38, 166, 154, 0.28); }
-.cluebook-window .cb-folder-section.color-green  { background: rgba(102, 187, 106, 0.06); border-color: rgba(102, 187, 106, 0.28); }
-.cluebook-window .cb-folder-section.color-yellow { background: rgba(255, 213, 79, 0.06); border-color: rgba(255, 213, 79, 0.28); }
-.cluebook-window .cb-folder-section.color-orange { background: rgba(255, 152, 0, 0.06); border-color: rgba(255, 152, 0, 0.28); }
-.cluebook-window .cb-folder-section.color-red    { background: rgba(239, 83, 80, 0.06); border-color: rgba(239, 83, 80, 0.28); }
-.cluebook-window .cb-folder-section.color-pink   { background: rgba(236, 64, 122, 0.06); border-color: rgba(236, 64, 122, 0.28); }
-.cluebook-window .cb-folder-section.color-brown  { background: rgba(141, 110, 99, 0.06); border-color: rgba(141, 110, 99, 0.28); }
+.cluebook-window .cb-folder-section.color-purple { background: rgba(123, 97, 255, 0.12); border-color: rgba(123, 97, 255, 0.4); }
+.cluebook-window .cb-folder-section.color-blue   { background: rgba(74, 144, 226, 0.12); border-color: rgba(74, 144, 226, 0.4); }
+.cluebook-window .cb-folder-section.color-teal   { background: rgba(38, 166, 154, 0.12); border-color: rgba(38, 166, 154, 0.4); }
+.cluebook-window .cb-folder-section.color-green  { background: rgba(102, 187, 106, 0.12); border-color: rgba(102, 187, 106, 0.4); }
+.cluebook-window .cb-folder-section.color-yellow { background: rgba(255, 213, 79, 0.12); border-color: rgba(255, 213, 79, 0.4); }
+.cluebook-window .cb-folder-section.color-orange { background: rgba(255, 152, 0, 0.12); border-color: rgba(255, 152, 0, 0.4); }
+.cluebook-window .cb-folder-section.color-red    { background: rgba(239, 83, 80, 0.12); border-color: rgba(239, 83, 80, 0.4); }
+.cluebook-window .cb-folder-section.color-pink   { background: rgba(236, 64, 122, 0.12); border-color: rgba(236, 64, 122, 0.4); }
+.cluebook-window .cb-folder-section.color-brown  { background: rgba(141, 110, 99, 0.12); border-color: rgba(141, 110, 99, 0.4); }
 
 .cluebook-window .cb-folder-section:hover {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
