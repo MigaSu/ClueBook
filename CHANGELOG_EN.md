@@ -2,7 +2,7 @@
 
 All notable changes, refactoring, and bug fixes are documented in this file.
 
-## [2.0.0] - 2026-08-16
+## [2.0.0] - 2026-08-17
 
 ### ⚡ Performance & Scalability (1,000+ Cards & Links)
 * **Zero-Reflow Thread Engine:** Completely eliminated Layout Thrashing during card dragging. Card dimensions and link graphs are pre-indexed in memory, with 0 DOM queries and 0 `offsetWidth`/`offsetHeight` reads during mouse movement.
@@ -10,6 +10,26 @@ All notable changes, refactoring, and bug fixes are documented in this file.
 * **Instant Lasso Selection:** Lasso collision detection is now evaluated via fast in-memory AABB mathematical tests (<0.1ms for 1,000 cards).
 * **Linear O(N+L) Data Pipeline:** Replaced nested entity lookups in `_processExplicitLinks` with `Map` hash structures.
 * **Hardware-Accelerated Zoom & Pan:** Removed timer-based `textShadow` repaint hacks; pan and zoom now run directly on the GPU compositor at smooth 60+ FPS.
+
+### 📁 Custom Folders & Sections
+* **Structured Organization:** Create custom folders across all tabs ("Main Suspects", "Crime Scene Evidence", "Side Quests") with Drag & Drop sorting between folders and root lists.
+* **Color Accents:** Custom color accents per folder (presets or custom palette).
+* **1-Click Send to Board:** Instantly drop all cards from a folder onto the detective canvas in a neat grid.
+
+### 🗂️ Versatile View Modes
+* **1-Click Mode Switching:** Switch seamlessly between sticky Cards (`Cards`), compact CRM-style Table (`Table`), and two-line List (`List`).
+* **Intelligent Column Extraction:** The Table view dynamically extracts key properties (locations, NPC attitudes, deadlines, timestamps) per tab.
+* **Persistent Preferences:** The chosen view mode persists per tab in user settings.
+
+### 🎯 Smart Investigation Board & Navigation
+* **Auto-Fit Camera:** The `[ 🎯 ]` target button calculates the bounding box of all cards on canvas, smoothly centering and scaling the camera to fit the entire investigation within the viewport.
+* **Per-Board Camera Memory:** Panning coordinates and zoom levels are remembered individually for each workspace.
+
+### 🖱️ Context Menu & Multi-Selection
+* **Full-Featured Right-Click Menu:** Rapid access to edit, jump to linked Actor/Scene, broadcast to player overlay, track in widget, move to folders, and delete.
+* **Enhanced Multi-Selection:** Select multiple cards using `Ctrl+Click`, `Shift+Click`, `Ctrl+A`, and lasso selection.
+* **Floating Selection HUD:** Bottom toolbar showing active count with batch actions.
+* **Instant GM Visibility Toggle:** `Shift + Right Click` on any card immediately toggles its visibility for players without opening modal dialogs.
 
 ### 🖼️ Multimedia & Gallery
 * **Dedicated Gallery Tab:** Built a full-featured visual tab for investigation photos, evidence, and clues with an adaptive thumbnail grid.
@@ -34,28 +54,22 @@ All notable changes, refactoring, and bug fixes are documented in this file.
 * **Inline Editing (Double Click):** Edit label headings directly on the board with seamless inline inputs without opening a modal dialog.
 * **Board Organization:** Large decorative headings and plaques to partition detective board zones.
 * **Glassmorphism Design:** Apple VisionOS frosted glass (`glass`), solid backdrop (`solid`), and pure floating text (`transparent`).
-* **Simplified Color Settings:** Dynamically hides background color picker when transparent style is chosen.
 * **Typography Control:** Font family selection (`Caveat`, `Inter`, `Courier Prime`, `Cinzel`), pixel-precise font size, and text color picker.
 
-### 🔗 Clean Typography Links & Mentions
-* **Link Redesign:** Replaced heavy, dark rectangular boxes with clean bold underlined typography (`font-weight: 700; text-decoration: underline;`).
-* **Rich Hover Preview Popovers:** Floating card previews with life status badges (NPC alive/dead), quest progress (active/done/fail), deadlines, locations, and clue photo thumbnails.
+### 🎛️ Smart Status Filters & Chronological Sorting
+* **Task & NPC Status Filters:** Interactive pill filters for tasks (`[ All | ⏳ In Progress | ✅ Completed | ❌ Failed ]`) and NPC life states (`[ All | 💚 Alive | 💀 Dead | ❓ Unknown ]`).
+* **1-Click Quick Quest Status Switcher:** Clicking the quest status badge opens a rapid status menu.
+* **Chronological Sorting:** Select display order (`Early first`, `Late first`, `Manual order`) with persistent state.
+
+### ⚙️ Workspace Customization
+* **Per-Board Hidden Tabs:** Hide irrelevant tabs for specific workspaces to streamline scenario tracking.
+* **Tab Micro-Badges:** Compact counter badges on navigation tabs indicating card counts.
 
 ### 🛡️ Strict Foundry VTT v14 Standards
-* **ForcedDeletion Migration:** Replaced deprecated `-=key` deletion syntax across all actions, models, sockets, and data helpers with `new foundry.data.operators.ForcedDeletion()`.
-* **Atomic Batch Deletions:** Combined card and link deletions into single atomic database updates.
-* **Formal DataModels:** Extended `ClueBookEntryModel` schema with typed validation and default values for all media, pin, and label properties.
-* **Overlay Event Delegation:** Replaced legacy `TextEditor.activateListeners` in `overlay.js` with native DOM `@UUID` click listeners.
-* **Strict CSS Scoping:** Enforced 100% selector scoping under module roots (`.cluebook-window`, `.cb-tracker-widget`, `.cb-edit-dialog`, `.cb-tag-manager`).
-* **Full Multilingual Localization:** Updated translations across English, Russian, German, and French.
-
-### 🎛️ Smart Status Filters & Ergonomics
-* **Quest Status Filter:** Interactive pill buttons in the quest tab header `[ All | ⏳ In Progress | ✅ Completed | ❌ Failed ]` with dynamic count badges for organizing hundreds of tasks.
-* **NPC Life Status Filter:** Quick life status filtering for characters `[ All | 💚 Alive | 💀 Dead | ❓ Unknown ]` with real-time counters.
-* **1-Click Quick Quest Status Switcher:** Clicking the quest status badge directly opens a rapid dropdown `[ ⏳ In Progress | ✅ Completed | ❌ Failed ]` to update task progress without opening the edit dialog.
-* **Deadline Freeze & Visual De-clutter on Done/Failed Quests:** When a quest is completed or failed, the large countdown timer box is automatically hidden from the card face to eliminate noise.
-* **Rich Status Popover on Hover:** Hovering over a completed/failed quest badge displays a floating tooltip with assigned deadline details and completion timestamps.
-* **Optional Completion Time:** Added an optional "Specify completion time" field in the quest edit modal.
+* **ApplicationV2 & DataModel:** Modern Foundry v14 architecture with strict schema validation.
+* **ForcedDeletion Migration:** Replaced deprecated `-=key` deletion syntax across all actions with `new foundry.data.operators.ForcedDeletion()`.
+* **Strict CSS Scoping:** Enforced 100% selector scoping under module roots.
+* **Full Multilingual Localization:** 100% key parity across English, Russian, German, and French.
 
 ### 🎨 UI/UX Fixes & Stability
 * **Dangling Link Labels Fix:** Connection lines and label badges are now strictly isolated to render only when both linked cards are actively visible on the board canvas.
