@@ -1581,7 +1581,16 @@ export class ClueBookApp extends BaseApp {
           await game.user.update({ [flagPath]: value });
         }
       }
-      this.render();
+
+      // Update FAB widget if buttons or tab visibility changed
+      const widget = document.getElementById("cluebook-widget");
+      if (widget && widget._buildMenu) {
+        const currentSettings = this.getSettings();
+        const menu = widget.querySelector(".cb-fab-menu");
+        if (menu) widget._buildMenu(currentSettings, menu);
+      }
+
+      this.render({ parts: ["tabs", "content"] });
     };
 
     html.querySelectorAll('.setting-input').forEach(el => {

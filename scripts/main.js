@@ -573,7 +573,7 @@ Hooks.on("updateJournalEntry", (journal, data, options, userId) => {
         if (clueBookApp.state.isBoardInteracting) {
           clueBookApp.state.pendingRender = true;
         } else {
-          clueBookApp.render({ parts: ["content"] });
+          clueBookApp.render({ parts: ["tabs", "content"] });
         }
       }
     }

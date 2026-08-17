@@ -474,7 +474,15 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
               ClueBookSocket.updateBoard(journal.id, newName, ownership);
             }
 
-            this.render({ parts: ["content"] });
+            // Update FAB menu if widget exists
+            const widget = document.getElementById("cluebook-widget");
+            if (widget && widget._buildMenu) {
+              const currentSettings = this.getSettings();
+              const menu = widget.querySelector(".cb-fab-menu");
+              if (menu) widget._buildMenu(currentSettings, menu);
+            }
+
+            this.render({ parts: ["tabs", "content"] });
           }
         },
         {
