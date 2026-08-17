@@ -1169,6 +1169,11 @@ export class ClueBookApp extends BaseApp {
     // Double-click to edit (or inline edit for labels)
     html.querySelectorAll('.cluebook-entry .entry-content').forEach(contentNode => {
       contentNode.addEventListener('dblclick', (ev) => {
+        if (ev.target.closest('.cb-quest-status-wrapper, .cb-clickable-badge, [data-action="toggleQuestStatusMenu"]')) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          return;
+        }
         const entry = ev.currentTarget.closest('.cluebook-entry');
         if (!entry) return;
 

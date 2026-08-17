@@ -74,48 +74,81 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
       event.stopPropagation();
     }
     if (this.state.isReadOnly) return;
-    const wrapper = target.closest('.cb-quest-status-wrapper');
-    if (!wrapper) return;
-    const dropdown = wrapper.querySelector('.cb-quest-status-dropdown');
-    if (!dropdown) return;
-
-    const isVisible = dropdown.style.display === 'flex';
-    // Close all other dropdowns
-    this.element.querySelectorAll('.cb-quest-status-dropdown').forEach(d => d.style.display = 'none');
-    dropdown.style.display = isVisible ? 'none' : 'flex';
-
-    if (!isVisible) {
-      const closeDropdown = (ev) => {
-        if (!wrapper.contains(ev.target)) {
-          dropdown.style.display = 'none';
-          document.removeEventListener('click', closeDropdown);
-        }
-      };
-      setTimeout(() => document.addEventListener('click', closeDropdown), 0);
-    }
-  }
-
-  static async _onSetQuestStatus(event, target) {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    if (this.state.isReadOnly) return;
+    const badge = target.closest('.cb-clickable-badge') || target;
     const entryEl = target.closest('.cluebook-entry');
     if (!entryEl) return;
 
     const entryId = entryEl.dataset.entryId;
     const sourceTab = entryEl.dataset.sourceTab || "quests";
-    const status = target.dataset.status;
-    if (!entryId || !status) return;
+    if (!entryId) return;
 
-    // Close all status dropdowns
-    this.element.querySelectorAll('.cb-quest-status-dropdown').forEach(d => d.style.display = 'none');
+    // Remove any existing floating status menu
+    const existingMenu = document.querySelector('.cb-quest-floating-menu');
+    if (existingMenu) {
+      const wasSame = existingMenu.dataset.entryId === entryId;
+      existingMenu.remove();
+      if (wasSame) return; // Toggle off
+    }
 
-    await this._updateWorkspaceData({
-      [`flags.ClueBook.data.${sourceTab}.${entryId}.status`]: status
+    const currentStatus = entryEl.dataset.questStatus || (badge.classList.contains('badge-completed') ? 'completed' : (badge.classList.contains('badge-failed') ? 'failed' : 'active'));
+
+    const menu = document.createElement('div');
+    menu.className = 'cb-quest-floating-menu';
+    menu.dataset.entryId = entryId;
+
+    const items = [
+      { status: 'active', icon: '⏳', label: game.i18n.localize('CLUEBOOK.Quest.Active') },
+      { status: 'completed', icon: '✅', label: game.i18n.localize('CLUEBOOK.Quest.Completed') },
+      { status: 'failed', icon: '❌', label: game.i18n.localize('CLUEBOOK.Quest.Failed') }
+    ];
+
+    items.forEach(item => {
+      const option = document.createElement('div');
+      option.className = `cb-dropdown-item ${currentStatus === item.status ? 'selected' : ''}`;
+      option.dataset.status = item.status;
+      option.innerHTML = `<span>${item.icon}</span> <span>${item.label}</span>`;
+      option.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        menu.remove();
+        await this._updateWorkspaceData({
+          [`flags.ClueBook.data.${sourceTab}.${entryId}.status`]: item.status
+        });
+        this.render({ parts: ["content"] });
+      });
+      menu.appendChild(option);
     });
-    this.render({ parts: ["content"] });
+
+    document.body.appendChild(menu);
+
+    const rect = badge.getBoundingClientRect();
+    let top = rect.bottom + 4;
+    let left = rect.left;
+
+    // Boundary protection against window overflow
+    if (left + 160 > window.innerWidth) {
+      left = Math.max(10, window.innerWidth - 170);
+    }
+    if (top + 130 > window.innerHeight) {
+      top = Math.max(10, rect.top - 120);
+    }
+
+    menu.style.position = 'fixed';
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
+    menu.style.zIndex = '100000';
+
+    const closeFloatingMenu = (ev) => {
+      if (!menu.contains(ev.target) && !badge.contains(ev.target)) {
+        menu.remove();
+        document.removeEventListener('click', closeFloatingMenu);
+        document.removeEventListener('contextmenu', closeFloatingMenu);
+      }
+    };
+    setTimeout(() => {
+      document.addEventListener('click', closeFloatingMenu);
+      document.addEventListener('contextmenu', closeFloatingMenu);
+    }, 10);
   }
 
   static async _onTogglePin(event, target) {

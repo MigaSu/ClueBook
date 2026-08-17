@@ -446,6 +446,11 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
 
       entry.addEventListener('dblclick', (ev) => {
         if (this.state.isReadOnly) return;
+        if (ev.target.closest('.cb-quest-status-wrapper, .cb-clickable-badge, [data-action="toggleQuestStatusMenu"]')) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          return;
+        }
         ev.stopPropagation();
         const sourceTab = entry.dataset.sourceTab;
         const data = this._getWorkspaceData()?.[sourceTab]?.[entryId];

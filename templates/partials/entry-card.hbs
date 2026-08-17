@@ -152,18 +152,6 @@
                 </div>
                 {{/if}}
               {{/if}}
-
-              <div class="cb-quest-status-dropdown" style="display: none;">
-                <div class="cb-dropdown-item {{#if (or (eq this.status 'active') (not this.status))}}selected{{/if}}" data-action="setQuestStatus" data-status="active">
-                  <span>⏳</span> {{localize "CLUEBOOK.Quest.Active"}}
-                </div>
-                <div class="cb-dropdown-item {{#if (eq this.status 'completed')}}selected{{/if}}" data-action="setQuestStatus" data-status="completed">
-                  <span>✅</span> {{localize "CLUEBOOK.Quest.Completed"}}
-                </div>
-                <div class="cb-dropdown-item {{#if (eq this.status 'failed')}}selected{{/if}}" data-action="setQuestStatus" data-status="failed">
-                  <span>❌</span> {{localize "CLUEBOOK.Quest.Failed"}}
-                </div>
-              </div>
             </div>
             {{#if this.pinned}}<i class="fas fa-lock" style="font-size: 11px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>{{/if}}
           </div>
