@@ -1461,6 +1461,14 @@ export class ClueBookApp extends BaseApp {
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(ev.target.tagName)) return;
 
         const entryId = entry.dataset.entryId;
+        // GM shortcut: Shift + Right Click instantly toggles visibility
+        if (game.user.isGM && ev.shiftKey) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          this.constructor._onToggleVisibility.call(this, ev, entry);
+          return;
+        }
+
         // Right-clicking without Shift/Ctrl/Meta selects ONLY this single card
         if (!ev.shiftKey && !ev.ctrlKey && !ev.metaKey) {
           html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));

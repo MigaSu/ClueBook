@@ -590,11 +590,11 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
       
       const action = actionEl.dataset.action;
       closeMenu();
-      await this._executeListContextMenuAction(action);
+      await this._executeListContextMenuAction(action, menuEv);
     });
   }
 
-  async _executeListContextMenuAction(action) {
+  async _executeListContextMenuAction(action, event = null) {
     const ids = Array.from(this.state.selectedEntries);
     if (ids.length < 1) return;
     const entryId = ids[0];
@@ -605,7 +605,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
       return this._onDeleteGroup();
     } else if (action === 'single-edit') {
       const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
-      if (entryEl) this.constructor._onToggleEdit.call(this, null, entryEl);
+      if (entryEl) this.constructor._onToggleEdit.call(this, event, entryEl);
     } else if (action === 'open-actor') {
       if (entry?.actorUuid) {
         const actor = await fromUuid(entry.actorUuid);
@@ -619,19 +619,19 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     } else if (action === 'share-overlay') {
       const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
       if (entryEl) {
-        this.constructor._onShareOverlay.call(this, null, entryEl);
+        this.constructor._onShareOverlay.call(this, event, entryEl);
       }
     } else if (action === 'toggle-track') {
       const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
       if (entryEl) {
-        this.constructor._onToggleTrack.call(this, null, entryEl);
+        this.constructor._onToggleTrack.call(this, event, entryEl);
       }
     } else if (action === 'move-folder') {
       return this._onMassMoveFolder(ids);
     } else if (action === 'toggle-visibility') {
       if (ids.length === 1) {
         const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
-        if (entryEl) return this.constructor._onToggleVisibility.call(this, null, entryEl);
+        if (entryEl) return this.constructor._onToggleVisibility.call(this, event, entryEl);
       }
       return this._onMassToggleVisibility(ids);
     } else if (action === 'toggle-board') {
