@@ -87,6 +87,10 @@
       "WhoHasAccess": "Who has access (You and GM always have access):",
       "WhoHasAccessPrompt": "Who has access (You and GM always have access):"
     },
+    "Archive": {
+      "CompletedQuests": "Completed Tasks Archive",
+      "DeadNPC": "Deceased Characters Archive"
+    },
     "Board": {
       "AlignCenter": "Align center",
       "AlignLeft": "Align left",

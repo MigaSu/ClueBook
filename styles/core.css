@@ -196,6 +196,90 @@
   color: #ffffff;
 }
 
+/* --- Collapsible Archive Section --- */
+.cluebook-window .cb-archive-section {
+  width: 100%;
+  grid-column: 1 / -1;
+  margin-top: 20px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px dashed rgba(255, 255, 255, 0.14);
+  padding-top: 12px;
+}
+
+.cluebook-window .cb-archive-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.cluebook-window .cb-archive-header:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.cluebook-window .cb-archive-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.cluebook-window .cb-archive-header:hover .cb-archive-title {
+  color: #ffffff;
+}
+
+.cluebook-window .cb-archive-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.85);
+  box-sizing: border-box;
+}
+
+.cluebook-window .cb-archive-chevron {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cluebook-window .cb-archive-section.is-open .cb-archive-chevron {
+  transform: rotate(180deg);
+  color: var(--cb-accent, #7b61ff);
+}
+
+.cluebook-window .cb-archive-content {
+  display: none;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+  animation: cbFadeIn 0.2s ease-out;
+}
+
+.cluebook-window .cb-archive-section.is-open .cb-archive-content {
+  display: grid;
+}
+
 .board-recenter-btn {
   position: absolute;
   top: 15px;

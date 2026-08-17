@@ -87,6 +87,10 @@
       "WhoHasAccess": "Wer hat Zugang (Sie und der SL haben immer Zugang):",
       "WhoHasAccessPrompt": "Wer hat Zugang (Sie und der SL haben immer Zugang):"
     },
+    "Archive": {
+      "CompletedQuests": "Archiv abgeschlossener Aufgaben",
+      "DeadNPC": "Archiv verstorbener Charaktere"
+    },
     "Board": {
       "AlignCenter": "Zentrieren",
       "AlignLeft": "Links ausrichten",

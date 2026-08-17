@@ -181,7 +181,9 @@ export class ClueBookApp extends BaseApp {
       viewImage: ClueBookApp._onViewImage,
       uploadBatchGallery: ClueBookApp._onUploadBatchGallery,
       toggleQuestStatusMenu: ClueBookApp._onToggleQuestStatusMenu,
-      setQuestStatus: ClueBookApp._onSetQuestStatus
+      setQuestStatus: ClueBookApp._onSetQuestStatus,
+      toggleQuestArchive: ClueBookApp._onToggleQuestArchive,
+      toggleNpcArchive: ClueBookApp._onToggleNpcArchive
     }
   };
 
@@ -236,6 +238,8 @@ export class ClueBookApp extends BaseApp {
     searchTags: [],
     questFilter: "all",
     npcFilter: "all",
+    isQuestArchiveOpen: false,
+    isNpcArchiveOpen: false,
     camera: { zoom: 1, panX: 0, panY: 0 }
   };
 
@@ -559,7 +563,7 @@ export class ClueBookApp extends BaseApp {
         sortedEntries = Object.entries(tabData).sort((a, b) => (a[1].sort || 0) - (b[1].sort || 0));
       }
 
-      // Status filters for Quests
+      // Status filters and Archive for Quests
       if (this.state.activeTab === "quests") {
         const questFilter = this.state.questFilter || "all";
         const allTabEntries = Object.values(tabData).filter(isEntryVisible);
@@ -570,8 +574,24 @@ export class ClueBookApp extends BaseApp {
           failed: allTabEntries.filter(e => e.status === "failed").length
         };
         context.activeQuestFilter = questFilter;
+        context.isQuestArchiveOpen = this.state.isQuestArchiveOpen ?? false;
 
-        if (questFilter === "active") {
+        if (questFilter === "all") {
+          const activeList = [];
+          const archiveList = [];
+          for (const [id, entry] of sortedEntries) {
+            if (!entry || !isEntryVisible(entry)) continue;
+            const enriched = await this._enrichEntry(entry);
+            const item = { id, sourceTab: "quests", isTracked: trackedIds.includes(id), ...entry, enriched };
+            if (entry.status === "completed" || entry.status === "failed") {
+              archiveList.push(item);
+            } else {
+              activeList.push(item);
+            }
+          }
+          context.archivedQuestEntries = archiveList;
+          return activeList;
+        } else if (questFilter === "active") {
           sortedEntries = sortedEntries.filter(([id, e]) => e.status === "active" || !e.status);
         } else if (questFilter === "completed") {
           sortedEntries = sortedEntries.filter(([id, e]) => e.status === "completed");
@@ -580,7 +600,7 @@ export class ClueBookApp extends BaseApp {
         }
       }
 
-      // Status filters for NPC
+      // Status filters and Archive for NPC
       if (this.state.activeTab === "npc") {
         const npcFilter = this.state.npcFilter || "all";
         const allTabEntries = Object.values(tabData).filter(isEntryVisible);
@@ -591,8 +611,24 @@ export class ClueBookApp extends BaseApp {
           unknown: allTabEntries.filter(e => e.lifeStatus === "unknown").length
         };
         context.activeNpcFilter = npcFilter;
+        context.isNpcArchiveOpen = this.state.isNpcArchiveOpen ?? false;
 
-        if (npcFilter === "alive") {
+        if (npcFilter === "all") {
+          const livingList = [];
+          const deadList = [];
+          for (const [id, entry] of sortedEntries) {
+            if (!entry || !isEntryVisible(entry)) continue;
+            const enriched = await this._enrichEntry(entry);
+            const item = { id, sourceTab: "npc", isTracked: trackedIds.includes(id), ...entry, enriched };
+            if (entry.lifeStatus === "dead" || entry.isDead) {
+              deadList.push(item);
+            } else {
+              livingList.push(item);
+            }
+          }
+          context.archivedNpcEntries = deadList;
+          return livingList;
+        } else if (npcFilter === "alive") {
           sortedEntries = sortedEntries.filter(([id, e]) => e.lifeStatus === "alive" || (!e.lifeStatus && !e.isDead));
         } else if (npcFilter === "dead") {
           sortedEntries = sortedEntries.filter(([id, e]) => e.lifeStatus === "dead" || e.isDead);

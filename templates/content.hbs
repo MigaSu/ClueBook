@@ -78,11 +78,47 @@
     {{#each entries}}
       {{> "modules/ClueBook/templates/partials/entry-card.hbs"}}
     {{/each}}
+
+    {{#if archivedQuestEntries.length}}
+    <div class="cb-archive-section {{#if isQuestArchiveOpen}}is-open{{/if}}">
+      <div class="cb-archive-header" data-action="toggleQuestArchive">
+        <div class="cb-archive-title">
+          <i class="fas fa-box-archive"></i>
+          <span>{{localize "CLUEBOOK.Archive.CompletedQuests"}}</span>
+          <span class="cb-archive-badge">{{archivedQuestEntries.length}}</span>
+        </div>
+        <i class="fas fa-chevron-down cb-archive-chevron"></i>
+      </div>
+      <div class="cb-archive-content">
+        {{#each archivedQuestEntries}}
+          {{> "modules/ClueBook/templates/partials/entry-card.hbs"}}
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+
+    {{#if archivedNpcEntries.length}}
+    <div class="cb-archive-section {{#if isNpcArchiveOpen}}is-open{{/if}}">
+      <div class="cb-archive-header" data-action="toggleNpcArchive">
+        <div class="cb-archive-title">
+          <i class="fas fa-skull"></i>
+          <span>{{localize "CLUEBOOK.Archive.DeadNPC"}}</span>
+          <span class="cb-archive-badge">{{archivedNpcEntries.length}}</span>
+        </div>
+        <i class="fas fa-chevron-down cb-archive-chevron"></i>
+      </div>
+      <div class="cb-archive-content">
+        {{#each archivedNpcEntries}}
+          {{> "modules/ClueBook/templates/partials/entry-card.hbs"}}
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
   </div>
 
   {{#unless isWorkspaces}}
   {{#unless isSettings}}
-  {{#unless entries.length}}
+  {{#unless (or entries.length archivedQuestEntries.length archivedNpcEntries.length)}}
     {{#if (or (ne activeTab "search") searchQuery)}}
     <div class="cb-empty-state-wrapper" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 5;">
       <div class="cb-empty-state">

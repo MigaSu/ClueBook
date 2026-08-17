@@ -87,6 +87,10 @@
       "WhoHasAccess": "Qui a accès (Vous et le MJ ont toujours accès):",
       "WhoHasAccessPrompt": "Qui a accès (Vous et le MJ ont toujours accès):"
     },
+    "Archive": {
+      "CompletedQuests": "Archives des tâches terminées",
+      "DeadNPC": "Archives des personnages décédés"
+    },
     "Board": {
       "AlignCenter": "Aligner au centre",
       "AlignLeft": "Aligner à gauche",

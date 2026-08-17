@@ -10,19 +10,20 @@ export class TrackerService {
    */
   static async getTrackedEvents(trackedIds, showOverdue) {
     if (!trackedIds || !trackedIds.length) return [];
+    const uniqueTrackedIds = Array.from(new Set(trackedIds));
 
-    const currentTs = game.time.worldTime;
+    const currentTs = TimeService.isActive() ? game.time.worldTime : 0;
     const allEvents = [];
 
     // Gather from personal workspace
     const personalData = game.user.getFlag("ClueBook", "data") || {};
-    await this.#extractTrackedEvents(personalData, trackedIds, "personal", game.i18n.localize("CLUEBOOK.Workspace.Personal"), allEvents, currentTs);
+    await this.#extractTrackedEvents(personalData, uniqueTrackedIds, "personal", game.i18n.localize("CLUEBOOK.Workspace.Personal"), allEvents, currentTs);
 
     // Gather from shared journal workspaces
     for (const j of game.journal) {
       if (j.getFlag("ClueBook", "isWorkspace") && j.testUserPermission(game.user, "OBSERVER")) {
         const sharedData = j.getFlag("ClueBook", "data") || {};
-        await this.#extractTrackedEvents(sharedData, trackedIds, j.id, j.name, allEvents, currentTs);
+        await this.#extractTrackedEvents(sharedData, uniqueTrackedIds, j.id, j.name, allEvents, currentTs);
       }
     }
     
@@ -32,7 +33,7 @@ export class TrackerService {
         if (u.id !== game.user.id && !u.isGM) {
           const uName = u.getFlag("ClueBook", "personalWorkspaceName") || game.i18n.format("CLUEBOOK.Workspace.PersonalUser", { user: u.name });
           const uData = u.getFlag("ClueBook", "data") || {};
-          await this.#extractTrackedEvents(uData, trackedIds, `personal_${u.id}`, uName, allEvents, currentTs);
+          await this.#extractTrackedEvents(uData, uniqueTrackedIds, `personal_${u.id}`, uName, allEvents, currentTs);
         }
       }
     }
@@ -51,8 +52,8 @@ export class TrackerService {
         if (b.diff === Infinity) return -1;
         return a.diff - b.diff;
       } else {
-        const idxA = trackedIds.indexOf(a.id);
-        const idxB = trackedIds.indexOf(b.id);
+        const idxA = uniqueTrackedIds.indexOf(a.id);
+        const idxB = uniqueTrackedIds.indexOf(b.id);
         return idxA - idxB;
       }
     });
@@ -78,9 +79,9 @@ export class TrackerService {
       let newText = await TE.enrichHTML(processUUIDs(text), { async: true });
       newText = newText.replace(
         /\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g,
-        (_, id, name, customText) => {
-          const displayText = customText || name;
-          return `<a data-action="jumpToMention" data-mention-id="${id}" data-workspace="${workspaceId}" title="${game.i18n.format("CLUEBOOK.App.GoToEntry", { name: name })}">${displayText}</a>`;
+        (match, tab, targetId, displayText) => {
+          const label = displayText || targetId;
+          return `<span class="cb-link-tag" data-tab="${tab}" data-entry-id="${targetId}"><i class="fas fa-link"></i> ${label}</span>`;
         }
       );
       return newText;
@@ -110,6 +111,8 @@ export class TrackerService {
   }
 
   static #pushEvent(arr, id, name, targetTs, currentTs, workspaceId, workspaceName, tab, colorHex) {
+    if (arr.some(e => e.id === id)) return; // Prevent duplicate IDs
+
     // Treat 0, null, undefined, or empty string as "No time"
     const hasTime = targetTs !== undefined && targetTs !== null && targetTs !== "" && targetTs !== 0;
     
