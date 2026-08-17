@@ -90,8 +90,8 @@ Hooks.once("init", async () => {
       
       setTimeout(() => {
         try {
-          if (ui.controls && (ui.controls.control === "cluebook" || ui.controls.activeControl === "cluebook")) {
-            ui.controls.control = "tokens";
+          if (ui.controls && (ui.controls.control?.name === "cluebook" || ui.controls.control === "cluebook")) {
+            ui.controls.initialize({ control: "tokens" });
           }
         } catch(e) {}
       }, 500);

@@ -629,6 +629,10 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     } else if (action === 'move-folder') {
       return this._onMassMoveFolder(ids);
     } else if (action === 'toggle-visibility') {
+      if (ids.length === 1) {
+        const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
+        if (entryEl) return this.constructor._onToggleVisibility.call(this, null, entryEl);
+      }
       return this._onMassToggleVisibility(ids);
     } else if (action === 'toggle-board') {
       return this._onMassToggleBoard(ids);
