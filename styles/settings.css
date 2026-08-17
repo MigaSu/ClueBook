@@ -230,7 +230,6 @@
   border-radius: 12px !important;
   display: flex !important;
   flex-direction: column !important;
-  overflow: hidden !important;
 }
 
 .cluebook-window.cluebook-board-settings-dialog .window-content {
@@ -240,8 +239,17 @@
   flex-direction: column !important;
   flex: 1 1 auto !important;
   min-height: 0 !important;
-  height: 100% !important;
   overflow: hidden !important;
+}
+
+.cluebook-window.cluebook-board-settings-dialog .dialog-content {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 .cluebook-window.cluebook-board-settings-dialog .cluebook-board-settings-form {
@@ -249,8 +257,9 @@
   flex-direction: column !important;
   flex: 1 1 auto !important;
   min-height: 0 !important;
-  height: 100% !important;
   overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .cluebook-window.cluebook-board-settings-dialog .settings-grid {
@@ -259,8 +268,8 @@
   gap: 14px !important;
   flex: 1 1 auto !important;
   min-height: 0 !important;
-  max-height: none !important;
   overflow-y: auto !important;
+  overflow-x: hidden !important;
   padding-right: 6px !important;
 }
 
