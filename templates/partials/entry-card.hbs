@@ -27,8 +27,12 @@
           {{else}}
             <span class="cb-row-badge is-active">⏳ {{localize "CLUEBOOK.Filter.Active"}}</span>
           {{/if}}
-          {{#if this.formattedDeadline}}
-            <span class="cb-row-time" title="{{this.deadlineHint}}"><i class="fas fa-clock"></i> {{this.formattedDeadline}}</span>
+          {{#if this.deadlinePrecise}}
+            <span class="cb-row-time {{#if this.isOverdue}}is-overdue{{/if}}" title="{{#if this.timeRemaining}}{{this.timeRemaining}}{{else}}{{this.deadlinePrecise}}{{/if}}">
+              <i class="fas fa-clock"></i> {{this.deadlinePrecise}}{{#if this.timeRemaining}} <small style="opacity: 0.85; margin-left: 2px;">({{this.timeRemaining}})</small>{{/if}}
+            </span>
+          {{else if this.deadline}}
+            <span class="cb-row-time"><i class="fas fa-clock"></i> {{this.deadline}}</span>
           {{/if}}
         {{else if (eq this.sourceTab "npc")}}
           {{#if (eq this.lifeStatus "alive")}}
@@ -43,8 +47,10 @@
             <span class="cb-row-info"><i class="fas fa-user"></i> {{this.owner}}</span>
           {{/if}}
         {{else if (eq this.sourceTab "timeline")}}
-          {{#if this.formattedStart}}
-            <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{this.formattedStart}}</span>
+          {{#if this.timelineIntervalPrecise}}
+            <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{this.timelineIntervalPrecise}}</span>
+          {{else if this.date}}
+            <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{this.date}}</span>
           {{/if}}
         {{/if}}
 
@@ -110,8 +116,12 @@
               {{else}}
                 <span class="cb-row-badge is-active">⏳ {{localize "CLUEBOOK.Filter.Active"}}</span>
               {{/if}}
-              {{#if this.formattedDeadline}}
-                <span class="cb-row-time" title="{{this.deadlineHint}}"><i class="fas fa-clock"></i> {{this.formattedDeadline}}</span>
+              {{#if this.deadlinePrecise}}
+                <span class="cb-row-time {{#if this.isOverdue}}is-overdue{{/if}}" title="{{#if this.timeRemaining}}{{this.timeRemaining}}{{else}}{{this.deadlinePrecise}}{{/if}}">
+                  <i class="fas fa-clock"></i> {{this.deadlinePrecise}}{{#if this.timeRemaining}} <small style="opacity: 0.85; margin-left: 2px;">({{this.timeRemaining}})</small>{{/if}}
+                </span>
+              {{else if this.deadline}}
+                <span class="cb-row-time"><i class="fas fa-clock"></i> {{this.deadline}}</span>
               {{/if}}
             {{else if (eq this.sourceTab "npc")}}
               {{#if (eq this.lifeStatus "alive")}}
@@ -126,8 +136,10 @@
                 <span class="cb-row-info"><i class="fas fa-user"></i> {{this.owner}}</span>
               {{/if}}
             {{else if (eq this.sourceTab "timeline")}}
-              {{#if this.formattedStart}}
-                <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{this.formattedStart}}</span>
+              {{#if this.timelineIntervalPrecise}}
+                <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{this.timelineIntervalPrecise}}</span>
+              {{else if this.date}}
+                <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{this.date}}</span>
               {{/if}}
             {{/if}}
           </div>

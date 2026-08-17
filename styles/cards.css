@@ -1066,6 +1066,27 @@
   white-space: nowrap;
 }
 
+.cluebook-window .cb-row-time {
+  font-size: 11px;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  padding: 2px 7px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.cluebook-window .cb-row-time.is-overdue {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
 .cluebook-window .cb-row-tags {
   display: flex;
   align-items: center;

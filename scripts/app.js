@@ -898,37 +898,44 @@ export class ClueBookApp extends BaseApp {
       // Stop calendar-specific logic if Simple Calendar is missing
       if (!isTimeActive) continue;
 
-      if (entry.sourceTab === "quests" && entry.deadlineTimestamp) {
-        const dl = entry.deadlineTimestamp;
-        const curr = game.time.worldTime;
-        const diff = dl - curr;
-        
-        const fmt = ClueBookApp._formatSCTimestamp(entry.deadlineTimestamp);
-        entry.formattedDeadline = fmt.full;
-        entry.formattedDeadlineDate = fmt.date;
-        entry.formattedDeadlineTime = fmt.time;
-        
-        const absDiff = Math.abs(diff);
-        const d = Math.floor(absDiff / 86400);
-        const h = Math.floor((absDiff % 86400) / 3600);
-        const m = Math.floor((absDiff % 3600) / 60);
-        const dStr = d > 0 ? d + game.i18n.localize("CLUEBOOK.Time.DaysShort") : '';
-        const hStr = h > 0 ? h + game.i18n.localize("CLUEBOOK.Time.HoursShort") : '';
-        const mStr = m + game.i18n.localize("CLUEBOOK.Time.MinutesShort");
-        const timeStr = `${dStr}${hStr}${mStr}`.trim();
+      if (entry.sourceTab === "quests") {
+        if (entry.deadlineTimestamp) {
+          const dl = entry.deadlineTimestamp;
+          const curr = game.time.worldTime;
+          const diff = dl - curr;
+          
+          const fmt = ClueBookApp._formatSCTimestamp(entry.deadlineTimestamp);
+          entry.formattedDeadline = fmt.full;
+          entry.formattedDeadlineDate = fmt.date;
+          entry.formattedDeadlineTime = fmt.time;
+          entry.deadlinePrecise = fmt.time ? `${fmt.date} ${fmt.time}` : (fmt.full || fmt.date);
+          
+          const absDiff = Math.abs(diff);
+          const d = Math.floor(absDiff / 86400);
+          const h = Math.floor((absDiff % 86400) / 3600);
+          const m = Math.floor((absDiff % 3600) / 60);
+          const dStr = d > 0 ? d + game.i18n.localize("CLUEBOOK.Time.DaysShort") : '';
+          const hStr = h > 0 ? h + game.i18n.localize("CLUEBOOK.Time.HoursShort") : '';
+          const mStr = m + game.i18n.localize("CLUEBOOK.Time.MinutesShort");
+          const timeStr = `${dStr}${hStr}${mStr}`.trim();
 
-        if (diff < 0) {
-          entry.isOverdue = true;
-          entry.timeRemaining = timeStr;
-          entry.timeStr = timeStr;
-        } else {
-          entry.isOverdue = false;
-          entry.timeRemaining = timeStr;
-          entry.timeStr = timeStr;
+          if (diff < 0) {
+            entry.isOverdue = true;
+            entry.timeRemaining = timeStr;
+            entry.timeStr = timeStr;
+          } else {
+            entry.isOverdue = false;
+            entry.timeRemaining = timeStr;
+            entry.timeStr = timeStr;
+          }
+        } else if (entry.deadline) {
+          entry.deadlinePrecise = entry.deadline;
         }
       }
 
       if (entry.sourceTab === "timeline") {
+        let startStr = "";
+        let endStr = "";
         if (entry.startTimestamp) {
           const dt = TimeService.timestampToDate(entry.startTimestamp);
           if (dt) {
@@ -936,8 +943,12 @@ export class ClueBookApp extends BaseApp {
             entry.formattedStart = fmt.full;
             entry.formattedStartDate = fmt.date;
             entry.formattedStartTime = fmt.time;
+            startStr = fmt.time ? `${fmt.date} ${fmt.time}` : (fmt.full || fmt.date);
           }
+        } else if (entry.date) {
+          startStr = entry.date;
         }
+
         if (entry.endTimestamp) {
           const dt = TimeService.timestampToDate(entry.endTimestamp);
           if (dt) {
@@ -945,7 +956,18 @@ export class ClueBookApp extends BaseApp {
             entry.formattedEnd = fmt.full;
             entry.formattedEndDate = fmt.date;
             entry.formattedEndTime = fmt.time;
+            if (entry.formattedStartDate && entry.formattedEndDate === entry.formattedStartDate && fmt.time) {
+              endStr = fmt.time;
+            } else {
+              endStr = fmt.time ? `${fmt.date} ${fmt.time}` : (fmt.full || fmt.date);
+            }
           }
+        }
+
+        if (startStr && endStr) {
+          entry.timelineIntervalPrecise = `${startStr} — ${endStr}`;
+        } else if (startStr) {
+          entry.timelineIntervalPrecise = startStr;
         }
       }
     }
