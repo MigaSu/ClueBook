@@ -752,8 +752,11 @@ export class ClueBookApp extends BaseApp {
       const tabData = data[this.state.activeTab] || {};
       let sortedEntries = Object.entries(tabData);
 
+      const tabSortModes = game.user?.getFlag("ClueBook", "tabSortModes") || {};
+
       if (this.state.activeTab === "timeline") {
-        const sortMode = this.state.timelineSortMode || "chronological";
+        const sortMode = this.state.timelineSortMode || tabSortModes.timeline || "chronological";
+        this.state.timelineSortMode = sortMode;
         context.currentTimelineSortLabel = sortMode === "manual" 
           ? game.i18n.localize("CLUEBOOK.Sort.Manual") 
           : (sortMode === "chronological_desc" 
@@ -778,7 +781,8 @@ export class ClueBookApp extends BaseApp {
           });
         }
       } else if (this.state.activeTab === "quests") {
-        const sortMode = this.state.questSortMode || "chronological";
+        const sortMode = this.state.questSortMode || tabSortModes.quests || "chronological";
+        this.state.questSortMode = sortMode;
         context.currentQuestSortLabel = sortMode === "manual" 
           ? game.i18n.localize("CLUEBOOK.Sort.Manual") 
           : (sortMode === "chronological_desc" 

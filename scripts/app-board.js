@@ -122,9 +122,11 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     let rAF_frame = null;
     let wheelInteractionTimeout = null;
 
-    if (!this.state.camera) {
-      this.state.camera = game.user.getFlag("ClueBook", "boardCamera") || { zoom: 1, panX: 0, panY: 0 };
-    }
+    const activeWs = this.state.activeWorkspace || "personal";
+    const cameras = game.user.getFlag("ClueBook", "boardCameras") || {};
+    const savedCam = cameras[activeWs] || (activeWs === "personal" ? game.user.getFlag("ClueBook", "boardCamera") : null) || { zoom: 1, panX: 0, panY: 0 };
+    
+    this.state.camera = savedCam;
     currentZoom = Number(this.state.camera.zoom) || 1;
     currentPanX = Math.round(Number(this.state.camera.panX) || 0);
     currentPanY = Math.round(Number(this.state.camera.panY) || 0);
@@ -142,7 +144,12 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
 
     const persistCameraState = foundry.utils.debounce(() => {
       if (this.state.camera) {
-        game.user.update({ "flags.ClueBook.boardCamera": this.state.camera });
+        const ws = this.state.activeWorkspace || "personal";
+        const allCameras = { ...(game.user.getFlag("ClueBook", "boardCameras") || {}), [ws]: this.state.camera };
+        game.user.update({
+          "flags.ClueBook.boardCameras": allCameras,
+          "flags.ClueBook.boardCamera": this.state.camera
+        });
       }
     }, 600);
 

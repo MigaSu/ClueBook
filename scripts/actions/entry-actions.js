@@ -124,12 +124,14 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
         { id: "chronological_desc", label: game.i18n.localize("CLUEBOOK.Sort.ChronologicalDesc"), icon: "fa-hourglass-end" },
         { id: "manual", label: game.i18n.localize("CLUEBOOK.Sort.Manual"), icon: "fa-hand-paper" }
       ],
-      onSelect: (item) => {
+      onSelect: async (item) => {
         if (tab === "timeline") {
           this.state.timelineSortMode = item.id;
         } else {
           this.state.questSortMode = item.id;
         }
+        const currentSorts = game.user.getFlag("ClueBook", "tabSortModes") || {};
+        await game.user.setFlag("ClueBook", "tabSortModes", { ...currentSorts, [tab]: item.id });
         this.render({ parts: ["content"] });
       }
     });

@@ -35,8 +35,13 @@ export const ClueBookBoardActionsMixin = (Base) => class extends Base {
     this.state.activeTab = "board";
     this.state.highlightedEntryId = entryId;
     
-    // Update DB with new camera
-    game.user.update({ "flags.ClueBook.boardCamera": this.state.camera });
+    // Update DB with new camera for active workspace
+    const ws = this.state.activeWorkspace || "personal";
+    const allCameras = { ...(game.user.getFlag("ClueBook", "boardCameras") || {}), [ws]: this.state.camera };
+    game.user.update({ 
+      "flags.ClueBook.boardCameras": allCameras,
+      "flags.ClueBook.boardCamera": this.state.camera 
+    });
     
     this.render({ parts: ["content"] });
     
@@ -87,7 +92,12 @@ export const ClueBookBoardActionsMixin = (Base) => class extends Base {
       
       this.state.camera = { zoom, panX, panY };
       this.state.activeTab = "board";
-      game.user.update({ "flags.ClueBook.boardCamera": this.state.camera });
+      const ws = this.state.activeWorkspace || "personal";
+      const allCameras = { ...(game.user.getFlag("ClueBook", "boardCameras") || {}), [ws]: this.state.camera };
+      game.user.update({ 
+        "flags.ClueBook.boardCameras": allCameras,
+        "flags.ClueBook.boardCamera": this.state.camera 
+      });
     } else {
       this.state.activeTab = targetTab;
     }
