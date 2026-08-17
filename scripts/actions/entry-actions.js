@@ -34,7 +34,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
   }
 
   static async _onToggleEdit(event, target) {
-    event.stopPropagation();
+    if (event?.stopPropagation) event.stopPropagation();
     if (this.state.isReadOnly) return;
     const entryElement = target.closest('.cluebook-entry, .cluebook-folder');
     if (!entryElement) return;
@@ -255,7 +255,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
   }
 
   static async _onToggleVisibility(event, target) {
-    event.stopPropagation();
+    if (event?.stopPropagation) event.stopPropagation();
     try {
       const entry = target.closest('.cluebook-entry, .cluebook-folder') || target.closest('.cluebook-board-node');
       if (!entry) return;
@@ -266,7 +266,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
       const currentEntry = data[sourceTab]?.[entryId];
       if (!currentEntry) return;
       
-      if (event.shiftKey) {
+      if (event?.shiftKey) {
         const shouldHide = !currentEntry.isHidden;
         await this._updateWorkspaceData({
           [`flags.ClueBook.data.${sourceTab}.${entryId}.isHidden`]: shouldHide,
@@ -480,7 +480,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
   }
 
   static async _onDeleteEntry(event, target) {
-    if (event) event.stopPropagation();
+    if (event?.stopPropagation) event.stopPropagation();
     const entryEl = target.closest('.cluebook-entry, .cluebook-folder');
     if (!entryEl) return;
     if (entryEl.dataset.pinned === "true") {

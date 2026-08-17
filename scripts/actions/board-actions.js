@@ -57,7 +57,7 @@ export const ClueBookBoardActionsMixin = (Base) => class extends Base {
   }
 
   static async _onJumpToLinked(event, target) {
-    event.stopPropagation();
+    if (event?.stopPropagation) event.stopPropagation();
     const targetId = target.dataset.targetId;
     if (!targetId) return;
 
@@ -125,7 +125,7 @@ export const ClueBookBoardActionsMixin = (Base) => class extends Base {
   }
 
   static async _onJumpToTab(event, target) {
-    event.stopPropagation();
+    if (event?.stopPropagation) event.stopPropagation();
     const entry = target.closest('.cluebook-entry');
     if (!entry) return;
     const entryId = entry.dataset.entryId;
@@ -154,7 +154,7 @@ export const ClueBookBoardActionsMixin = (Base) => class extends Base {
   }
 
   static async _onDeleteLink(event, target) {
-    event.stopPropagation();
+    if (event?.stopPropagation) event.stopPropagation();
     const targetId = target.dataset.targetId;
     const entry = target.closest('.cluebook-entry');
     const sourceId = entry.dataset.entryId;
