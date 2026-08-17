@@ -1,5 +1,5 @@
 import { ClueBookEditDialog } from "./edit-dialog.js";
-import { getForcedDeletion } from "./data-models.js";
+import { getForcedDeletion, getRandomPhotoTilt } from "./data-models.js";
 
 export const ClueBookBoardMixin = (Base) => class extends Base {
   _setupBoardInteractivity(html) {
@@ -13,6 +13,9 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     const cardMap = new Map();       // cardId -> { id, el, tab, x, y, w, h, isPinned }
     const linkRecords = [];          // array of LinkRecords
     const linksByCard = new Map();   // cardId -> Set<LinkRecord>
+
+    if (!this._topGalleryZIndex) this._topGalleryZIndex = 4;
+    if (!this._topNoteZIndex) this._topNoteZIndex = 10;
 
     // 1. Index Cards & Pre-calculate Dimensions (Batched Read)
     const cardElements = board.querySelectorAll('.cluebook-entry');
@@ -62,6 +65,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         const sY = Math.round(s.y + (s.h / 2));
         const tX = Math.round(t.x + (t.w / 2));
         const tY = Math.round(t.y + (t.h / 2));
+        if (record.g) record.g.style.display = "";
         for (let i = 0; i < record.lines.length; i++) {
           const line = record.lines[i];
           line.setAttribute('x1', sX);
@@ -71,12 +75,17 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
           line.setAttribute('opacity', '1');
         }
         if (record.labelEl) {
+          record.labelEl.style.display = "";
           record.labelEl.style.left = `${(sX + tX) / 2}px`;
           record.labelEl.style.top = `${(sY + tY) / 2}px`;
         }
       } else {
+        if (record.g) record.g.style.display = "none";
         for (let i = 0; i < record.lines.length; i++) {
           record.lines[i].setAttribute('opacity', '0');
+        }
+        if (record.labelEl) {
+          record.labelEl.style.display = "none";
         }
       }
     };
@@ -111,13 +120,19 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     let isPanning = false;
     let panStartX = 0, panStartY = 0;
     let rAF_frame = null;
+    let wheelInteractionTimeout = null;
 
     if (!this.state.camera) {
       this.state.camera = game.user.getFlag("ClueBook", "boardCamera") || { zoom: 1, panX: 0, panY: 0 };
     }
-    currentZoom = this.state.camera.zoom || 1;
-    currentPanX = Math.round(this.state.camera.panX || 0);
-    currentPanY = Math.round(this.state.camera.panY || 0);
+    currentZoom = Number(this.state.camera.zoom) || 1;
+    currentPanX = Math.round(Number(this.state.camera.panX) || 0);
+    currentPanY = Math.round(Number(this.state.camera.panY) || 0);
+
+    const syncCameraToState = () => {
+      this.state.camera = { zoom: currentZoom, panX: currentPanX, panY: currentPanY };
+    };
+    syncCameraToState();
 
     const applyTransform = () => {
       entriesList.style.transformOrigin = "0 0";
@@ -125,39 +140,61 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     };
     applyTransform();
 
-    const updateCameraState = foundry.utils.debounce(() => {
-      this.state.camera = { zoom: currentZoom, panX: currentPanX, panY: currentPanY };
-      game.user.update({ "flags.ClueBook.boardCamera": this.state.camera });
-    }, 500);
+    const persistCameraState = foundry.utils.debounce(() => {
+      if (this.state.camera) {
+        game.user.update({ "flags.ClueBook.boardCamera": this.state.camera });
+      }
+    }, 600);
 
-    // Zoom (Wheel)
+    // Zoom (Wheel) with smooth geometric scaling and live-sync deferral
     board.addEventListener('wheel', (ev) => {
       ev.preventDefault();
-      const zoomFactor = 0.1;
       const direction = ev.deltaY < 0 ? 1 : -1;
-      let newZoom = currentZoom + (direction * zoomFactor);
-      newZoom = Math.max(0.1, Math.min(newZoom, 3.0));
+      const zoomFactor = direction > 0 ? 1.1 : 0.90909;
+      let newZoom = Math.min(3.0, Math.max(0.1, Number((currentZoom * zoomFactor).toFixed(4))));
 
-      if (newZoom !== currentZoom) {
+      if (Math.abs(newZoom - currentZoom) > 0.0001) {
         const rect = board.getBoundingClientRect();
         const mouseX = ev.clientX - rect.left;
         const mouseY = ev.clientY - rect.top;
 
-        currentPanX = Math.round(mouseX - (mouseX - currentPanX) * (newZoom / currentZoom));
-        currentPanY = Math.round(mouseY - (mouseY - currentPanY) * (newZoom / currentZoom));
-        
+        const scaleRatio = newZoom / currentZoom;
+        currentPanX = Math.round(mouseX - (mouseX - currentPanX) * scaleRatio);
+        currentPanY = Math.round(mouseY - (mouseY - currentPanY) * scaleRatio);
         currentZoom = newZoom;
+
+        syncCameraToState();
         applyTransform();
-        updateCameraState();
+        persistCameraState();
+
+        this.state.isBoardInteracting = true;
+        clearTimeout(wheelInteractionTimeout);
+        wheelInteractionTimeout = setTimeout(() => {
+          this.state.isBoardInteracting = false;
+          if (this.state.pendingRender) {
+            this.state.pendingRender = false;
+            this.render({ parts: ["content"] });
+          }
+        }, 500);
       }
     }, { passive: false });
 
     let rightClickStartX = 0;
     let rightClickStartY = 0;
 
-    // Context menu on empty board
+    // Context menu on empty board or on single gallery image (e.g. map)
     board.addEventListener('contextmenu', ev => {
-      if (ev.target.closest('.cluebook-entry')) return;
+      const clickedEntry = ev.target.closest('.cluebook-entry');
+      if (clickedEntry) {
+        // If a group of entries is selected (>1), let the card mass-selection context menu handle it
+        if (this.state.selectedEntries.size > 1 && this.state.selectedEntries.has(clickedEntry.dataset.entryId)) {
+          return;
+        }
+        // If clicked on gallery card (image / map), allow opening the creation context menu!
+        if (clickedEntry.dataset.sourceTab !== "gallery") {
+          return;
+        }
+      }
       ev.preventDefault();
       if (Math.abs(ev.clientX - rightClickStartX) > 5 || Math.abs(ev.clientY - rightClickStartY) > 5) return;
       this._showBoardCreateContextMenu(ev, currentZoom, currentPanX, currentPanY);
@@ -178,8 +215,48 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         ev.preventDefault();
       }
       
-      // Left click on empty board -> deselect or lasso
+      // Alt + Left Click -> Instant Pin Drop!
+      if (ev.button === 0 && ev.altKey) {
+        const clickedCard = ev.target.closest('.cluebook-entry');
+        if (!clickedCard || clickedCard.dataset.sourceTab === "gallery") {
+          ev.preventDefault();
+          ev.stopPropagation();
+          if (this.state.isReadOnly) return;
+
+          const rect = entriesList.getBoundingClientRect();
+          const boardX = Math.round((ev.clientX - rect.left) / currentZoom);
+          const boardY = Math.round((ev.clientY - rect.top) / currentZoom);
+
+          const id = foundry.utils.randomID();
+          const newEntry = this._getEmptyEntryForTab("pins");
+          newEntry.id = id;
+          newEntry.name = "";
+          newEntry.onBoard = true;
+          newEntry.boardX = boardX;
+          newEntry.boardY = boardY;
+
+          this._updateWorkspaceData({
+            [`flags.ClueBook.data.pins.${id}`]: newEntry
+          }).then(() => {
+            this.render({ parts: ["content"] });
+            new ClueBookEditDialog({
+              entry: newEntry,
+              sourceTab: "pins",
+              entryId: id,
+              workspace: this.state.activeWorkspace,
+              onSave: async (updated) => {
+                await this._updateWorkspaceData({ [`flags.ClueBook.data.pins.${id}`]: updated });
+                this.render({ parts: ["content"] });
+              }
+            }).render(true);
+          });
+          return;
+        }
+      }
+
+      // Left click on empty board -> deselect or lasso, and close pin popovers
       if (ev.button === 0 && ev.target.closest('.cluebook-entry') === null && ev.target.closest('.entry-controls') === null) {
+        board.querySelectorAll('.is-pin-card.is-popover-open').forEach(el => el.classList.remove('is-popover-open'));
         if (!ev.shiftKey) {
           this.state.selectedEntries.clear();
           html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
@@ -196,6 +273,46 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         entriesList.appendChild(this.lassoBox);
         ev.preventDefault();
       }
+    });
+
+    // Board Drag & Drop for Image Files and Actors/Items
+    board.addEventListener('dragover', (ev) => {
+      ev.preventDefault();
+      if (ev.dataTransfer) ev.dataTransfer.dropEffect = "copy";
+    });
+
+    board.addEventListener('drop', async (ev) => {
+      if (this.state.isReadOnly) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+
+      const rect = entriesList.getBoundingClientRect();
+      const boardX = Math.round((ev.clientX - rect.left) / currentZoom);
+      const boardY = Math.round((ev.clientY - rect.top) / currentZoom);
+
+      // 1. Files dropped from desktop (single or multiple)
+      if (ev.dataTransfer?.files?.length > 0) {
+        const { MediaService } = await import("./services/media-service.js");
+        const uploaded = await MediaService.uploadFiles(ev.dataTransfer.files);
+        if (uploaded.length > 0) {
+          const items = uploaded.map(u => ({ imgPath: u.path, title: u.name }));
+          await this._createQuickMediaBatch(items, true, boardX, boardY);
+          ui.notifications.info(game.i18n.format("CLUEBOOK.Gallery.BatchUploaded", { count: items.length }));
+        }
+        return;
+      }
+
+      // 2. Foundry documents (Actor / Item)
+      try {
+        const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
+        const data = TE.getDragEventData ? TE.getDragEventData(ev) : JSON.parse(ev.dataTransfer.getData('text/plain') || '{}');
+        if (data?.uuid) {
+          const doc = await fromUuid(data.uuid);
+          if (doc?.img && doc.img !== CONST.DEFAULT_TOKEN) {
+            await this._createQuickMediaEntry(doc.img, doc.name || "Entity", true, boardX, boardY);
+          }
+        }
+      } catch (e) {}
     });
 
     // Recenter Button
@@ -223,8 +340,9 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
           currentPanY = 0;
           currentZoom = 1;
         }
+        syncCameraToState();
         applyTransform();
-        updateCameraState();
+        persistCameraState();
       });
     }
 
@@ -290,6 +408,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
           const w = content.style.width ? parseInt(content.style.width) : null;
           const h = content.style.height ? parseInt(content.style.height) : null;
           const t = entry.dataset.sourceTab;
+          if (t === "labels" || t === "pins") return;
           const id = entry.dataset.entryId;
           if (w && w !== parseInt(entry.dataset.lastW)) {
             this._saveDataRaw(t, id, "boardW", w);
@@ -347,6 +466,49 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         }).render(true);
       });
 
+      // --- Pin-specific Interactions (Hover Grace Delay & Clickable Links) ---
+      if (entry.classList.contains('is-pin-card')) {
+        let pinHideTimeout = null;
+        entry.addEventListener('mouseenter', () => {
+          if (draggedEntry || isPanning || this.isLasso) return;
+          if (pinHideTimeout) {
+            clearTimeout(pinHideTimeout);
+            pinHideTimeout = null;
+          }
+          entry.classList.add('is-popover-hover');
+        });
+
+        entry.addEventListener('mouseleave', () => {
+          if (pinHideTimeout) clearTimeout(pinHideTimeout);
+          pinHideTimeout = setTimeout(() => {
+            entry.classList.remove('is-popover-hover');
+          }, 1000);
+        });
+
+        const badge = entry.querySelector('.cb-pin-badge');
+        badge?.addEventListener('click', (ev) => {
+          if (draggedEntry || this.state.isBoardInteracting) return;
+          entry.classList.toggle('is-popover-open');
+        });
+
+        const popover = entry.querySelector('.cb-pin-popover');
+        if (popover) {
+          popover.addEventListener('mousedown', (ev) => ev.stopPropagation());
+          popover.addEventListener('click', async (ev) => {
+            const link = ev.target.closest('a.content-link, .cb-mention-link, [data-uuid]');
+            if (!link) return;
+            ev.stopPropagation();
+            const uuid = link.dataset.uuid;
+            if (uuid) {
+              const doc = await fromUuid(uuid);
+              doc?.sheet?.render(true);
+            } else if (link.dataset.mentionId) {
+              this._jumpToEntryOnBoard(link.dataset.mentionId);
+            }
+          });
+        }
+      }
+
       entry.addEventListener('mouseenter', () => {
         if (!this.getSettings().theme.hoverHighlight) return;
         if (draggedEntry || isPanning || this.isLasso || linkingSource) return;
@@ -372,7 +534,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       entry.addEventListener('mousedown', (ev) => {
         if (this.state.isReadOnly) return;
         if (ev.button !== 0) return;
-        if (ev.target.closest('.entry-controls') || ev.target.closest('.edit-mode')) {
+        if (ev.target.closest('.entry-controls') || ev.target.closest('.edit-mode') || ev.target.closest('.cb-pin-popover')) {
           ev.stopPropagation();
           return;
         }
@@ -442,6 +604,19 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
           entry.classList.add('is-selected');
         }
 
+        // Bring to front on select (only for unpinned cards)
+        if (entry.dataset.pinned !== "true") {
+          const galleryBelow = this.getSettings()?.features?.galleryAlwaysBelow;
+          if (galleryBelow) {
+            const isGallery = entry.dataset.sourceTab === "gallery";
+            const newZ = isGallery ? (++this._topGalleryZIndex) : (++this._topNoteZIndex);
+            entry.style.zIndex = String(newZ);
+          } else {
+            if (!this._topGlobalZIndex) this._topGlobalZIndex = 20;
+            entry.style.zIndex = String(++this._topGlobalZIndex);
+          }
+        }
+
         // Build active drag items from cache (Zero Reflows during drag!)
         activeDragItems = [];
         this.state.selectedEntries.forEach(sId => {
@@ -463,6 +638,15 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         
         ev.preventDefault();
       });
+
+      // Click to toggle sticky popover for interactive pins
+      entry.addEventListener('click', (ev) => {
+        const pinBadge = ev.target.closest('.cb-pin-badge');
+        if (pinBadge) {
+          ev.stopPropagation();
+          entry.classList.toggle('is-popover-open');
+        }
+      });
     });
 
     if (this._boardMoveHandler) document.removeEventListener('mousemove', this._boardMoveHandler);
@@ -477,8 +661,9 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         if (isPanning) {
           currentPanX = ev.clientX - panStartX;
           currentPanY = ev.clientY - panStartY;
+          syncCameraToState();
           applyTransform();
-          updateCameraState();
+          persistCameraState();
         } else if (this.isLasso) {
           const rect = entriesList.getBoundingClientRect();
           const endX = (ev.clientX - rect.left) / currentZoom;
@@ -548,16 +733,12 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     };
 
     this._boardUpHandler = async (ev) => {
-      this.state.isBoardInteracting = false;
-      if (this.state.pendingRender) {
-        this.state.pendingRender = false;
-        this.render();
-      }
-
       if (isPanning) {
         isPanning = false;
-        updateCameraState();
-        return;
+        currentPanX = ev.clientX - panStartX;
+        currentPanY = ev.clientY - panStartY;
+        syncCameraToState();
+        persistCameraState();
       }
 
       if (linkingSource) {
@@ -574,7 +755,6 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
           this._createLink(sourceId, targetId);
         }
         linkingSource = null;
-        return;
       }
 
       if (this.isLasso) {
@@ -583,40 +763,47 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
           this.lassoBox.remove();
           this.lassoBox = null;
         }
-        return;
       }
 
-      if (!draggedEntry || !activeDragItems || activeDragItems.length === 0) return;
+      if (draggedEntry && activeDragItems && activeDragItems.length > 0) {
+        const updates = {};
+        const snap = ev.shiftKey || this.getSettings().theme.snapToGrid;
 
-      const updates = {};
-      const snap = ev.shiftKey || this.getSettings().theme.snapToGrid;
+        for (let i = 0; i < activeDragItems.length; i++) {
+          const dragInfo = activeDragItems[i];
+          let newX = Math.round(dragInfo.item.x);
+          let newY = Math.round(dragInfo.item.y);
 
-      for (let i = 0; i < activeDragItems.length; i++) {
-        const dragInfo = activeDragItems[i];
-        let newX = Math.round(dragInfo.item.x);
-        let newY = Math.round(dragInfo.item.y);
-
-        if (snap) {
-          newX = Math.round(newX / 20) * 20;
-          newY = Math.round(newY / 20) * 20;
+          if (snap) {
+            newX = Math.round(newX / 20) * 20;
+            newY = Math.round(newY / 20) * 20;
+          }
           dragInfo.item.x = newX;
           dragInfo.item.y = newY;
           dragInfo.item.el.style.left = `${newX}px`;
           dragInfo.item.el.style.top = `${newY}px`;
+
+          if (!dragInfo.item.isPinned) {
+            updates[`flags.ClueBook.data.${dragInfo.item.tab}.${dragInfo.item.id}.sort`] = Date.now();
+          }
+          updates[`flags.ClueBook.data.${dragInfo.item.tab}.${dragInfo.item.id}.boardX`] = newX;
+          updates[`flags.ClueBook.data.${dragInfo.item.tab}.${dragInfo.item.id}.boardY`] = newY;
         }
 
-        dragInfo.item.el.style.zIndex = "10";
-        updates[`flags.ClueBook.data.${dragInfo.item.tab}.${dragInfo.item.id}.boardX`] = newX;
-        updates[`flags.ClueBook.data.${dragInfo.item.tab}.${dragInfo.item.id}.boardY`] = newY;
+        updateLinesForCards(movingCardIds);
+        activeDragItems = null;
+        movingCardIds = null;
+        draggedEntry = null;
+
+        if (Object.keys(updates).length > 0) {
+          await this._updateWorkspaceData(updates);
+        }
       }
 
-      updateLinesForCards(movingCardIds);
-      activeDragItems = null;
-      movingCardIds = null;
-      draggedEntry = null;
-
-      if (Object.keys(updates).length > 0) {
-        await this._updateWorkspaceData(updates);
+      this.state.isBoardInteracting = false;
+      if (this.state.pendingRender) {
+        this.state.pendingRender = false;
+        this.render({ parts: ["content"] });
       }
     };
 
@@ -802,6 +989,9 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       <div class="cb-menu-item" data-tab="locations"><i class="fas fa-map-marker-alt"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateLocation")}</div>
       <div class="cb-menu-item" data-tab="quests"><i class="fas fa-tasks"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateQuest")}</div>
       <div class="cb-menu-item" data-tab="timeline"><i class="fas fa-history"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateTimeline")}</div>
+      <div class="cb-menu-item" data-tab="gallery"><i class="fas fa-camera-retro"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateGallery")}</div>
+      <div class="cb-menu-item" data-tab="labels"><i class="fas fa-heading"></i> ${game.i18n.localize("CLUEBOOK.Board.CreateLabel")}</div>
+      <div class="cb-menu-item" data-tab="pins"><i class="fas fa-thumbtack"></i> ${game.i18n.localize("CLUEBOOK.Board.CreatePin")}</div>
     `;
     menu.replaceChildren(...new DOMParser().parseFromString(rawHTML, "text/html").body.childNodes);
 
@@ -842,6 +1032,9 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       newEntry.onBoard = true;
       newEntry.boardX = boardX;
       newEntry.boardY = boardY;
+      if (targetTab === "gallery") {
+        newEntry.rotation = getRandomPhotoTilt();
+      }
       
       const flagPath = `flags.ClueBook.data.${targetTab}.${id}`;
       const updateData = { [flagPath]: newEntry };

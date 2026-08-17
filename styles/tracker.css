@@ -94,7 +94,7 @@
 .cb-tracker-item[draggable="true"]:active {
   cursor: grabbing;
 }
-.is-dragging-item {
+.cb-tracker-item.is-dragging-item {
   opacity: 0.5;
   background: rgba(255, 255, 255, 0.2) !important;
 }

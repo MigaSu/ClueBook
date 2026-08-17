@@ -225,6 +225,9 @@
 .cluebook-window .cluebook-entry .entry-controls .btn-edit {
   background: var(--cb-accent);
 }
+.cluebook-window .cluebook-entry .entry-controls .btn-view-image {
+  background: #00bcd4;
+}
 .cluebook-window .cluebook-entry .entry-controls .btn-delete {
   background: var(--cb-danger);
 }

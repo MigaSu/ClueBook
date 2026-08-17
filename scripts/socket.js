@@ -1,4 +1,5 @@
 import { TimeService } from "./services/time-service.js";
+import { MediaService } from "./services/media-service.js";
 import { getForcedDeletion } from "./data-models.js";
 
 export class ClueBookSocket {
@@ -21,6 +22,8 @@ export class ClueBookSocket {
             return ClueBookSocket.#handleCreateBoard(data);
           case "addSimpleCalendarNote":
             return ClueBookSocket.#handleAddScNote(data);
+          case "uploadMedia":
+            return MediaService.handleSocketUpload(data);
         }
       }
 

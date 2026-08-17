@@ -1,7 +1,7 @@
 import { ClueBookEditDialog } from "../edit-dialog.js";
 import { ClueBookSocket } from "../socket.js";
 import { ClueBookTagManager } from "../tag-manager.js";
-import { getForcedDeletion } from "../data-models.js";
+import { getForcedDeletion, getRandomPhotoTilt } from "../data-models.js";
 import { TimeService } from "../services/time-service.js";
 export const ClueBookEntryActionsMixin = (Base) => class extends Base {
   static async _onManageTags(event, target) {
@@ -288,7 +288,19 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     }
     const newValue = !isOnBoard;
 
-    await this._saveDataRaw(sourceTab, entryId, "onBoard", newValue);
+    const updates = {
+      [`flags.ClueBook.data.${sourceTab}.${entryId}.onBoard`]: newValue
+    };
+
+    if (newValue && sourceTab === "gallery") {
+      const data = this._getWorkspaceData();
+      const currentEntry = data[sourceTab]?.[entryId];
+      if (!currentEntry?.rotation) {
+        updates[`flags.ClueBook.data.${sourceTab}.${entryId}.rotation`] = getRandomPhotoTilt();
+      }
+    }
+
+    await this._updateWorkspaceData(updates);
     this.render({ parts: ["content"] });
   }
 

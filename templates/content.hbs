@@ -75,6 +75,12 @@
     <button type="button" data-action="addEntry">
       <i class="fas fa-plus"></i> {{localize "CLUEBOOK.Entry.Add"}}
     </button>
+    {{#if (eq activeTab "gallery")}}
+    <button type="button" data-action="uploadBatchGallery" class="cb-btn-batch-upload" style="background: linear-gradient(135deg, #00acc1 0%, #00838f 100%);" title="{{localize "CLUEBOOK.Gallery.BatchUploadHint"}}">
+      <i class="fas fa-images"></i> {{localize "CLUEBOOK.Gallery.BatchUpload"}}
+    </button>
+    <input type="file" class="cb-batch-file-input" multiple accept="image/*" style="display: none;">
+    {{/if}}
   </div>
   {{/if}}
   {{/unless}}
@@ -91,6 +97,8 @@
       <div class="legend-item"><kbd>{{localize "CLUEBOOK.Hotkeys.RightClickBackground"}}</kbd> {{localize "CLUEBOOK.Hotkeys.CreateEntry"}}</div>
       <div class="legend-item"><kbd>{{localize "CLUEBOOK.Hotkeys.RightClickGroup"}}</kbd> {{localize "CLUEBOOK.Hotkeys.Align"}}</div>
       <div class="legend-item"><kbd>{{localize "CLUEBOOK.Hotkeys.ShiftLeftClick"}}</kbd> {{localize "CLUEBOOK.Hotkeys.SelectGrid"}}</div>
+      <div class="legend-item"><kbd>{{localize "CLUEBOOK.Hotkeys.AltLeftClick"}}</kbd> {{localize "CLUEBOOK.Hotkeys.PlacePin"}}</div>
+      <div class="legend-item"><kbd>{{localize "CLUEBOOK.Hotkeys.CtrlV"}}</kbd> {{localize "CLUEBOOK.Hotkeys.PasteImage"}}</div>
       <div class="legend-item"><kbd>{{localize "CLUEBOOK.Hotkeys.ControlLeftClick"}}</kbd> {{localize "CLUEBOOK.Hotkeys.CreateLink"}}</div>
       <div class="legend-item"><kbd>{{localize "CLUEBOOK.Hotkeys.MouseWheel"}}</kbd> {{localize "CLUEBOOK.Hotkeys.Zoom"}}</div>
       <div class="legend-item"><kbd>{{localize "CLUEBOOK.Hotkeys.MouseWheelClick"}}</kbd> {{localize "CLUEBOOK.Hotkeys.Pan"}}</div>

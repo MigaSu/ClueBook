@@ -1,5 +1,6 @@
 import { TimeService } from "./services/time-service.js";
 import { ClueBookDatePicker } from "./date-picker.js";
+import { getRandomPhotoTilt } from "./data-models.js";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -42,6 +43,7 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
     const context = await super._prepareContext(options);
     context.entry = foundry.utils.deepClone(this.entry);
     context.sourceTab = this.sourceTab;
+    context.isGallery = this.sourceTab === "gallery";
     context.isMassEdit = this.options.isMassEdit;
     context.entriesCount = this.options.entriesCount;
     context.isSimpleCalendarActive = TimeService.isActive();
@@ -164,6 +166,16 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
         html.querySelector('button[data-action="saveDialog"]')?.click();
       }
     }, { capture: true });
+
+    // Icon Picker handler for Pins
+    html.querySelectorAll('.cb-icon-option').forEach(option => {
+      option.addEventListener('click', () => {
+        html.querySelectorAll('.cb-icon-option').forEach(o => o.classList.remove('active'));
+        option.classList.add('active');
+        const radio = option.querySelector('input[type="radio"]');
+        if (radio) radio.checked = true;
+      });
+    });
 
     // --- Tags System ---
     const tagInput = html.querySelector('.cb-tag-input');
@@ -370,6 +382,15 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
           html.querySelector('.end-time-fields').style.display = mode === 'time' ? 'block' : 'none';
           html.querySelector('.end-duration-fields').style.display = mode === 'duration' ? 'block' : 'none';
         });
+      });
+    }
+
+    // Toggle Label Background Color Picker dynamically when style changes
+    const labelBgStyleSelect = html.querySelector('select[name="bgStyle"]');
+    const labelBgGroup = html.querySelector('.cb-label-bg-group');
+    if (labelBgStyleSelect && labelBgGroup) {
+      labelBgStyleSelect.addEventListener('change', (e) => {
+        labelBgGroup.style.display = e.target.value === 'transparent' ? 'none' : 'flex';
       });
     }
 
@@ -747,6 +768,64 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
         setTimeout(autoResize, 10); // Initial resize
       }
     });
+
+    // FilePicker click handler
+    html.querySelectorAll('.btn-file-picker').forEach(btn => {
+      btn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const targetInputName = ev.currentTarget.dataset.target || "img";
+        const input = html.querySelector(`input[name="${targetInputName}"]`);
+        const currentPath = input ? input.value : "";
+        
+        new FilePicker({
+          type: "image",
+          current: currentPath,
+          callback: (path) => {
+            if (input) {
+              input.value = path;
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+              input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            this._updateImagePreview(html, path);
+          }
+        }).render(true);
+      });
+    });
+
+    // Remove image button
+    html.querySelectorAll('.btn-remove-image').forEach(btn => {
+      btn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const input = html.querySelector('input[name="img"]');
+        if (input) {
+          input.value = "";
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        this._updateImagePreview(html, "");
+      });
+    });
+
+    const imgInput = html.querySelector('input[name="img"]');
+    if (imgInput) {
+      imgInput.addEventListener('input', () => {
+        this._updateImagePreview(html, imgInput.value);
+      });
+    }
+  }
+
+  _updateImagePreview(html, src) {
+    const previewContainer = html.querySelector('.cb-img-preview-container');
+    const previewImg = html.querySelector('.cb-img-preview');
+    if (!previewContainer || !previewImg) return;
+
+    if (src && src.trim() !== "") {
+      previewImg.src = src.trim();
+      previewContainer.style.display = "flex";
+    } else {
+      previewImg.src = "";
+      previewContainer.style.display = "none";
+    }
   }
 
   static async _onSaveAction(event, target) {
@@ -826,6 +905,32 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
       updateData.subtitle = data.subtitle;
       updateData.owner = data.owner;
       updateData.sceneUuid = data.sceneUuid;
+      updateData.note = data.note;
+    } else if (instance.sourceTab === "gallery") {
+      updateData.name = data.name;
+      updateData.caption = data.caption;
+      updateData.img = data.img ? data.img.trim() : "";
+      updateData.frameStyle = data.frameStyle || "polaroid";
+      updateData.cropMode = data.cropMode || "contain";
+      updateData.cropPosition = data.cropPosition || "center";
+      updateData.text = data.text;
+      if (instance.entry?.rotation !== undefined && instance.entry.rotation !== null) {
+        updateData.rotation = instance.entry.rotation;
+      } else if (instance.entry?.onBoard) {
+        updateData.rotation = getRandomPhotoTilt();
+      }
+    } else if (instance.sourceTab === "labels") {
+      updateData.name = data.name;
+      updateData.textColor = data.textColor || "#ffffff";
+      updateData.color = data.customColorHex || data.color || "#ffffff";
+      updateData.fontSize = Number(data.fontSize) || 28;
+      updateData.fontFamily = data.fontFamily || "caveat";
+      updateData.bgStyle = data.bgStyle || "glass";
+    } else if (instance.sourceTab === "pins") {
+      updateData.name = data.name;
+      updateData.icon = data.icon || "fa-thumbtack";
+      updateData.color = data.customColorHex || data.color || "#ff5252";
+      updateData.bgStyle = data.bgStyle || "transparent";
       updateData.note = data.note;
     } else if (instance.sourceTab === "timeline") {
       updateData.event = data.event;

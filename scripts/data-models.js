@@ -44,17 +44,30 @@ export class ClueBookEntryModel extends foundry.abstract.DataModel {
       owner: new StringField({ initial: "" }), // Для Локаций (владелец/актер)
       gmNotes: new HTMLField({ initial: "" }), // Секретные заметки мастера (для всех типов)
       
+      // Мультимедиа и изображения (Галерея)
+      img: new StringField({ initial: "" }),
+      caption: new StringField({ initial: "" }),
+      frameStyle: new StringField({ initial: "polaroid" }), // "polaroid" | "frameless"
+      cropMode: new StringField({ initial: "contain" }), // "contain" | "cover"
+      cropPosition: new StringField({ initial: "center" }), // "top" | "center" | "bottom"
+      rotation: new NumberField({ initial: 0 }), // Realistic tilt angle (-5.0 to +5.0 deg)
+
+      // Надписи (Labels) и Пины (Pins) на доске
+      fontSize: new NumberField({ initial: 28 }), // Font size in px
+      fontFamily: new StringField({ initial: "caveat" }), // "caveat", "inter", "courier", "cinzel"
+      bgStyle: new StringField({ initial: "glass" }), // "glass", "transparent", "solid"
+      icon: new StringField({ initial: "fa-thumbtack" }), // "fa-thumbtack", "fa-map-marker-alt", "fa-skull", etc.
+
       // Специфичные поля для дат (Timeline & Quests)
-      deadlineTimestamp: new NumberField({ nullable: true, initial: null }),
-      startTimestamp: new NumberField({ nullable: true, initial: null }),
-      endTimestamp: new NumberField({ nullable: true, initial: null }),
-      timeMode: new StringField({ initial: "by" }), // Для Квестов (by, at)
-      endMode: new StringField({ initial: "none" }), // Для Событий (none, time, duration)
-      duration: new foundry.data.fields.SchemaField({
-        days: new NumberField({ initial: 0 }),
-        hours: new NumberField({ initial: 0 }),
-        minutes: new NumberField({ initial: 0 })
-      })
+      year: new NumberField({ nullable: true, initial: null }),
+      month: new NumberField({ nullable: true, initial: null }),
+      day: new NumberField({ nullable: true, initial: null }),
+      hour: new NumberField({ nullable: true, initial: null }),
+      minute: new NumberField({ nullable: true, initial: null }),
+      timeMode: new StringField({ initial: "by" }), // "by" (к сроку) | "duration" (длительность)
+      deadlineTimestamp: new NumberField({ nullable: true, initial: null }), // Для календаря в миллисекундах / секундах
+      endTimestamp: new NumberField({ nullable: true, initial: null }), // Для диапазона времени
+      isTracked: new BooleanField({ initial: false }) // Для трекера активных задач
     };
   }
 }
@@ -84,3 +97,32 @@ export function getForcedDeletion() {
   return null;
 }
 
+// Internal state for balanced alternating photo tilts
+let _tiltSign = Math.random() > 0.5 ? 1 : -1;
+let _tiltStep = 0;
+const TILT_POOL = [-3.2, 2.6, -1.8, 3.7, -2.7, 1.9, -3.8, 3.1, -1.5, 2.4, -3.5, 3.9];
+
+/**
+ * Generates a realistic subtle tilt between -4.0 and +4.0 degrees for gallery photos on the board.
+ * Uses a balanced alternating algorithm to prevent clustering in the same direction.
+ * @param {number|null} [index=null] Optional index for deterministic distribution across batch imports
+ * @returns {number} Angle in degrees (-4.0 to +4.0)
+ */
+export function getRandomPhotoTilt(index = null) {
+  if (typeof index === 'number') {
+    const baseAngle = TILT_POOL[Math.abs(index) % TILT_POOL.length];
+    const jitter = Number(((Math.random() * 0.6) - 0.3).toFixed(1));
+    const angle = Number((baseAngle + jitter).toFixed(1));
+    return Math.max(-4.0, Math.min(4.0, angle));
+  }
+
+  _tiltSign = -_tiltSign; // Always alternate between left and right tilt
+  _tiltStep = (_tiltStep + 1) % 4;
+
+  const magnitudes = [1.8, 3.4, 2.3, 3.8];
+  const baseMag = magnitudes[_tiltStep];
+  const jitter = Number(((Math.random() * 0.6) - 0.3).toFixed(1));
+  const angle = Number((_tiltSign * (baseMag + jitter)).toFixed(1));
+  
+  return Math.max(-4.0, Math.min(4.0, angle));
+}

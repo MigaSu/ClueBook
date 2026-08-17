@@ -2,7 +2,7 @@
 
 All notable changes, refactoring, and bug fixes are documented in this file.
 
-## [1.2.0] - 2026-08-15
+## [2.0.0] - 2026-08-16
 
 ### ⚡ Performance & Scalability (1,000+ Cards & Links)
 * **Zero-Reflow Thread Engine:** Completely eliminated Layout Thrashing during card dragging. Card dimensions and link graphs are pre-indexed in memory, with 0 DOM queries and 0 `offsetWidth`/`offsetHeight` reads during mouse movement.
@@ -11,13 +11,47 @@ All notable changes, refactoring, and bug fixes are documented in this file.
 * **Linear O(N+L) Data Pipeline:** Replaced nested entity lookups in `_processExplicitLinks` with `Map` hash structures.
 * **Hardware-Accelerated Zoom & Pan:** Removed timer-based `textShadow` repaint hacks; pan and zoom now run directly on the GPU compositor at smooth 60+ FPS.
 
-### 🛠️ Strict Foundry VTT v14 Standards
+### 🖼️ Multimedia & Gallery
+* **Dedicated Gallery Tab:** Built a full-featured visual tab for investigation photos, evidence, and clues with an adaptive thumbnail grid.
+* **Clipboard Paste (Ctrl+V):** Paste images directly from the clipboard onto the board (under cursor) or into the gallery list with automatic upload.
+* **Dual Frame Aesthetics:** Support for retro Polaroid frames (`polaroid`) with handwritten captions and modern frameless cards (`frameless`).
+* **Smart Image Cropping & Positioning:** Configurable image fit modes (`contain` / `cover`) and focal point positioning (`center`, `top`, `bottom`).
+* **Batch Drag & Drop:** Upload single files or batches of photos directly from your desktop onto the board or list view with automatic layout alignment.
+* **Foundry Document Drag & Drop:** Dropping Actors or Items automatically creates image cards using their portrait tokens.
+* **Realistic Detective Corkboard Tilt:** Every photo sent to the board (via Ctrl+V, file drops, or context menu) automatically receives a subtle natural tilt between ±4°, creating a genuine detective investigation board atmosphere.
+* **Isolated Media Storage:** Secure file management via `MediaService` (`worlds/[world-id]/cluebook-gallery/`) with GM-socket proxy fallback for non-GM players.
+* **Lightbox Image Viewer:** High-resolution fullscreen photo inspector accessible with a single click.
+* **Board Layering Priority:** Option to auto-stack gallery photos beneath note cards (`galleryAlwaysBelow`).
+
+### 📌 Interactive Pins & Map Markers
+* **Alt + Click Fast Placement:** Instantly drop pin markers anywhere on the board or on top of maps/images with a single click and automatic editor focus.
+* **Compact Board Pins:** New lightweight pin entity for maps, tactical locations, and key clue hotspots.
+* **Rich Icon Set:** Customizable FontAwesome icons (pushpins, map markers, skulls, stars, crosshairs, fire, keys, shields) with individual color controls.
+* **Visual Themes:** Transparent, dark frosted glass (`dark-glass`), and light frosted glass (`light-glass`).
+* **Rich Info Popovers:** Contextual popovers on click/hover with enriched text, GM notes, and clickable links.
+
+### 🏷️ VisionOS Board Labels & Headings
+* **Inline Editing (Double Click):** Edit label headings directly on the board with seamless inline inputs without opening a modal dialog.
+* **Board Organization:** Large decorative headings and plaques to partition detective board zones.
+* **Glassmorphism Design:** Apple VisionOS frosted glass (`glass`), solid backdrop (`solid`), and pure floating text (`transparent`).
+* **Simplified Color Settings:** Dynamically hides background color picker when transparent style is chosen.
+* **Typography Control:** Font family selection (`Caveat`, `Inter`, `Courier Prime`, `Cinzel`), pixel-precise font size, and text color picker.
+
+### 🔗 Clean Typography Links & Mentions
+* **Link Redesign:** Replaced heavy, dark rectangular boxes with clean bold underlined typography (`font-weight: 700; text-decoration: underline;`).
+* **Rich Hover Preview Popovers:** Floating card previews with life status badges (NPC alive/dead), quest progress (active/done/fail), deadlines, locations, and clue photo thumbnails.
+
+### 🛡️ Strict Foundry VTT v14 Standards
 * **ForcedDeletion Migration:** Replaced deprecated `-=key` deletion syntax across all actions, models, sockets, and data helpers with `new foundry.data.operators.ForcedDeletion()`.
 * **Atomic Batch Deletions:** Combined card and link deletions into single atomic database updates.
+* **Formal DataModels:** Extended `ClueBookEntryModel` schema with typed validation and default values for all media, pin, and label properties.
 * **Overlay Event Delegation:** Replaced legacy `TextEditor.activateListeners` in `overlay.js` with native DOM `@UUID` click listeners.
-* **Strict CSS Scoping:** Enforced root scoping for all module stylesheets under `.cluebook-window`, `.cb-tracker-widget`, `.cb-edit-dialog`, and `.cb-tag-manager`.
+* **Strict CSS Scoping:** Enforced 100% selector scoping under module roots (`.cluebook-window`, `.cb-tracker-widget`, `.cb-edit-dialog`, `.cb-tag-manager`).
+* **Full Multilingual Localization:** Updated translations across English, Russian, German, and French.
 
 ### 🎨 UI/UX Fixes
+* **Smooth Geometric Zoom & Sync:** Upgraded board zoom to scale geometrically with full camera synchronization, impervious to concurrent data updates during mouse wheel rolling.
+* **Natural Link Word-Wrapping:** Fixed mid-word line breaking (`word-break: normal; overflow-wrap: break-word;`), ensuring links wrap between whole words rather than breaking arbitrary syllables across letters.
 * **Card Controls Visibility:** Fixed card action buttons (`.entry-controls`) clipping against card boundaries.
 * **Canvas Text Selection Prevention:** Added `user-select: none` to the board canvas to prevent accidental text selection of the window during panning and dragging.
 * **Isolated Button Clicks:** Enhanced event propagation on card control buttons to guarantee instant click response without triggering card dragging or lasso.

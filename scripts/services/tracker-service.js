@@ -80,7 +80,7 @@ export class TrackerService {
         /\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g,
         (_, id, name, customText) => {
           const displayText = customText || name;
-          return `<a data-action="jumpToMention" data-mention-id="${id}" data-workspace="${workspaceId}" title="${game.i18n.format("CLUEBOOK.App.GoToEntry", { name: name })}"><i class="fas fa-book"></i> ${displayText}</a>`;
+          return `<a data-action="jumpToMention" data-mention-id="${id}" data-workspace="${workspaceId}" title="${game.i18n.format("CLUEBOOK.App.GoToEntry", { name: name })}">${displayText}</a>`;
         }
       );
       return newText;

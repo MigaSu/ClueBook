@@ -32,13 +32,20 @@
 .cluebook-window .board-canvas .cluebook-entry {
   /* Remove transform transition to prevent Chromium from creating a low-res GPU layer */
   transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
-  transform: none !important;
+  transform: rotate(var(--cb-rotation, 0deg));
+  z-index: 10;
 }
-.cluebook-window .board-canvas .cluebook-entry:hover {
-  z-index: 30 !important;
+
+.cluebook-window .board-canvas.gallery-below .cluebook-entry.is-gallery-card {
+  z-index: 4;
 }
+
 .cluebook-window .board-canvas .cluebook-entry:not(.is-editing):hover {
-  transform: none !important;
+  transform: rotate(var(--cb-rotation, 0deg));
+}
+
+.cluebook-window .board-canvas .cluebook-entry.is-dragging {
+  transform: rotate(var(--cb-rotation, 0deg)) scale(1.02);
 }
 
 .cluebook-window .board-canvas .entry-content {
@@ -82,7 +89,8 @@
   flex-direction: column;
   gap: 5px;
   margin-top: 5px;
-  word-break: break-word;
+  word-break: normal;
+  overflow-wrap: break-word;
   overflow-y: auto;
   height: 100%;
 }
@@ -102,6 +110,8 @@
   padding-bottom: 4px;
   color: #0f172a;
   letter-spacing: -0.02em;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .cluebook-window .display-text {
@@ -109,6 +119,8 @@
   line-height: 1.55;
   color: #1e293b;
   text-align: left;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
 }
 
 .cluebook-window .cb-smart-badge {
@@ -190,3 +202,542 @@
   box-shadow: 0 4px 0 0 var(--cb-accent, #7b61ff) !important;
   transform: translateY(-2px);
 }
+
+/* --- Gallery / Photo Cards --- */
+.cluebook-window .cluebook-entry.is-gallery-card {
+  background: #fdfdfd;
+  color: #1a1a1a;
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.15);
+  overflow: visible !important;
+}
+
+.cluebook-window .cluebook-entry.is-gallery-card .entry-content {
+  padding: 6px !important;
+  box-sizing: border-box;
+}
+
+.cluebook-window .board-canvas .cluebook-entry.is-gallery-card .entry-content {
+  resize: both !important;
+  overflow: hidden !important;
+  min-width: 140px;
+  min-height: 140px;
+}
+
+.cluebook-window .cluebook-entry.is-gallery-card .view-mode {
+  overflow: hidden !important;
+  height: 100% !important;
+  width: 100% !important;
+  margin-top: 0 !important;
+  gap: 0 !important;
+}
+
+.cluebook-window .cluebook-entry.is-gallery-card.frame-polaroid {
+  background: #faf8f5 !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3), inset 0 0 10px rgba(0,0,0,0.03) !important;
+}
+.cluebook-window .cluebook-entry.is-gallery-card.frame-polaroid .entry-content {
+  padding: 6px 6px 10px 6px !important;
+}
+
+.cluebook-window .cluebook-entry.is-gallery-card.frame-frameless {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 4px;
+  overflow: visible !important;
+}
+.cluebook-window .cluebook-entry.is-gallery-card.frame-frameless .entry-content {
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.cluebook-window .cluebook-entry.is-gallery-card.frame-frameless .sticky-pin,
+.cluebook-window .cluebook-entry.is-gallery-card.frame-frameless::after {
+  display: none !important;
+}
+
+.cluebook-window .cb-gallery-card-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden !important;
+}
+
+.cluebook-window .cb-gallery-card-body.is-frameless {
+  padding: 0;
+  border-radius: 4px;
+  overflow: hidden !important;
+  background: transparent;
+}
+
+.cluebook-window .cb-gallery-card-body .cb-photo-frame {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden !important;
+  border-radius: 2px;
+  background: #151518;
+  min-height: 0 !important;
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.cluebook-window .cb-gallery-card-body.is-frameless .cb-photo-frame {
+  background: transparent;
+  border-radius: 4px;
+}
+
+/* Gallery Tab: Compact Thumbnail Preview Grid */
+.cluebook-window .tab[data-tab="gallery"] .entries-list {
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.cluebook-window .tab[data-tab="gallery"] .cluebook-entry.is-gallery-card {
+  max-width: 220px;
+  min-height: auto;
+}
+
+.cluebook-window .tab[data-tab="gallery"] .cluebook-entry.is-gallery-card .entry-content {
+  padding: 6px 6px 8px 6px !important;
+  min-height: auto;
+}
+
+.cluebook-window .tab[data-tab="gallery"] .cb-photo-frame {
+  height: 140px !important;
+  max-height: 140px !important;
+  min-height: 140px !important;
+  width: 100%;
+}
+
+.cluebook-window .cb-gallery-card-body .cb-card-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.cluebook-window .cb-gallery-card-body.is-frameless .cb-card-photo {
+  object-fit: contain;
+}
+
+/* Custom Fit and Crop modifiers */
+.cluebook-window .cluebook-entry.crop-cover .cb-card-photo { object-fit: cover !important; }
+.cluebook-window .cluebook-entry.crop-contain .cb-card-photo { object-fit: contain !important; }
+.cluebook-window .cluebook-entry.crop-pos-top .cb-card-photo { object-position: top center !important; }
+.cluebook-window .cluebook-entry.crop-pos-bottom .cb-card-photo { object-position: bottom center !important; }
+.cluebook-window .cluebook-entry.crop-pos-left .cb-card-photo { object-position: center left !important; }
+.cluebook-window .cluebook-entry.crop-pos-right .cb-card-photo { object-position: center right !important; }
+
+.cluebook-window .cb-gallery-card-body .cb-photo-placeholder {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 0;
+  height: 100%;
+  background: rgba(0,0,0,0.05);
+  border: 2px dashed rgba(0,0,0,0.15);
+  border-radius: 4px;
+  color: rgba(0,0,0,0.4);
+  font-size: 12px;
+  padding: 10px;
+  text-align: center;
+}
+
+.cluebook-window .cb-gallery-card-body .cb-photo-placeholder i {
+  font-size: 28px;
+  opacity: 0.5;
+}
+
+.cluebook-window .cb-gallery-card-body .cb-photo-caption {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+
+.cluebook-window .cb-gallery-card-body .cb-photo-title {
+  font-family: 'Caveat', 'Segoe Print', 'Comic Sans MS', cursive, sans-serif;
+  font-size: 16px;
+  color: #1e1e24;
+  line-height: 1.2;
+}
+
+.cluebook-window .cb-gallery-card-body .cb-photo-note {
+  font-family: 'Caveat', 'Segoe Print', 'Comic Sans MS', cursive, sans-serif;
+  font-size: 13px;
+  color: #4a5568;
+  line-height: 1.2;
+}
+
+/* ==========================================================================
+   Board Labels (Apple VisionOS Glassmorphism Headings)
+   ========================================================================== */
+.cluebook-window .board-canvas .cluebook-entry.is-label-card,
+.cluebook-window .cluebook-entry.is-label-card {
+  position: absolute !important;
+  display: inline-flex !important;
+  width: max-content !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  cursor: grab !important;
+  transform: none !important;
+}
+
+.cluebook-window .board-canvas .cluebook-entry.is-label-card::after,
+.cluebook-window .cluebook-entry.is-label-card::after {
+  display: none !important;
+}
+
+.cluebook-window .cluebook-entry.is-label-card .sticky-pin {
+  display: none !important;
+}
+
+.cluebook-window .cluebook-entry.is-label-card .entry-controls,
+.cluebook-window .board-canvas .cluebook-entry.is-label-card .entry-controls {
+  top: -32px !important;
+  right: auto !important;
+  left: 50% !important;
+  transform: translateX(-50%) scale(0.85) !important;
+}
+
+.cluebook-window .cluebook-entry.is-label-card:hover .entry-controls {
+  opacity: 1 !important;
+  transform: translateX(-50%) scale(1) !important;
+  pointer-events: auto !important;
+}
+
+/* Plaque container */
+.cluebook-window .board-canvas .cluebook-entry.is-label-card .entry-content,
+.cluebook-window .cluebook-entry.is-label-card .entry-content {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: max-content !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  padding: 10px 24px !important;
+  margin: 0 !important;
+  border-radius: 14px !important;
+  resize: none !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+}
+
+.cluebook-window .board-canvas .cluebook-entry.is-label-card .view-mode,
+.cluebook-window .cluebook-entry.is-label-card .view-mode {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: max-content !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+/* Label text element: ALWAYS single line, centered, no wrapping */
+.cluebook-window .cluebook-entry.is-label-card .cb-board-label-text {
+  white-space: pre !important;
+  text-align: center !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  letter-spacing: 0.5px;
+}
+
+/* Fast inline input on double click */
+.cluebook-window .cluebook-entry.is-label-card .cb-label-inline-input {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.6) !important;
+  border-radius: 0 !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+  text-align: center !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  width: auto !important;
+  min-width: 100px !important;
+  max-width: 90vw !important;
+  color: inherit !important;
+}
+
+/* --- Background 1: Apple Glass --- */
+.cluebook-window .board-canvas .cluebook-entry.is-label-card.bg-glass .entry-content,
+.cluebook-window .cluebook-entry.is-label-card.bg-glass .entry-content {
+  background: color-mix(in srgb, var(--cb-label-bg, #ffffff) 20%, rgba(20, 20, 28, 0.65)) !important;
+  backdrop-filter: blur(24px) saturate(200%) brightness(1.1) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(1.1) !important;
+  border: 1px solid color-mix(in srgb, var(--cb-label-bg, #ffffff) 45%, rgba(255, 255, 255, 0.25)) !important;
+  box-shadow: 
+    0 12px 36px -4px rgba(0, 0, 0, 0.6),
+    0 4px 12px rgba(0, 0, 0, 0.35),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.4) !important;
+}
+
+.cluebook-window .board-canvas .cluebook-entry.is-label-card.bg-glass:hover .entry-content,
+.cluebook-window .cluebook-entry.is-label-card.bg-glass:hover .entry-content {
+  box-shadow: 
+    0 18px 45px -4px rgba(0, 0, 0, 0.7),
+    0 6px 16px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.4) !important;
+}
+
+/* --- Background 2: Solid Card --- */
+.cluebook-window .board-canvas .cluebook-entry.is-label-card.bg-solid .entry-content,
+.cluebook-window .cluebook-entry.is-label-card.bg-solid .entry-content {
+  background: var(--cb-label-bg, #1a1a24) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 3px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
+}
+
+/* --- Background 3: Transparent --- */
+.cluebook-window .board-canvas .cluebook-entry.is-label-card.bg-transparent .entry-content,
+.cluebook-window .cluebook-entry.is-label-card.bg-transparent .entry-content {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  padding: 2px 4px !important;
+}
+
+.cluebook-window .cluebook-entry.is-label-card.bg-transparent .cb-board-label-text {
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.95), 0 0 4px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Label Fonts */
+.cluebook-window .cluebook-entry.is-label-card.font-caveat .cb-board-label-text {
+  font-family: 'Caveat', 'Segoe Print', cursive, sans-serif;
+  letter-spacing: 0.5px;
+}
+.cluebook-window .cluebook-entry.is-label-card.font-inter .cb-board-label-text {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: -0.5px;
+}
+.cluebook-window .cluebook-entry.is-label-card.font-courier .cb-board-label-text {
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  letter-spacing: 0px;
+}
+.cluebook-window .cluebook-entry.is-label-card.font-cinzel .cb-board-label-text {
+  font-family: 'Cinzel', 'Times New Roman', serif;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* Label Font Sizes */
+.cluebook-window .cluebook-entry.is-label-card.size-small .cb-board-label-text { font-size: 18px; }
+.cluebook-window .cluebook-entry.is-label-card.size-medium .cb-board-label-text { font-size: 24px; }
+.cluebook-window .cluebook-entry.is-label-card.size-large .cb-board-label-text { font-size: 34px; }
+.cluebook-window .cluebook-entry.is-label-card.size-xlarge .cb-board-label-text { font-size: 46px; }
+.cluebook-window .cluebook-entry.is-label-card.size-huge .cb-board-label-text { font-size: 60px; }
+
+/* ==========================================================================
+   Board Interactive Pins (Map Pushpins / Badges)
+   ========================================================================== */
+.cluebook-window .cluebook-entry.is-pin-card,
+.cluebook-window .board-canvas .cluebook-entry.is-pin-card {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  width: max-content !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.cluebook-window .cluebook-entry.is-pin-card .sticky-pin {
+  display: none !important;
+}
+
+.cluebook-window .cluebook-entry.is-pin-card .entry-controls,
+.cluebook-window .board-canvas .cluebook-entry.is-pin-card .entry-controls {
+  top: -34px !important;
+  right: auto !important;
+  left: 50% !important;
+  transform: translateX(-50%) scale(0.85) !important;
+}
+
+.cluebook-window .cluebook-entry.is-pin-card:hover .entry-controls {
+  opacity: 1 !important;
+  transform: translateX(-50%) scale(1) !important;
+  pointer-events: auto !important;
+}
+
+.cluebook-window .cluebook-entry.is-pin-card .entry-content,
+.cluebook-window .board-canvas .cluebook-entry.is-pin-card .entry-content {
+  width: max-content !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  overflow: visible !important;
+  resize: none !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* Pin Badges */
+.cluebook-window .cluebook-entry.is-pin-card .cb-pin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.cluebook-window .cluebook-entry.is-pin-card .cb-pin-badge i {
+  font-size: 18px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+}
+
+.cluebook-window .cluebook-entry.is-pin-card .cb-pin-badge .cb-pin-title {
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5);
+}
+
+/* Background Styles for Pin */
+.cluebook-window .cluebook-entry.is-pin-card .entry-content.pin-style-transparent .cb-pin-badge {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 2px 4px;
+}
+
+.cluebook-window .cluebook-entry.is-pin-card .entry-content.pin-style-dark-glass .cb-pin-badge {
+  background: rgba(14, 14, 22, 0.75) !important;
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+.cluebook-window .cluebook-entry.is-pin-card .entry-content.pin-style-light-glass .cb-pin-badge {
+  background: rgba(255, 255, 255, 0.28) !important;
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+/* Active / Hover on badge */
+.cluebook-window .cluebook-entry.is-pin-card:hover .cb-pin-badge,
+.cluebook-window .cluebook-entry.is-pin-card.is-popover-open .cb-pin-badge {
+  filter: brightness(1.15);
+}
+
+/* Pin Popover */
+.cluebook-window .cluebook-entry.is-pin-card .cb-pin-popover {
+  display: none;
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 260px;
+  max-width: 380px;
+  background: rgba(18, 18, 26, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255,255,255,0.3);
+  padding: 12px 14px;
+  color: #f0f0f5;
+  z-index: 1000;
+  pointer-events: auto;
+  animation: cb-popover-in 0.12s ease-out;
+}
+
+@keyframes cb-popover-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-3px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.cluebook-window .cluebook-entry.is-pin-card.is-popover-hover .cb-pin-popover,
+.cluebook-window .cluebook-entry.is-pin-card.is-popover-open .cb-pin-popover {
+  display: block;
+}
+
+.cluebook-window .cluebook-entry.is-pin-card .cb-pin-popover-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 8px;
+}
+
+.cluebook-window .cluebook-entry.is-pin-card .cb-pin-popover-body {
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.9);
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+
+

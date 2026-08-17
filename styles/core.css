@@ -393,6 +393,21 @@ select.cluebook-input {
 .cb-segmented-control input[type="radio"] {
   display: none;
 }
+.cb-segmented-control label:has(input[type="radio"]:checked) {
+  background: rgba(123, 97, 255, 0.35);
+  box-shadow: inset 0 0 10px rgba(123, 97, 255, 0.25);
+  color: #c4b5fd;
+}
+.cb-segmented-control label:has(input[value="polaroid"]:checked) {
+  background: rgba(255, 183, 77, 0.35);
+  box-shadow: inset 0 0 10px rgba(255, 183, 77, 0.25);
+  color: #ffb74d;
+}
+.cb-segmented-control label:has(input[value="frameless"]:checked) {
+  background: rgba(0, 188, 212, 0.35);
+  box-shadow: inset 0 0 10px rgba(0, 188, 212, 0.25);
+  color: #4dd0e1;
+}
 .cb-segmented-control label:has(input[value="by"]:checked) {
   background: rgba(33, 150, 243, 0.3);
   box-shadow: inset 0 0 10px rgba(33, 150, 243, 0.2);
@@ -644,17 +659,91 @@ select.cluebook-input {
   color: rgba(255, 255, 255, 0.7) !important;
 }
 
-.cluebook-entry .cb-mention-link {
-  color: inherit;
-  font-weight: 700;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
-  cursor: pointer;
-  transition: opacity 0.2s;
+/* --- Links & Mentions styling across ClueBook (Clean Typography) --- */
+.cluebook-window a.content-link,
+.cluebook-window a.inline-roll,
+.cluebook-window a.inline-result,
+.cluebook-window .cb-mention-link,
+.cluebook-window a[data-action="jumpToMention"],
+.cb-epic-overlay a.content-link,
+.cb-epic-overlay a.inline-roll,
+.cb-epic-overlay a.inline-result,
+.cb-epic-overlay .cb-mention-link,
+.cb-epic-overlay a[data-action="jumpToMention"],
+.cb-preview-popover a.content-link,
+.cb-preview-popover .cb-mention-link,
+.cb-hover-popover a.content-link,
+.cb-hover-popover .cb-mention-link,
+.cb-edit-dialog a.content-link,
+.cb-edit-dialog .cb-mention-link,
+.cb-tracker-widget a.content-link,
+.cb-tracker-widget a[data-action="jumpToMention"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: inherit !important;
+  font-weight: 700 !important;
+  text-decoration: underline !important;
+  text-decoration-thickness: 1px !important;
+  text-underline-offset: 2px !important;
+  display: inline !important;
+  cursor: pointer !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  hyphens: manual !important;
+  line-height: inherit !important;
+  transition: opacity 0.2s ease !important;
 }
-.cluebook-entry .cb-mention-link:hover {
-  opacity: 0.7;
+
+.cluebook-window a.content-link:hover,
+.cluebook-window a.inline-roll:hover,
+.cluebook-window a.inline-result:hover,
+.cluebook-window .cb-mention-link:hover,
+.cluebook-window a[data-action="jumpToMention"]:hover,
+.cb-epic-overlay a.content-link:hover,
+.cb-epic-overlay a.inline-roll:hover,
+.cb-epic-overlay a.inline-result:hover,
+.cb-epic-overlay .cb-mention-link:hover,
+.cb-epic-overlay a[data-action="jumpToMention"]:hover,
+.cb-preview-popover a.content-link:hover,
+.cb-preview-popover .cb-mention-link:hover,
+.cb-hover-popover a.content-link:hover,
+.cb-hover-popover .cb-mention-link:hover,
+.cb-edit-dialog a.content-link:hover,
+.cb-edit-dialog .cb-mention-link:hover,
+.cb-tracker-widget a.content-link:hover,
+.cb-tracker-widget a[data-action="jumpToMention"]:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  opacity: 0.75 !important;
+  text-decoration: underline !important;
+}
+
+.cluebook-window a.content-link i,
+.cluebook-window a.inline-roll i,
+.cluebook-window a.inline-result i,
+.cluebook-window .cb-mention-link i,
+.cluebook-window a[data-action="jumpToMention"] i,
+.cb-epic-overlay a.content-link i,
+.cb-epic-overlay a.inline-roll i,
+.cb-epic-overlay a.inline-result i,
+.cb-epic-overlay .cb-mention-link i,
+.cb-epic-overlay a[data-action="jumpToMention"] i,
+.cb-preview-popover a.content-link i,
+.cb-preview-popover .cb-mention-link i,
+.cb-hover-popover a.content-link i,
+.cb-hover-popover .cb-mention-link i,
+.cb-edit-dialog a.content-link i,
+.cb-edit-dialog .cb-mention-link i,
+.cb-tracker-widget a.content-link i,
+.cb-tracker-widget a[data-action="jumpToMention"] i {
+  display: none !important;
 }
 
 
@@ -1010,27 +1099,7 @@ select.cluebook-input {
   border-top: none; /* override the simple top border */
 }
 
-/* Ensure links inside the overlay are styled nicely */
-.cb-epic-overlay .content-link {
-  background: rgba(123, 97, 255, 0.2) !important;
-  border: 1px solid rgba(123, 97, 255, 0.5) !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
-  color: #d1c4ff !important;
-  text-decoration: none !important;
-  transition: all 0.2s ease !important;
-}
 
-.cb-epic-overlay .content-link i {
-  color: #a890ff !important;
-}
-
-.cb-epic-overlay .content-link:hover {
-  background: rgba(123, 97, 255, 0.4) !important;
-  color: #fff !important;
-  text-shadow: 0 0 8px rgba(123, 97, 255, 0.8) !important;
-  border-color: rgba(123, 97, 255, 0.8) !important;
-}
 
 
 /* --- Add Clue Button in Overlay --- */
@@ -1324,7 +1393,25 @@ select.cluebook-input {
   font-weight: 600;
   padding: 2px 6px;
   border-radius: 4px;
-  margin-bottom: 6px;
+}
+
+.cb-hover-popover .cb-popover-thumb {
+  margin-bottom: 8px;
+  border-radius: 6px;
+  overflow: hidden;
+  max-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cb-hover-popover .cb-popover-thumb img {
+  max-height: 120px;
+  width: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 /* Light Text Color overrides for dark themes */

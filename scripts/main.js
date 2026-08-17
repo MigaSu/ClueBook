@@ -568,7 +568,7 @@ Hooks.on("updateJournalEntry", (journal, data, options, userId) => {
         if (clueBookApp.state.isBoardInteracting) {
           clueBookApp.state.pendingRender = true;
         } else {
-          clueBookApp.render();
+          clueBookApp.render({ parts: ["content"] });
         }
       }
     }

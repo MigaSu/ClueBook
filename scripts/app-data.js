@@ -41,7 +41,7 @@ export const ClueBookDataMixin = (Base) => class extends Base {
 
     // 2. Ensure basic data structure exists and gather existing entry IDs
     if (!newData.links || typeof newData.links !== 'object') newData.links = {};
-    const tabs = ["notes", "npc", "locations", "quests", "timeline"];
+    const tabs = ["notes", "npc", "locations", "quests", "timeline", "gallery", "labels", "pins"];
     const existingIds = new Set();
 
     tabs.forEach(tab => {
@@ -107,8 +107,13 @@ export const ClueBookDataMixin = (Base) => class extends Base {
 
     const processUUIDs = (text) => {
       if (!text) return text;
+      // Parse qnmention
+      let newText = text.replace(/\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g, (match, id, name, customText) => {
+        const displayText = customText || name;
+        return `<a class="content-link cb-mention-link" data-mention-id="${id}">${displayText}</a>`;
+      });
       const uuidRegex = /(?<!@UUID\[)(?<!\.)\b(?:Actor|Item|JournalEntry|JournalEntryPage|Scene|RollTable|Cards|Macro|Playlist|User)(?:\.[a-zA-Z0-9_-]+)+\b/g;
-      let newText = text.replace(uuidRegex, match => `@UUID[${match}]`);
+      newText = newText.replace(uuidRegex, match => `@UUID[${match}]`);
       const compendiumRegex = /(?<!@UUID\[)(?<!\.)\bCompendium\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)+\b/g;
       newText = newText.replace(compendiumRegex, match => `@UUID[${match}]`);
       return newText;
@@ -139,6 +144,7 @@ export const ClueBookDataMixin = (Base) => class extends Base {
     if (entry.owner) enriched.owner = await enrichField(entry.owner, 'owner');
     if (entry.subtitle) enriched.subtitle = await enrichField(entry.subtitle, 'subtitle');
     if (entry.location) enriched.location = await enrichField(entry.location, 'location');
+    if (entry.caption) enriched.caption = await enrichField(entry.caption, 'caption');
     if (entry.gmNotes && game.user.isGM) enriched.gmNotes = await enrichField(entry.gmNotes, 'gmNotes');
     
     return enriched;
@@ -154,6 +160,9 @@ export const ClueBookDataMixin = (Base) => class extends Base {
       case "quests": return { ...base, text: "", status: "active", deadline: "" };
       case "timeline": return { ...base, time: "", event: "" };
       case "locations": return { ...base, name: "", subtitle: "", sceneUuid: "", owner: "", note: "" };
+      case "gallery": return { ...base, name: "", img: "", caption: "", frameStyle: "polaroid", cropMode: "contain", cropPosition: "center", text: "" };
+      case "labels": return { ...base, name: "", fontSize: 28, fontFamily: "caveat", bgStyle: "glass", textColor: "#ffffff", color: "#ffffff", onBoard: true };
+      case "pins": return { ...base, name: "", note: "", icon: "fa-thumbtack", color: "#ff5252", bgStyle: "transparent", onBoard: true };
       default: return { ...base };
     }
   }

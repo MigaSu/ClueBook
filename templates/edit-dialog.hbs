@@ -11,7 +11,8 @@
   </p>
   {{/if}}
 
-  <!-- Color Row -->
+  <!-- Color Row (for standard cards) -->
+  {{#unless (or (eq sourceTab "labels") (eq sourceTab "pins"))}}
   <div class="form-group" style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 6px;">
     <!-- Color Swatches -->
     <div class="color-palette" style="display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; flex: 1; padding-bottom: 6px;">
@@ -45,6 +46,7 @@
       </label>
     </div>
   </div>
+  {{/unless}}
 
 
   {{#unless isMassEdit}}
@@ -184,8 +186,191 @@
     {{/if}}
   {{/if}}
 
-  <!-- Linked Badges (Drop Zone Info) -->
-  {{#if isGM}}
+  {{#if (eq sourceTab "gallery")}}
+    <div class="form-group">
+      <input type="text" name="name" value="{{entry.name}}" class="cluebook-input cb-input-lg" placeholder="📸 {{localize 'CLUEBOOK.Gallery.TitlePlaceholder'}}">
+    </div>
+
+    <!-- Style Selector: Polaroid vs Frameless -->
+    <div class="form-group" style="display: flex; gap: 8px; align-items: center;">
+      <label style="font-size: 12px; font-weight: bold; color: rgba(255,255,255,0.7); margin-left: 2px;">{{localize 'CLUEBOOK.Gallery.Style'}}:</label>
+      <div class="cb-segmented-control" style="flex: 1;">
+        <label>
+          <input type="radio" name="frameStyle" value="polaroid" {{#if (or (eq entry.frameStyle "polaroid") (not entry.frameStyle))}}checked{{/if}}>
+          <span><i class="fas fa-camera-retro"></i> {{localize 'CLUEBOOK.Gallery.StylePolaroid'}}</span>
+        </label>
+        <label>
+          <input type="radio" name="frameStyle" value="frameless" {{#if (eq entry.frameStyle "frameless")}}checked{{/if}}>
+          <span><i class="fas fa-map"></i> {{localize 'CLUEBOOK.Gallery.StyleFrameless'}}</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Crop / Fit Mode Selector -->
+    <div class="form-group" style="display: flex; gap: 8px; align-items: center;">
+      <div style="flex: 1;">
+        <label style="font-size: 11px; opacity: 0.7; margin-bottom: 2px; display: block;">{{localize 'CLUEBOOK.Gallery.FitMode'}}:</label>
+        <select name="cropMode" class="cluebook-input" style="width: 100%;">
+          <option value="contain" {{#if (or (eq entry.cropMode "contain") (not entry.cropMode))}}selected{{/if}}>🖼️ {{localize 'CLUEBOOK.Gallery.FitContain'}}</option>
+          <option value="cover" {{#if (eq entry.cropMode "cover")}}selected{{/if}}>📐 {{localize 'CLUEBOOK.Gallery.FitCover'}}</option>
+        </select>
+      </div>
+      <div style="flex: 1;">
+        <label style="font-size: 11px; opacity: 0.7; margin-bottom: 2px; display: block;">{{localize 'CLUEBOOK.Gallery.FocalPoint'}}:</label>
+        <select name="cropPosition" class="cluebook-input" style="width: 100%;">
+          <option value="center" {{#if (or (eq entry.cropPosition "center") (not entry.cropPosition))}}selected{{/if}}>🎯 {{localize 'CLUEBOOK.Gallery.PosCenter'}}</option>
+          <option value="top" {{#if (eq entry.cropPosition "top")}}selected{{/if}}>⬆️ {{localize 'CLUEBOOK.Gallery.PosTop'}}</option>
+          <option value="bottom" {{#if (eq entry.cropPosition "bottom")}}selected{{/if}}>⬇️ {{localize 'CLUEBOOK.Gallery.PosBottom'}}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Image Attachment Field -->
+    <div class="form-group cb-image-group" style="background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <i class="fas fa-image" style="color: rgba(255,255,255,0.6); margin-left: 2px;"></i>
+        <input type="text" name="img" value="{{entry.img}}" class="cluebook-input" placeholder="{{localize 'CLUEBOOK.Gallery.ImagePlaceholder'}}" style="flex: 1;">
+        <button type="button" class="btn-file-picker cluebook-btn" data-target="img" title="{{localize 'CLUEBOOK.Gallery.ChooseFile'}}" style="padding: 4px 10px; cursor: pointer; background: rgba(123, 97, 255, 0.3); border: 1px solid var(--cb-accent); color: white; border-radius: 4px;">
+          <i class="fas fa-folder-open"></i>
+        </button>
+        <button type="button" class="btn-remove-image cluebook-btn" title="{{localize 'CLUEBOOK.Gallery.RemoveImage'}}" style="padding: 4px 10px; cursor: pointer; background: rgba(255, 82, 82, 0.2); border: 1px solid #ff5252; color: #ff5252; border-radius: 4px;">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Image Preview Container -->
+      <div class="cb-img-preview-container" style="display: {{#if entry.img}}flex{{else}}none{{/if}}; justify-content: center; align-items: center; max-height: 160px; overflow: hidden; border-radius: 4px; background: rgba(0,0,0,0.3); position: relative;">
+        <img class="cb-img-preview" src="{{entry.img}}" style="max-height: 160px; max-width: 100%; object-fit: contain; border-radius: 4px;">
+      </div>
+
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <input type="text" name="caption" value="{{entry.caption}}" class="cluebook-input" placeholder="✍️ {{localize 'CLUEBOOK.Gallery.CaptionPlaceholder'}}" style="flex: 1;">
+      </div>
+    </div>
+  {{/if}}
+
+  {{#if (eq sourceTab "labels")}}
+    <div class="form-group">
+      <label style="font-size: 11px; opacity: 0.7; margin-bottom: 3px; display: block;">{{localize 'CLUEBOOK.Label.TextLabel'}}:</label>
+      <input type="text" name="name" value="{{entry.name}}" class="cluebook-input cb-input-lg" placeholder="🏷️ {{localize 'CLUEBOOK.Label.TextPlaceholder'}}" autofocus>
+    </div>
+
+    <!-- Colors Row: Text Color & Background Color -->
+    <div style="display: flex; gap: 10px;">
+      <!-- Text Color -->
+      <div class="form-group" style="flex: 1; background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 10px;">
+        <label style="font-size: 11px; opacity: 0.8; margin-bottom: 6px; display: block;">
+          <i class="fas fa-font"></i> {{localize 'CLUEBOOK.Label.TextColor'}}:
+        </label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="color" name="textColor" class="cb-label-color-input" value="{{#if entry.textColor}}{{entry.textColor}}{{else}}#ffffff{{/if}}" style="width: 44px; height: 32px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; cursor: pointer; padding: 0; background: transparent;">
+          <input type="text" value="{{#if entry.textColor}}{{entry.textColor}}{{else}}#ffffff{{/if}}" style="flex: 1; font-family: monospace; font-size: 12px;" class="cluebook-input" oninput="this.previousElementSibling.value = this.value" onchange="this.previousElementSibling.value = this.value">
+        </div>
+      </div>
+
+      <!-- Background Color (Auto-hidden if Transparent) -->
+      <div class="form-group cb-label-bg-group" style="flex: 1; background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 10px; {{#if (eq entry.bgStyle "transparent")}}display: none;{{/if}}">
+        <label style="font-size: 11px; opacity: 0.8; margin-bottom: 6px; display: block;">
+          <i class="fas fa-fill-drip"></i> {{localize 'CLUEBOOK.Label.BgColor'}}:
+        </label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="color" name="customColorHex" class="cb-label-bg-input" value="{{#if entry.color}}{{entry.color}}{{else}}#ffffff{{/if}}" style="width: 44px; height: 32px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; cursor: pointer; padding: 0; background: transparent;">
+          <input type="text" value="{{#if entry.color}}{{entry.color}}{{else}}#ffffff{{/if}}" style="flex: 1; font-family: monospace; font-size: 12px;" class="cluebook-input" oninput="this.previousElementSibling.value = this.value" onchange="this.previousElementSibling.value = this.value">
+        </div>
+      </div>
+    </div>
+
+    <!-- Typography & Background Style -->
+    <div style="display: flex; gap: 8px;">
+      <!-- Font Family -->
+      <div class="form-group" style="flex: 2;">
+        <label style="font-size: 11px; opacity: 0.7; margin-bottom: 2px; display: block;">{{localize 'CLUEBOOK.Label.FontFamily'}}:</label>
+        <select name="fontFamily" class="cluebook-input" style="width: 100%;">
+          <option value="caveat" {{#if (or (eq entry.fontFamily "caveat") (not entry.fontFamily))}}selected{{/if}}>✍️ {{localize 'CLUEBOOK.Label.FontCaveat'}}</option>
+          <option value="inter" {{#if (eq entry.fontFamily "inter")}}selected{{/if}}>🔤 {{localize 'CLUEBOOK.Label.FontInter'}}</option>
+          <option value="courier" {{#if (eq entry.fontFamily "courier")}}selected{{/if}}>⌨️ {{localize 'CLUEBOOK.Label.FontCourier'}}</option>
+          <option value="cinzel" {{#if (eq entry.fontFamily "cinzel")}}selected{{/if}}>🏛️ {{localize 'CLUEBOOK.Label.FontCinzel'}}</option>
+        </select>
+      </div>
+
+      <!-- Font Size (Numeric in px) -->
+      <div class="form-group" style="flex: 1;">
+        <label style="font-size: 11px; opacity: 0.7; margin-bottom: 2px; display: block;">{{localize 'CLUEBOOK.Label.FontSize'}} (px):</label>
+        <input type="number" name="fontSize" class="cluebook-input" min="12" max="150" step="1" value="{{#if entry.fontSize}}{{entry.fontSize}}{{else}}28{{/if}}" style="width: 100%; text-align: center;">
+      </div>
+
+      <!-- Background Style -->
+      <div class="form-group" style="flex: 2;">
+        <label style="font-size: 11px; opacity: 0.7; margin-bottom: 2px; display: block;">{{localize 'CLUEBOOK.Label.BgStyle'}}:</label>
+        <select name="bgStyle" class="cluebook-input" style="width: 100%;">
+          <option value="glass" {{#if (or (eq entry.bgStyle "glass") (not entry.bgStyle))}}selected{{/if}}>✨ {{localize 'CLUEBOOK.Label.BgGlass'}}</option>
+          <option value="solid" {{#if (eq entry.bgStyle "solid")}}selected{{/if}}>🎨 {{localize 'CLUEBOOK.Label.BgSolid'}}</option>
+          <option value="transparent" {{#if (eq entry.bgStyle "transparent")}}selected{{/if}}>🚫 {{localize 'CLUEBOOK.Label.BgTransparent'}}</option>
+        </select>
+      </div>
+    </div>
+  {{/if}}
+
+  {{#if (eq sourceTab "pins")}}
+    <div class="form-group">
+      <label style="font-size: 11px; opacity: 0.7; margin-bottom: 3px; display: block;">{{localize 'CLUEBOOK.Pin.TitleLabel'}}:</label>
+      <input type="text" name="name" value="{{entry.name}}" class="cluebook-input cb-input-lg" placeholder="📍 {{localize 'CLUEBOOK.Pin.TitlePlaceholder'}}" autofocus>
+    </div>
+
+    <!-- Color & Background Style Row -->
+    <div style="display: flex; gap: 10px;">
+      <!-- Pin Color -->
+      <div class="form-group" style="flex: 1; background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 10px;">
+        <label style="font-size: 11px; opacity: 0.8; margin-bottom: 6px; display: block;">
+          <i class="fas fa-palette"></i> {{localize 'CLUEBOOK.Pin.Color'}}:
+        </label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="color" name="customColorHex" class="cb-pin-color-input" value="{{#if entry.color}}{{entry.color}}{{else}}#ff5252{{/if}}" style="width: 44px; height: 32px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; cursor: pointer; padding: 0; background: transparent;">
+          <input type="text" value="{{#if entry.color}}{{entry.color}}{{else}}#ff5252{{/if}}" style="flex: 1; font-family: monospace; font-size: 12px;" class="cluebook-input" oninput="this.previousElementSibling.value = this.value" onchange="this.previousElementSibling.value = this.value">
+        </div>
+      </div>
+
+      <!-- Background Style -->
+      <div class="form-group" style="flex: 1; background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 10px;">
+        <label style="font-size: 11px; opacity: 0.8; margin-bottom: 6px; display: block;">
+          <i class="fas fa-layer-group"></i> {{localize 'CLUEBOOK.Pin.BgStyle'}}:
+        </label>
+        <select name="bgStyle" class="cluebook-input" style="width: 100%; height: 32px;">
+          <option value="transparent" {{#if (or (eq entry.bgStyle "transparent") (not entry.bgStyle))}}selected{{/if}}>🚫 {{localize 'CLUEBOOK.Pin.BgNone'}}</option>
+          <option value="dark-glass" {{#if (eq entry.bgStyle "dark-glass")}}selected{{/if}}>🌙 {{localize 'CLUEBOOK.Pin.BgDarkGlass'}}</option>
+          <option value="light-glass" {{#if (eq entry.bgStyle "light-glass")}}selected{{/if}}>☀️ {{localize 'CLUEBOOK.Pin.BgLightGlass'}}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Pin Icon Picker -->
+    <div class="form-group" style="background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 10px;">
+      <label style="font-size: 11px; opacity: 0.8; margin-bottom: 8px; display: block;">{{localize 'CLUEBOOK.Pin.ChooseIcon'}}:</label>
+      <div class="cb-icon-picker-grid" style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <label class="cb-icon-option {{#if (or (eq entry.icon "fa-thumbtack") (not entry.icon))}}active{{/if}}" title="📌" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-thumbtack" style="display: none;" {{#if (or (eq entry.icon "fa-thumbtack") (not entry.icon))}}checked{{/if}}><span><i class="fas fa-thumbtack"></i></span></label>
+        <label class="cb-icon-option {{#if (eq entry.icon "fa-map-pin")}}active{{/if}}" title="📍" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-map-pin" style="display: none;" {{#if (eq entry.icon "fa-map-pin")}}checked{{/if}}><span><i class="fas fa-map-pin"></i></span></label>
+        <label class="cb-icon-option {{#if (eq entry.icon "fa-map-marker-alt")}}active{{/if}}" title="🗺️" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-map-marker-alt" style="display: none;" {{#if (eq entry.icon "fa-map-marker-alt")}}checked{{/if}}><span><i class="fas fa-map-marker-alt"></i></span></label>
+        <label class="cb-icon-option {{#if (eq entry.icon "fa-skull")}}active{{/if}}" title="💀" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-skull" style="display: none;" {{#if (eq entry.icon "fa-skull")}}checked{{/if}}><span><i class="fas fa-skull"></i></span></label>
+        <label class="cb-icon-option {{#if (eq entry.icon "fa-question")}}active{{/if}}" title="❓" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-question" style="display: none;" {{#if (eq entry.icon "fa-question")}}checked{{/if}}><span><i class="fas fa-question"></i></span></label>
+        <label class="cb-icon-option {{#if (eq entry.icon "fa-star")}}active{{/if}}" title="⭐" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-star" style="display: none;" {{#if (eq entry.icon "fa-star")}}checked{{/if}}><span><i class="fas fa-star"></i></span></label>
+        <label class="cb-icon-option {{#if (eq entry.icon "fa-crosshairs")}}active{{/if}}" title="🎯" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-crosshairs" style="display: none;" {{#if (eq entry.icon "fa-crosshairs")}}checked{{/if}}><span><i class="fas fa-crosshairs"></i></span></label>
+        <label class="cb-icon-option {{#if (eq entry.icon "fa-fire")}}active{{/if}}" title="🔥" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-fire" style="display: none;" {{#if (eq entry.icon "fa-fire")}}checked{{/if}}><span><i class="fas fa-fire"></i></span></label>
+        <label class="cb-icon-option {{#if (eq entry.icon "fa-eye")}}active{{/if}}" title="👁️" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-eye" style="display: none;" {{#if (eq entry.icon "fa-eye")}}checked{{/if}}><span><i class="fas fa-eye"></i></span></label>
+        <label class="cb-icon-option {{#if (eq entry.icon "fa-exclamation")}}active{{/if}}" title="❗" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-exclamation" style="display: none;" {{#if (eq entry.icon "fa-exclamation")}}checked{{/if}}><span><i class="fas fa-exclamation"></i></span></label>
+        <label class="cb-icon-option {{#if (eq entry.icon "fa-heart")}}active{{/if}}" title="❤️" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-heart" style="display: none;" {{#if (eq entry.icon "fa-heart")}}checked{{/if}}><span><i class="fas fa-heart"></i></span></label>
+        <label class="cb-icon-option {{#if (eq entry.icon "fa-shield-alt")}}active{{/if}}" title="🛡️" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-shield-alt" style="display: none;" {{#if (eq entry.icon "fa-shield-alt")}}checked{{/if}}><span><i class="fas fa-shield-alt"></i></span></label>
+        <label class="cb-icon-option {{#if (eq entry.icon "fa-gem")}}active{{/if}}" title="💎" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-gem" style="display: none;" {{#if (eq entry.icon "fa-gem")}}checked{{/if}}><span><i class="fas fa-gem"></i></span></label>
+        <label class="cb-icon-option {{#if (eq entry.icon "fa-key")}}active{{/if}}" title="🔑" style="cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); transition: all 0.15s;"><input type="radio" name="icon" value="fa-key" style="display: none;" {{#if (eq entry.icon "fa-key")}}checked{{/if}}><span><i class="fas fa-key"></i></span></label>
+      </div>
+    </div>
+
+    <!-- Pin Note / Popover Description -->
+    <div class="form-group">
+      <label style="font-size: 11px; opacity: 0.7; margin-bottom: 3px; display: block;">{{localize 'CLUEBOOK.Pin.NoteLabel'}} (@UUID / {{localize 'CLUEBOOK.Pin.MentionSupport'}}):</label>
+      <textarea name="note" class="cluebook-input" rows="4" placeholder="{{localize 'CLUEBOOK.Pin.NotePlaceholder'}}">{{entry.note}}</textarea>
+    </div>
+  {{/if}}
+
   <!-- Dedicated Drop Zone for Scene/Actor -->
   {{#if isGM}}
   {{#if (or (eq sourceTab "npc") (or (eq sourceTab "locations") (eq sourceTab "notes")))}}
@@ -206,9 +391,9 @@
   </div>
   {{/if}}
   {{/if}}
-  {{/if}}
 
   <!-- Tabs for Text -->
+  {{#unless (or (eq sourceTab "gallery") (eq sourceTab "labels") (eq sourceTab "pins"))}}
   <div class="cb-tabs-container">
     <div class="cb-tab-headers">
       <div class="cb-tab-header active" data-tab="public-notes"><i class="fas fa-align-left"></i> {{localize 'CLUEBOOK.Entry.Description'}}</div>
@@ -228,6 +413,8 @@
         <textarea name="text" class="cluebook-input" rows="8" placeholder="{{localize 'CLUEBOOK.Entry.QuestPH'}}">{{entry.text}}</textarea>
       {{else if (eq sourceTab "timeline")}}
         <textarea name="event" class="cluebook-input" rows="8" placeholder="{{localize 'CLUEBOOK.Entry.TimelinePH'}}">{{entry.event}}</textarea>
+      {{else if (eq sourceTab "pins")}}
+        <textarea name="note" class="cluebook-input" rows="8" placeholder="{{localize 'CLUEBOOK.Pin.NotePlaceholder'}}">{{entry.note}}</textarea>
       {{/if}}
     </div>
     
@@ -238,9 +425,10 @@
     {{/if}}
   </div>
   {{/unless}}
+  {{/unless}}
 
   <!-- Tags Input Row -->
-  {{#if showTags}}
+  {{#if (and showTags (ne sourceTab "labels") (ne sourceTab "pins"))}}
   <div class="form-group cb-tags-input-group" style="position: relative;">
     <div style="display: flex; gap: 8px; align-items: center;">
       <i class="fas fa-tags" style="color: rgba(255,255,255,0.4); margin-left: 5px;"></i>

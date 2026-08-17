@@ -248,6 +248,12 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
                 ${["yellow","green","blue","red","purple","orange","teal","pink","brown"].map(c => `<option value="${c}" ${(settingsObj.defaultColors?.timeline === c || (!settingsObj.defaultColors?.timeline && c === "red")) ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Colors." + c.charAt(0).toUpperCase() + c.slice(1))}</option>`).join('')}
               </select>
             </div>
+            <div class="setting-row">
+              <label>${game.i18n.localize("CLUEBOOK.Tabs.Gallery")}</label>
+              <select name="dc_gallery" class="setting-input cluebook-input">
+                ${["yellow","green","blue","red","purple","orange","teal","pink","brown"].map(c => `<option value="${c}" ${(settingsObj.defaultColors?.gallery === c || (!settingsObj.defaultColors?.gallery && c === "teal")) ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Colors." + c.charAt(0).toUpperCase() + c.slice(1))}</option>`).join('')}
+              </select>
+            </div>
           </div>
         </div>
       </form>
@@ -293,7 +299,8 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
                   npc: form.elements.dc_npc?.value || "green",
                   locations: form.elements.dc_locations?.value || "blue",
                   quests: form.elements.dc_quests?.value || "purple",
-                  timeline: form.elements.dc_timeline?.value || "red"
+                  timeline: form.elements.dc_timeline?.value || "red",
+                  gallery: form.elements.dc_gallery?.value || "teal"
                 }
             };
 
@@ -520,7 +527,7 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
         let existingEntry = null;
 
         if (tempId) {
-          for (const tabKey of ["notes", "npc", "quests", "timeline"]) {
+          for (const tabKey of ["notes", "npc", "locations", "quests", "timeline", "gallery", "labels", "pins"]) {
             if (data[tabKey]?.[tempId]) {
               existingTab = tabKey;
               existingEntry = data[tabKey][tempId];
@@ -611,15 +618,10 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
       // Clean up links for deleted entries
       let links = this._getWorkspaceLinks();
       const isDeleted = (v) => v === null || (v && typeof v === "object" && (v instanceof (foundry.data?.operators?.ForcedDeletion ?? Object) || v.__$OPERATOR$__ === "ForcedDeletion"));
+      const allTabs = ["notes", "npc", "locations", "quests", "timeline", "gallery", "labels", "pins"];
       for (const [key, l] of Object.entries(links)) {
-        const sourceDeleted = isDeleted(updateData[`flags.ClueBook.data.notes.${l.source}`]) ||
-                              isDeleted(updateData[`flags.ClueBook.data.npc.${l.source}`]) ||
-                              isDeleted(updateData[`flags.ClueBook.data.quests.${l.source}`]) ||
-                              isDeleted(updateData[`flags.ClueBook.data.timeline.${l.source}`]);
-        const targetDeleted = isDeleted(updateData[`flags.ClueBook.data.notes.${l.target}`]) ||
-                              isDeleted(updateData[`flags.ClueBook.data.npc.${l.target}`]) ||
-                              isDeleted(updateData[`flags.ClueBook.data.quests.${l.target}`]) ||
-                              isDeleted(updateData[`flags.ClueBook.data.timeline.${l.target}`]);
+        const sourceDeleted = allTabs.some(t => isDeleted(updateData[`flags.ClueBook.data.${t}.${l.source}`]));
+        const targetDeleted = allTabs.some(t => isDeleted(updateData[`flags.ClueBook.data.${t}.${l.target}`]));
         if (sourceDeleted || targetDeleted) {
           updateData[`flags.ClueBook.data.links.${key}`] = getForcedDeletion();
         }

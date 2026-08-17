@@ -42,7 +42,7 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
       // Parse qnmention
       newText = newText.replace(/\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g, (match, id, name, customText) => {
         const displayText = customText || name;
-        return `<a class="content-link cb-mention-link" data-mention-id="${id}"><i class="fas fa-book"></i> ${displayText}</a>`;
+        return `<a class="content-link cb-mention-link" data-mention-id="${id}">${displayText}</a>`;
       });
       return newText;
     };
@@ -79,6 +79,17 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
       }
 
       contentHTML += `<div class="cb-overlay-body">${await enrich(entry.text)}</div>`;
+    } else if (sourceTab === "gallery") {
+      contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-camera-retro"></i> ${entry.name ? processUUIDs(entry.name) : game.i18n.localize("CLUEBOOK.Gallery.Title")}</h3>`;
+      if (entry.img) {
+        contentHTML += `<div class="cb-overlay-image" style="margin: 10px 0; text-align: center;"><img src="${entry.img}" style="max-height: 400px; max-width: 100%; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); object-fit: contain;"></div>`;
+      }
+      if (entry.caption) {
+        contentHTML += `<p class="cb-overlay-caption" style="text-align: center; font-style: italic; opacity: 0.9;">${await enrich(entry.caption)}</p>`;
+      }
+      if (entry.text) {
+        contentHTML += `<div class="cb-overlay-body">${await enrich(entry.text)}</div>`;
+      }
     } else if (sourceTab === "timeline") {
       contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-hourglass-half"></i> ${entry.time || game.i18n.localize("CLUEBOOK.AppActions.UnknownTime")}</h3>`;
       contentHTML += `<div class="cb-overlay-body">${await enrich(entry.event)}</div>`;
@@ -101,6 +112,97 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
     
     ui.notifications.info(game.i18n.localize("CLUEBOOK.AppActions.SentToOverlay"));
   }
+
+  static async _onViewImage(event, target) {
+    event.stopPropagation();
+    const imgSrc = target.dataset.imgSrc;
+    const imgTitle = target.dataset.imgTitle || "";
+    if (!imgSrc) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'cb-lightbox-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(8px);
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-out;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    `;
+
+    const img = document.createElement('img');
+    img.src = imgSrc;
+    img.style.cssText = `
+      max-width: 90vw;
+      max-height: 85vh;
+      object-fit: contain;
+      border-radius: 4px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      cursor: default;
+      transition: transform 0.2s ease;
+    `;
+    img.onclick = (e) => e.stopPropagation();
+
+    if (imgTitle) {
+      const title = document.createElement('div');
+      title.textContent = imgTitle;
+      title.style.cssText = `
+        color: #fff;
+        margin-top: 15px;
+        font-size: 16px;
+        font-weight: bold;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        background: rgba(0,0,0,0.5);
+        padding: 4px 14px;
+        border-radius: 20px;
+        pointer-events: none;
+      `;
+      overlay.appendChild(img);
+      overlay.appendChild(title);
+    } else {
+      overlay.appendChild(img);
+    }
+
+    const closeBtn = document.createElement('div');
+    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    closeBtn.style.cssText = `
+      position: absolute;
+      top: 20px;
+      right: 25px;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    `;
+    closeBtn.onmouseenter = () => closeBtn.style.opacity = '1';
+    closeBtn.onmouseleave = () => closeBtn.style.opacity = '0.7';
+    overlay.appendChild(closeBtn);
+
+    const closeLightbox = () => {
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 200);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') closeLightbox();
+    };
+
+    overlay.onclick = closeLightbox;
+    document.addEventListener('keydown', onKeyDown);
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+      overlay.style.opacity = '1';
+    });
+  }  
 
   static async _onActivateScene(event, target) {
     event.stopPropagation();
@@ -189,4 +291,27 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
     }, 0);
   }
 
+  static async _onUploadBatchGallery(event, target) {
+    event.stopPropagation();
+    const container = target.closest('.add-entry-btn-container');
+    const fileInput = container ? container.querySelector('.cb-batch-file-input') : null;
+    if (!fileInput) return;
+
+    fileInput.onchange = async () => {
+      if (fileInput.files?.length > 0) {
+        const { MediaService } = await import("../services/media-service.js");
+        const uploaded = await MediaService.uploadFiles(fileInput.files);
+        if (uploaded.length > 0) {
+          const items = uploaded.map(u => ({ imgPath: u.path, title: u.name }));
+          const app = Array.from(foundry.applications.instances.values()).find(w => w.constructor.name === "ClueBookApp");
+          if (app) {
+            await app._createQuickMediaBatch(items, false, 100, 100);
+            ui.notifications.info(game.i18n.format("CLUEBOOK.Gallery.BatchUploaded", { count: items.length }));
+          }
+        }
+      }
+      fileInput.value = "";
+    };
+    fileInput.click();
+  }
 }

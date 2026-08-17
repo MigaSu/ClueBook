@@ -177,7 +177,9 @@ export class ClueBookApp extends BaseApp {
       clearDate: ClueBookApp._onClearDate,
       activateScene: ClueBookApp._onActivateScene,
       openActor: ClueBookApp._onOpenActor,
-      manageTags: ClueBookApp._onManageTags
+      manageTags: ClueBookApp._onManageTags,
+      viewImage: ClueBookApp._onViewImage,
+      uploadBatchGallery: ClueBookApp._onUploadBatchGallery
     }
   };
 
@@ -229,7 +231,8 @@ export class ClueBookApp extends BaseApp {
     highlightedEntryId: null,
     selectedEntryId: null,
     selectedEntries: new Set(),
-    searchTags: []
+    searchTags: [],
+    camera: { zoom: 1, panX: 0, panY: 0 }
   };
 
   static DEFAULT_SETTINGS = {
@@ -240,7 +243,8 @@ export class ClueBookApp extends BaseApp {
       boardShowExplicitLinks: false,
       boardShowSuggestedLinks: false,
       hideTags: false,
-      hideTagsOnCards: false
+      hideTagsOnCards: false,
+      galleryAlwaysBelow: false
     },
     theme: {
       defaultWorkspace: "personal",
@@ -261,7 +265,8 @@ export class ClueBookApp extends BaseApp {
       npc: "green",
       quests: "purple",
       timeline: "red",
-      locations: "blue"
+      locations: "blue",
+      gallery: "teal"
     },
     widget: {
       direction: "up-right"
@@ -325,6 +330,7 @@ export class ClueBookApp extends BaseApp {
       { id: "locations", icon: "fas fa-map-marked-alt", label: game.i18n.localize("CLUEBOOK.Tabs.Locations") },
       { id: "quests", icon: "fas fa-scroll", label: game.i18n.localize("CLUEBOOK.Tabs.Quests") },
       { id: "timeline", icon: "fas fa-clock", label: game.i18n.localize("CLUEBOOK.Tabs.Timeline") },
+      { id: "gallery", icon: "fas fa-camera-retro", label: game.i18n.localize("CLUEBOOK.Tabs.Gallery") },
       { id: "board", icon: "fas fa-project-diagram", label: game.i18n.localize("CLUEBOOK.Tabs.Board") }
     ];
   }
@@ -521,7 +527,21 @@ export class ClueBookApp extends BaseApp {
           }
         }
       }
-      context.links = Object.values(data.links || {});
+      const galleryBelow = this.getSettings()?.features?.galleryAlwaysBelow;
+      if (galleryBelow) {
+        entries.sort((a, b) => {
+          const aGallery = a.sourceTab === "gallery" ? 0 : 1;
+          const bGallery = b.sourceTab === "gallery" ? 0 : 1;
+          if (aGallery !== bGallery) return aGallery - bGallery;
+          return (a.sort || 0) - (b.sort || 0);
+        });
+      } else {
+        entries.sort((a, b) => (a.sort || 0) - (b.sort || 0));
+      }
+      const boardEntryIds = new Set(entries.map(e => e.id));
+      context.links = Object.values(data.links || {}).filter(l => 
+        l.source && l.target && boardEntryIds.has(l.source) && boardEntryIds.has(l.target)
+      );
     } else {
       const tabData = data[this.state.activeTab] || {};
       let sortedEntries;
@@ -1073,13 +1093,18 @@ export class ClueBookApp extends BaseApp {
       }
     }
 
-    // Double-click to edit
+    // Double-click to edit (or inline edit for labels)
     html.querySelectorAll('.cluebook-entry .entry-content').forEach(contentNode => {
       contentNode.addEventListener('dblclick', (ev) => {
         const entry = ev.currentTarget.closest('.cluebook-entry');
-        if (entry) {
-          ClueBookApp._onToggleEdit.call(this, ev, entry);
+        if (!entry) return;
+
+        if (entry.dataset.sourceTab === "labels") {
+          this._startLabelInlineEdit(entry);
+          return;
         }
+
+        ClueBookApp._onToggleEdit.call(this, ev, entry);
       });
     });
 
@@ -1107,6 +1132,73 @@ export class ClueBookApp extends BaseApp {
     if (!this.state.isBoardView && !this.state.searchQuery && this.state.activeTab !== "settings" && this.state.activeTab !== "workspaces" && !this.state.isReadOnly) {
       this._setupListDragDrop(html);
     }
+
+    // Setup Global Clipboard Paste (Ctrl+V)
+    this._setupClipboardPaste(html);
+  }
+
+  /**
+   * Fast inline editing of label text directly on the board
+   * @param {HTMLElement} labelCard 
+   */
+  _startLabelInlineEdit(labelCard) {
+    if (this.state.isReadOnly) return;
+    const id = labelCard.dataset.entryId;
+    const textEl = labelCard.querySelector('.cb-board-label-text');
+    if (!textEl || labelCard.classList.contains('is-inline-editing')) return;
+
+    labelCard.classList.add('is-inline-editing');
+    const isPlaceholder = !!textEl.querySelector('em');
+    const currentText = isPlaceholder ? '' : textEl.textContent.trim();
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'cb-label-inline-input';
+    input.value = currentText;
+    input.placeholder = game.i18n.localize('CLUEBOOK.Label.TextPlaceholder') || 'Heading...';
+    input.style.fontSize = textEl.style.fontSize || '';
+    input.style.fontFamily = getComputedStyle(textEl).fontFamily;
+    input.style.color = textEl.style.color || '#ffffff';
+
+    textEl.style.display = 'none';
+    textEl.parentNode.appendChild(input);
+    input.focus();
+    input.select();
+
+    let saved = false;
+    const saveAndClose = async () => {
+      if (saved) return;
+      saved = true;
+      const newName = input.value.trim();
+      labelCard.classList.remove('is-inline-editing');
+      input.remove();
+      textEl.style.display = '';
+
+      if (newName !== currentText) {
+        textEl.textContent = newName || '';
+        await this._updateWorkspaceData({
+          [`flags.ClueBook.data.labels.${id}.name`]: newName
+        });
+        this.render({ parts: ["content"] });
+      }
+    };
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveAndClose();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        saved = true;
+        labelCard.classList.remove('is-inline-editing');
+        input.remove();
+        textEl.style.display = '';
+      }
+    });
+
+    input.addEventListener('blur', () => {
+      saveAndClose();
+    });
   }
 
 
@@ -1389,12 +1481,12 @@ export class ClueBookApp extends BaseApp {
     });
 
     // Render mention links in view mode (already-saved mentions)
-    html.querySelectorAll('.display-text, .display-gm-notes, .timeline-event, .cb-smart-badge').forEach(el => {
+    html.querySelectorAll('.display-text, .display-gm-notes, .timeline-event, .cb-smart-badge, .cb-pin-popover-body').forEach(el => {
       const replacedHTML = el.innerHTML.replace(
         /\[\[qnmention:([^:]+):([^\]]+)\]\](?:\{([^}]*)\})?/g,
         (_, id, name, customText) => {
           const displayText = customText || name;
-          return `<a class="cb-mention-link" data-mention-id="${id}" title="${game.i18n.format("CLUEBOOK.App.GoToEntry", { name: name })}">${displayText}</a>`;
+          return `<a class="content-link cb-mention-link" data-mention-id="${id}" title="${game.i18n.format("CLUEBOOK.App.GoToEntry", { name: name })}">${displayText}</a>`;
         }
       );
       if (replacedHTML !== el.innerHTML) {
@@ -1407,7 +1499,17 @@ export class ClueBookApp extends BaseApp {
         ev.stopPropagation();
         const targetId = link.dataset.mentionId;
         if (!targetId) return;
-        // Jump to linked entry (reuse existing jumpToLinked logic)
+        
+        // If target card is on the current board view, scroll and highlight it!
+        const targetCard = html.querySelector(`.cluebook-entry[data-entry-id="${targetId}"]`);
+        if (targetCard) {
+          targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          targetCard.classList.add('is-highlighted');
+          setTimeout(() => targetCard.classList.remove('is-highlighted'), 2000);
+          return;
+        }
+
+        // Otherwise jump to linked entry via API
         const api = game.modules.get("ClueBook")?.api;
         if (api) {
            await api.openApp({ focusId: targetId });
@@ -1462,32 +1564,61 @@ export class ClueBookApp extends BaseApp {
         npc: { icon: 'fa-user', label: game.i18n.localize("CLUEBOOK.Tabs.NPC"), color: '#4caf50' },
         locations: { icon: 'fa-map-marked-alt', label: game.i18n.localize("CLUEBOOK.Tabs.Locations"), color: '#2196f3' },
         quests: { icon: 'fa-scroll', label: game.i18n.localize("CLUEBOOK.Tabs.Quests"), color: '#7b61ff' },
-        timeline: { icon: 'fa-clock', label: game.i18n.localize("CLUEBOOK.Tabs.Timeline"), color: '#ff9800' }
+        timeline: { icon: 'fa-clock', label: game.i18n.localize("CLUEBOOK.Tabs.Timeline"), color: '#ff9800' },
+        gallery: { icon: 'fa-image', label: game.i18n.localize("CLUEBOOK.Tabs.Gallery"), color: '#e91e63' },
+        pins: { icon: 'fa-thumbtack', label: game.i18n.localize("CLUEBOOK.Tabs.Pins"), color: '#ff5252' },
+        labels: { icon: 'fa-tag', label: game.i18n.localize("CLUEBOOK.Tabs.Labels"), color: '#ffffff' }
       }[targetTab] || { icon: 'fa-link', label: game.i18n.localize("CLUEBOOK.EntryDetails.Link"), color: '#7b61ff' };
 
       let titleText = cleanText(targetEntry.name || targetEntry.event || targetEntry.text || game.i18n.localize("CLUEBOOK.EntryDetails.Untitled"));
       if (titleText.length > 80) titleText = titleText.substring(0, 80) + '...';
 
-      let rawText = cleanText(targetEntry.text || targetEntry.note || targetEntry.event || "");
+      let rawText = cleanText(targetEntry.text || targetEntry.note || targetEntry.caption || targetEntry.event || "");
       if (rawText.length > 180) rawText = rawText.substring(0, 180) + '...';
 
-      let statusBadge = '';
-      if (targetTab === 'quests' && targetEntry.status) {
-        const statusMap = {
-          active: game.i18n.localize("CLUEBOOK.Quest.Active"),
-          completed: game.i18n.localize("CLUEBOOK.Quest.Completed"),
-          failed: game.i18n.localize("CLUEBOOK.Quest.Failed")
-        };
-        const statusText = statusMap[targetEntry.status] || targetEntry.status;
-        statusBadge = `<div class="cb-popover-badge" style="background: rgba(123,97,255,0.3); color: #d1c4ff;"><i class="fas fa-scroll"></i> ${statusText}</div>`;
-      } else if (targetTab === 'npc' && targetEntry.lifeStatus) {
-        const lifeMap = {
-          alive: game.i18n.localize("CLUEBOOK.Entry.Alive"),
-          dead: game.i18n.localize("CLUEBOOK.Entry.Dead"),
-          unknown: game.i18n.localize("CLUEBOOK.Entry.Unknown")
-        };
-        const lifeText = lifeMap[targetEntry.lifeStatus] || targetEntry.lifeStatus;
-        statusBadge = `<div class="cb-popover-badge" style="background: rgba(255,255,255,0.1); color: #eee;"><i class="fas fa-heartbeat"></i> ${lifeText}</div>`;
+      let badgesHTML = '';
+      if (targetTab === 'quests') {
+        const status = targetEntry.status || 'active';
+        if (status === 'completed') {
+          badgesHTML += `<div class="cb-popover-badge" style="background: rgba(76,175,80,0.25); border: 1px solid rgba(76,175,80,0.5); color: #86efac;"><i class="fas fa-check-circle"></i> ${game.i18n.localize("CLUEBOOK.Quest.Completed")}</div>`;
+        } else if (status === 'failed') {
+          badgesHTML += `<div class="cb-popover-badge" style="background: rgba(239,68,68,0.25); border: 1px solid rgba(239,68,68,0.5); color: #fca5a5;"><i class="fas fa-times-circle"></i> ${game.i18n.localize("CLUEBOOK.Quest.Failed")}</div>`;
+        } else {
+          badgesHTML += `<div class="cb-popover-badge" style="background: rgba(123,97,255,0.25); border: 1px solid rgba(123,97,255,0.5); color: #c4b5fd;"><i class="fas fa-hourglass-half"></i> ${game.i18n.localize("CLUEBOOK.Quest.Active")}</div>`;
+        }
+        if (targetEntry.deadline) {
+          badgesHTML += `<div class="cb-popover-badge" style="background: rgba(255,152,0,0.2); border: 1px solid rgba(255,152,0,0.4); color: #fdba74;"><i class="fas fa-clock"></i> ${cleanText(targetEntry.deadline)}</div>`;
+        }
+      } else if (targetTab === 'npc') {
+        const isDead = targetEntry.lifeStatus === 'dead' || targetEntry.isDead;
+        const isUnknown = targetEntry.lifeStatus === 'unknown';
+        if (isDead) {
+          badgesHTML += `<div class="cb-popover-badge" style="background: rgba(239,68,68,0.25); border: 1px solid rgba(239,68,68,0.5); color: #fca5a5;"><i class="fas fa-skull"></i> ${game.i18n.localize("CLUEBOOK.Entry.Dead")}</div>`;
+        } else if (isUnknown) {
+          badgesHTML += `<div class="cb-popover-badge" style="background: rgba(156,163,175,0.25); border: 1px solid rgba(156,163,175,0.5); color: #d1d5db;"><i class="fas fa-question-circle"></i> ${game.i18n.localize("CLUEBOOK.Entry.Unknown")}</div>`;
+        } else {
+          badgesHTML += `<div class="cb-popover-badge" style="background: rgba(76,175,80,0.25); border: 1px solid rgba(76,175,80,0.5); color: #86efac;"><i class="fas fa-heartbeat"></i> ${game.i18n.localize("CLUEBOOK.Entry.Alive")}</div>`;
+        }
+        if (targetEntry.location) {
+          badgesHTML += `<div class="cb-popover-badge" style="background: rgba(59,130,246,0.2); border: 1px solid rgba(59,130,246,0.4); color: #93c5fd;"><i class="fas fa-map-marker-alt"></i> ${cleanText(targetEntry.location)}</div>`;
+        }
+        if (targetEntry.attitude) {
+          badgesHTML += `<div class="cb-popover-badge" style="background: rgba(234,179,8,0.2); border: 1px solid rgba(234,179,8,0.4); color: #fde047;"><i class="fas fa-smile"></i> ${cleanText(targetEntry.attitude)}</div>`;
+        }
+      } else if (targetTab === 'locations') {
+        if (targetEntry.subtitle) {
+          badgesHTML += `<div class="cb-popover-badge" style="background: rgba(59,130,246,0.2); border: 1px solid rgba(59,130,246,0.4); color: #93c5fd;"><i class="fas fa-map-pin"></i> ${cleanText(targetEntry.subtitle)}</div>`;
+        }
+        if (targetEntry.owner) {
+          badgesHTML += `<div class="cb-popover-badge" style="background: rgba(147,51,234,0.2); border: 1px solid rgba(147,51,234,0.4); color: #d8b4fe;"><i class="fas fa-user"></i> ${cleanText(targetEntry.owner)}</div>`;
+        }
+      } else if (targetTab === 'pins') {
+        badgesHTML += `<div class="cb-popover-badge" style="background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.4); color: #fca5a5;"><i class="fas ${targetEntry.icon || 'fa-thumbtack'}"></i> ${game.i18n.localize("CLUEBOOK.Tabs.Pins")}</div>`;
+      }
+
+      let imageThumb = '';
+      if (targetTab === 'gallery' && targetEntry.img) {
+        imageThumb = `<div class="cb-popover-thumb" style="margin-bottom: 8px; border-radius: 6px; overflow: hidden; max-height: 120px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);"><img src="${targetEntry.img}" style="max-height: 120px; width: 100%; object-fit: cover;"></div>`;
       }
 
       const rawHTML = `
@@ -1495,7 +1626,8 @@ export class ClueBookApp extends BaseApp {
           <div class="cb-popover-type"><i class="fas ${tabInfo.icon}"></i> ${tabInfo.label}</div>
           <div class="cb-popover-title">${titleText}</div>
         </div>
-        ${statusBadge}
+        ${imageThumb}
+        ${badgesHTML ? `<div style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px;">${badgesHTML}</div>` : ''}
         ${rawText && rawText !== titleText ? `<div class="cb-popover-body">${rawText}</div>` : ''}
       `;
       popover.replaceChildren(...new DOMParser().parseFromString(rawHTML, "text/html").body.childNodes);
