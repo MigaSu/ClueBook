@@ -95,7 +95,7 @@ export class ClueBookLinkModel extends foundry.abstract.DataModel {
 export class ClueBookFolderModel extends foundry.abstract.DataModel {
   static defineSchema() {
     return {
-      name: new StringField({ required: true, initial: "Новая папка" }),
+      name: new StringField({ required: true, initial: "" }),
       tab: new StringField({ required: true, initial: "notes" }),
       color: new StringField({ initial: "purple" }),
       position: new StringField({ initial: "top" }), // "top" | "bottom"
