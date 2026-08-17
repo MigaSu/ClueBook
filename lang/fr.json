@@ -500,11 +500,17 @@
     },
     "Socket": {
       "BoardCreatedError": "Erreur lors de la création du tableau. Voir la console.",
-      "BoardCreatedFor": "Tableau \"{board}\" créé!",
-      "BoardCreatedSuccess": "Tableau créé avec succès!",
-      "BoardCreationRequest": "Demande de {player}: création du tableau \"{board}\"...",
+      "BoardCreatedFor": "Tableau \"{board}\" créé !",
+      "BoardCreatedSuccess": "Tableau créé avec succès !",
+      "BoardCreationRequest": "Demande de {player} : création du tableau \"{board}\"...",
       "Player": "Joueur",
-      "SentToSimpleCalendar": "Envoyé au calendrier!"
+      "SentToSimpleCalendar": "Envoyé à Simple Calendar !"
+    },
+    "Sort": {
+      "ChronologicalAsc": "Plus anciens d'abord",
+      "ChronologicalDesc": "Plus récents d'abord",
+      "Manual": "Ordre manuel",
+      "Sort": "Trier"
     },
     "Tabs": {
       "Board": "Tableau",

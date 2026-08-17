@@ -493,12 +493,18 @@
       "WidgetSettings": "Widget-Einstellungen"
     },
     "Socket": {
-      "BoardCreatedError": "Fehler beim Erstellen des Boards. Siehe Konsole.",
-      "BoardCreatedFor": "Board \"{board}\" erstellt!",
-      "BoardCreatedSuccess": "Board erfolgreich erstellt!",
-      "BoardCreationRequest": "Anfrage von {player}: Erstelle Board \"{board}\"...",
+      "BoardCreatedError": "Fehler beim Erstellen der Pinnwand. Siehe Konsole.",
+      "BoardCreatedFor": "Pinnwand \"{board}\" erstellt!",
+      "BoardCreatedSuccess": "Pinnwand erfolgreich erstellt!",
+      "BoardCreationRequest": "Anfrage von {player}: Pinnwand \"{board}\" wird erstellt...",
       "Player": "Spieler",
-      "SentToSimpleCalendar": "An Kalender gesendet!"
+      "SentToSimpleCalendar": "An Simple Calendar gesendet!"
+    },
+    "Sort": {
+      "ChronologicalAsc": "Früheste zuerst",
+      "ChronologicalDesc": "Späteste zuerst",
+      "Manual": "Manuelle Reihenfolge",
+      "Sort": "Sortierung"
     },
     "Tabs": {
       "Board": "Board",

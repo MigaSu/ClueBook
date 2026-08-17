@@ -52,6 +52,23 @@
     <button type="button" class="cb-filter-pill {{#if (eq activeQuestFilter 'failed')}}active{{/if}}" data-action="filterQuestStatus" data-status="failed">
       ❌ {{localize "CLUEBOOK.Filter.Failed"}} <span class="cb-filter-count">{{questCounts.failed}}</span>
     </button>
+    <div class="cb-filter-spacer"></div>
+    <button type="button" class="cb-filter-pill cb-sort-btn" data-action="toggleSortMenu" data-tab="quests" title="{{localize 'CLUEBOOK.Sort.Sort'}}">
+      <i class="fas fa-sort-amount-down-alt"></i>
+      <span>{{currentQuestSortLabel}}</span>
+      <i class="fas fa-chevron-down cb-sort-chevron"></i>
+    </button>
+  </div>
+  {{/if}}
+
+  {{#if (eq activeTab "timeline")}}
+  <div class="cb-status-filter-strip">
+    <div class="cb-filter-spacer"></div>
+    <button type="button" class="cb-filter-pill cb-sort-btn" data-action="toggleSortMenu" data-tab="timeline" title="{{localize 'CLUEBOOK.Sort.Sort'}}">
+      <i class="fas fa-sort-amount-down-alt"></i>
+      <span>{{currentTimelineSortLabel}}</span>
+      <i class="fas fa-chevron-down cb-sort-chevron"></i>
+    </button>
   </div>
   {{/if}}
 

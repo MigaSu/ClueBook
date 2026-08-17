@@ -151,6 +151,76 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     }, 10);
   }
 
+  static async _onToggleSortMenu(event, target) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    const tab = target.dataset.tab || this.state.activeTab;
+    const currentMode = (tab === "timeline") 
+      ? (this.state.timelineSortMode || "chronological") 
+      : (this.state.questSortMode || "chronological");
+
+    document.querySelectorAll('.cb-sort-floating-menu').forEach(el => el.remove());
+
+    const menu = document.createElement('div');
+    menu.className = 'cb-quest-floating-menu cb-sort-floating-menu';
+
+    const options = [
+      { id: "chronological", label: game.i18n.localize("CLUEBOOK.Sort.ChronologicalAsc"), icon: "fa-hourglass-start" },
+      { id: "chronological_desc", label: game.i18n.localize("CLUEBOOK.Sort.ChronologicalDesc"), icon: "fa-hourglass-end" },
+      { id: "manual", label: game.i18n.localize("CLUEBOOK.Sort.Manual"), icon: "fa-hand-paper" }
+    ];
+
+    options.forEach(opt => {
+      const item = document.createElement('div');
+      item.className = `cb-quest-menu-item ${opt.id === currentMode ? 'active' : ''}`;
+      item.innerHTML = `<i class="fas ${opt.icon}"></i> <span>${opt.label}</span>`;
+      item.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        menu.remove();
+        if (tab === "timeline") {
+          this.state.timelineSortMode = opt.id;
+        } else {
+          this.state.questSortMode = opt.id;
+        }
+        this.render({ parts: ["content"] });
+      });
+      menu.appendChild(item);
+    });
+
+    document.body.appendChild(menu);
+
+    const rect = target.getBoundingClientRect();
+    let top = rect.bottom + 4;
+    let left = rect.left;
+
+    if (left + 220 > window.innerWidth) {
+      left = Math.max(10, window.innerWidth - 230);
+    }
+    if (top + 140 > window.innerHeight) {
+      top = Math.max(10, rect.top - 130);
+    }
+
+    menu.style.position = 'fixed';
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
+    menu.style.zIndex = '100000';
+
+    const closeFloatingMenu = (ev) => {
+      if (!menu.contains(ev.target) && !target.contains(ev.target)) {
+        menu.remove();
+        document.removeEventListener('click', closeFloatingMenu);
+        document.removeEventListener('contextmenu', closeFloatingMenu);
+      }
+    };
+    setTimeout(() => {
+      document.addEventListener('click', closeFloatingMenu);
+      document.addEventListener('contextmenu', closeFloatingMenu);
+    }, 10);
+  }
+
   static async _onTogglePin(event, target) {
     if (event) {
       event.preventDefault();

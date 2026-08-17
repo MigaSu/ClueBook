@@ -506,6 +506,12 @@
       "Player": "Player",
       "SentToSimpleCalendar": "Sent to Simple Calendar!"
     },
+    "Sort": {
+      "ChronologicalAsc": "Earliest First",
+      "ChronologicalDesc": "Latest First",
+      "Manual": "Manual Order",
+      "Sort": "Sort"
+    },
     "Tabs": {
       "Board": "Board",
       "Gallery": "Gallery",

@@ -196,6 +196,37 @@
   color: #ffffff;
 }
 
+.cluebook-window .cb-filter-spacer {
+  flex: 1;
+}
+
+.cluebook-window .cb-sort-btn {
+  margin-left: auto;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.cluebook-window .cb-sort-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.cluebook-window .cb-sort-chevron {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-left: 2px;
+}
+
 /* --- Universal Collapsible Folder Section --- */
 .cluebook-window .cb-folder-section {
   width: 100%;

@@ -191,7 +191,8 @@ export class ClueBookApp extends BaseApp {
       toggleFolderCollapse: ClueBookApp._onToggleFolderCollapse,
       toggleFolderPosition: ClueBookApp._onToggleFolderPosition,
       addEntryToFolder: ClueBookApp._onAddEntryToFolder,
-      sendFolderToBoard: ClueBookApp._onSendFolderToBoard
+      sendFolderToBoard: ClueBookApp._onSendFolderToBoard,
+      toggleSortMenu: ClueBookApp._onToggleSortMenu
     }
   };
 
@@ -616,15 +617,60 @@ export class ClueBookApp extends BaseApp {
       );
     } else {
       const tabData = data[this.state.activeTab] || {};
-      let sortedEntries;
+      let sortedEntries = Object.entries(tabData);
+
       if (this.state.activeTab === "timeline") {
-        sortedEntries = Object.entries(tabData).sort((a, b) => {
-          const tA = a[1].startTimestamp ?? Number.MAX_SAFE_INTEGER;
-          const tB = b[1].startTimestamp ?? Number.MAX_SAFE_INTEGER;
-          return tA - tB;
-        });
+        const sortMode = this.state.timelineSortMode || "chronological";
+        context.currentTimelineSortLabel = sortMode === "manual" 
+          ? game.i18n.localize("CLUEBOOK.Sort.Manual") 
+          : (sortMode === "chronological_desc" 
+              ? game.i18n.localize("CLUEBOOK.Sort.ChronologicalDesc") 
+              : game.i18n.localize("CLUEBOOK.Sort.ChronologicalAsc"));
+
+        if (sortMode === "manual") {
+          sortedEntries.sort((a, b) => (a[1].sort || 0) - (b[1].sort || 0));
+        } else {
+          sortedEntries.sort((a, b) => {
+            const tA = a[1].startTimestamp;
+            const tB = b[1].startTimestamp;
+            const hasA = (tA !== null && tA !== undefined && !isNaN(tA));
+            const hasB = (tB !== null && tB !== undefined && !isNaN(tB));
+
+            if (hasA && hasB) {
+              return sortMode === "chronological_desc" ? (tB - tA) : (tA - tB);
+            }
+            if (hasA && !hasB) return -1; // events without time go to end
+            if (!hasA && hasB) return 1;
+            return (a[1].sort || 0) - (b[1].sort || 0);
+          });
+        }
+      } else if (this.state.activeTab === "quests") {
+        const sortMode = this.state.questSortMode || "chronological";
+        context.currentQuestSortLabel = sortMode === "manual" 
+          ? game.i18n.localize("CLUEBOOK.Sort.Manual") 
+          : (sortMode === "chronological_desc" 
+              ? game.i18n.localize("CLUEBOOK.Sort.ChronologicalDesc") 
+              : game.i18n.localize("CLUEBOOK.Sort.ChronologicalAsc"));
+
+        if (sortMode === "manual") {
+          sortedEntries.sort((a, b) => (a[1].sort || 0) - (b[1].sort || 0));
+        } else {
+          sortedEntries.sort((a, b) => {
+            const tA = a[1].deadlineTimestamp;
+            const tB = b[1].deadlineTimestamp;
+            const hasA = (tA !== null && tA !== undefined && !isNaN(tA));
+            const hasB = (tB !== null && tB !== undefined && !isNaN(tB));
+
+            if (hasA && hasB) {
+              return sortMode === "chronological_desc" ? (tB - tA) : (tA - tB);
+            }
+            if (hasA && !hasB) return -1; // tasks without time go to end
+            if (!hasA && hasB) return 1;
+            return (a[1].sort || 0) - (b[1].sort || 0);
+          });
+        }
       } else {
-        sortedEntries = Object.entries(tabData).sort((a, b) => (a[1].sort || 0) - (b[1].sort || 0));
+        sortedEntries.sort((a, b) => (a[1].sort || 0) - (b[1].sort || 0));
       }
 
       // Status filters and Archive for Quests

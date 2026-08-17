@@ -506,6 +506,12 @@
       "Player": "Игрок",
       "SentToSimpleCalendar": "Отправлено в Simple Calendar!"
     },
+    "Sort": {
+      "ChronologicalAsc": "Сначала ранние",
+      "ChronologicalDesc": "Сначала поздние",
+      "Manual": "Ручной порядок",
+      "Sort": "Сортировка"
+    },
     "Tabs": {
       "Board": "Доска",
       "Gallery": "Галерея",
