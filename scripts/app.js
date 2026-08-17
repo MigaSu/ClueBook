@@ -1199,6 +1199,15 @@ export class ClueBookApp extends BaseApp {
         this.flushDebouncedSaves();
         this.state.activeWorkspace = ev.target.value;
         await game.user.setFlag("ClueBook", "lastWorkspace", ev.target.value);
+        
+        // Refresh FAB menu immediately for new active board
+        const widget = document.getElementById("cluebook-widget");
+        if (widget && widget._buildMenu) {
+          const currentSettings = this.getSettings();
+          const menu = widget.querySelector(".cb-fab-menu");
+          if (menu) widget._buildMenu(currentSettings, menu);
+        }
+
         this.render();
       });
     }
