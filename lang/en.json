@@ -235,6 +235,7 @@
       "LocationPH": "Location description...",
       "NPCName": "NPC Name",
       "NPCPH": "Notes about NPC...",
+      "NoDescription": "No description",
       "NotePlaceholder": "Note text...",
       "OpenActorSheet": "Open Actor Sheet",
       "Pin": "Pin to board",
@@ -256,6 +257,7 @@
       "Title": "Title",
       "Unknown": "Unknown",
       "Unpin": "Unpin",
+      "Untitled": "(Untitled)",
       "ViewImage": "View Image",
       "Visibility": "Visibility (Shift = Toggle hide from all)",
       "VisibilityTitle": "Visibility Settings",
@@ -581,6 +583,14 @@
       "Title": "Upcoming Events",
       "ToggleTrack": "Track (add to Tracker)",
       "Untrack": "Untrack"
+    },
+    "View": {
+      "Compact": "Compact Table",
+      "Grid": "Grid Cards",
+      "List": "Detailed List",
+      "SwitchToGrid": "Grid Cards",
+      "SwitchToList": "List/Table",
+      "ViewMode": "View Mode"
     },
     "Weather": {
       "Cancel": "Cancel",

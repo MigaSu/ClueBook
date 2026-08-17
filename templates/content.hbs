@@ -38,58 +38,65 @@
   </button>
   {{/if}}
 
-  {{#if (eq activeTab "quests")}}
-  <div class="cb-status-filter-strip">
-    <button type="button" class="cb-filter-pill {{#if (or (eq activeQuestFilter 'all') (not activeQuestFilter))}}active{{/if}}" data-action="filterQuestStatus" data-status="all">
-      {{localize "CLUEBOOK.Filter.All"}} <span class="cb-filter-count">{{questCounts.all}}</span>
-    </button>
-    <button type="button" class="cb-filter-pill {{#if (eq activeQuestFilter 'active')}}active{{/if}}" data-action="filterQuestStatus" data-status="active">
-      ⏳ {{localize "CLUEBOOK.Filter.Active"}} <span class="cb-filter-count">{{questCounts.active}}</span>
-    </button>
-    <button type="button" class="cb-filter-pill {{#if (eq activeQuestFilter 'completed')}}active{{/if}}" data-action="filterQuestStatus" data-status="completed">
-      ✅ {{localize "CLUEBOOK.Filter.Completed"}} <span class="cb-filter-count">{{questCounts.completed}}</span>
-    </button>
-    <button type="button" class="cb-filter-pill {{#if (eq activeQuestFilter 'failed')}}active{{/if}}" data-action="filterQuestStatus" data-status="failed">
-      ❌ {{localize "CLUEBOOK.Filter.Failed"}} <span class="cb-filter-count">{{questCounts.failed}}</span>
-    </button>
-    <div class="cb-filter-spacer"></div>
+  {{#unless isBoardView}}
+  <div class="cb-tab-toolbar">
+    {{#if (eq activeTab "quests")}}
+    <div class="cb-status-filter-strip" style="margin: 0; padding: 0; background: transparent; border: none;">
+      <button type="button" class="cb-filter-pill {{#if (or (eq activeQuestFilter 'all') (not activeQuestFilter))}}active{{/if}}" data-action="filterQuestStatus" data-status="all">
+        {{localize "CLUEBOOK.Filter.All"}} <span class="cb-filter-count">{{questCounts.all}}</span>
+      </button>
+      <button type="button" class="cb-filter-pill {{#if (eq activeQuestFilter 'active')}}active{{/if}}" data-action="filterQuestStatus" data-status="active">
+        ⏳ {{localize "CLUEBOOK.Filter.Active"}} <span class="cb-filter-count">{{questCounts.active}}</span>
+      </button>
+      <button type="button" class="cb-filter-pill {{#if (eq activeQuestFilter 'completed')}}active{{/if}}" data-action="filterQuestStatus" data-status="completed">
+        ✅ {{localize "CLUEBOOK.Filter.Completed"}} <span class="cb-filter-count">{{questCounts.completed}}</span>
+      </button>
+      <button type="button" class="cb-filter-pill {{#if (eq activeQuestFilter 'failed')}}active{{/if}}" data-action="filterQuestStatus" data-status="failed">
+        ❌ {{localize "CLUEBOOK.Filter.Failed"}} <span class="cb-filter-count">{{questCounts.failed}}</span>
+      </button>
+    </div>
+    {{else if (eq activeTab "npc")}}
+    <div class="cb-status-filter-strip" style="margin: 0; padding: 0; background: transparent; border: none;">
+      <button type="button" class="cb-filter-pill {{#if (or (eq activeNpcFilter 'all') (not activeNpcFilter))}}active{{/if}}" data-action="filterNpcStatus" data-status="all">
+        {{localize "CLUEBOOK.Filter.All"}} <span class="cb-filter-count">{{npcCounts.all}}</span>
+      </button>
+      <button type="button" class="cb-filter-pill {{#if (eq activeNpcFilter 'alive')}}active{{/if}}" data-action="filterNpcStatus" data-status="alive">
+        💚 {{localize "CLUEBOOK.Filter.Alive"}} <span class="cb-filter-count">{{npcCounts.alive}}</span>
+      </button>
+      <button type="button" class="cb-filter-pill {{#if (eq activeNpcFilter 'dead')}}active{{/if}}" data-action="filterNpcStatus" data-status="dead">
+        💀 {{localize "CLUEBOOK.Filter.Dead"}} <span class="cb-filter-count">{{npcCounts.dead}}</span>
+      </button>
+      <button type="button" class="cb-filter-pill {{#if (eq activeNpcFilter 'unknown')}}active{{/if}}" data-action="filterNpcStatus" data-status="unknown">
+        ❓ {{localize "CLUEBOOK.Filter.Unknown"}} <span class="cb-filter-count">{{npcCounts.unknown}}</span>
+      </button>
+    </div>
+    {{/if}}
+
+    <div class="cb-toolbar-spacer"></div>
+
+    {{#if (eq activeTab "quests")}}
     <button type="button" class="cb-filter-pill cb-sort-btn" data-action="toggleSortMenu" data-tab="quests" title="{{localize 'CLUEBOOK.Sort.Sort'}}">
       <i class="fas fa-sort-amount-down-alt"></i>
       <span>{{currentQuestSortLabel}}</span>
       <i class="fas fa-chevron-down cb-sort-chevron"></i>
     </button>
-  </div>
-  {{/if}}
-
-  {{#if (eq activeTab "timeline")}}
-  <div class="cb-status-filter-strip">
-    <div class="cb-filter-spacer"></div>
+    {{else if (eq activeTab "timeline")}}
     <button type="button" class="cb-filter-pill cb-sort-btn" data-action="toggleSortMenu" data-tab="timeline" title="{{localize 'CLUEBOOK.Sort.Sort'}}">
       <i class="fas fa-sort-amount-down-alt"></i>
       <span>{{currentTimelineSortLabel}}</span>
       <i class="fas fa-chevron-down cb-sort-chevron"></i>
     </button>
-  </div>
-  {{/if}}
+    {{/if}}
 
-  {{#if (eq activeTab "npc")}}
-  <div class="cb-status-filter-strip">
-    <button type="button" class="cb-filter-pill {{#if (or (eq activeNpcFilter 'all') (not activeNpcFilter))}}active{{/if}}" data-action="filterNpcStatus" data-status="all">
-      {{localize "CLUEBOOK.Filter.All"}} <span class="cb-filter-count">{{npcCounts.all}}</span>
-    </button>
-    <button type="button" class="cb-filter-pill {{#if (eq activeNpcFilter 'alive')}}active{{/if}}" data-action="filterNpcStatus" data-status="alive">
-      💚 {{localize "CLUEBOOK.Filter.Alive"}} <span class="cb-filter-count">{{npcCounts.alive}}</span>
-    </button>
-    <button type="button" class="cb-filter-pill {{#if (eq activeNpcFilter 'dead')}}active{{/if}}" data-action="filterNpcStatus" data-status="dead">
-      💀 {{localize "CLUEBOOK.Filter.Dead"}} <span class="cb-filter-count">{{npcCounts.dead}}</span>
-    </button>
-    <button type="button" class="cb-filter-pill {{#if (eq activeNpcFilter 'unknown')}}active{{/if}}" data-action="filterNpcStatus" data-status="unknown">
-      ❓ {{localize "CLUEBOOK.Filter.Unknown"}} <span class="cb-filter-count">{{npcCounts.unknown}}</span>
+    <button type="button" class="cb-filter-pill cb-view-btn" data-action="toggleViewMenu" data-tab="{{activeTab}}" title="{{localize 'CLUEBOOK.View.ViewMode'}}">
+      <i class="fas {{currentViewIcon}}"></i>
+      <span>{{currentViewLabel}}</span>
+      <i class="fas fa-chevron-down cb-sort-chevron"></i>
     </button>
   </div>
-  {{/if}}
+  {{/unless}}
 
-  <div class="entries-list">
+  <div class="entries-list {{#if (eq currentViewMode 'compact')}}is-compact-view{{else if (eq currentViewMode 'list')}}is-list-view{{else}}is-grid-view{{/if}}">
     {{> "modules/ClueBook/templates/partials/tab-board.hbs"}}
 
     {{#unless isBoardView}}

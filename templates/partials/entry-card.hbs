@@ -1,54 +1,233 @@
-<div class="cluebook-entry {{#if (eq this.id @root.editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id @root.highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}} {{#if (eq this.sourceTab "gallery")}}is-gallery-card frame-{{#if this.frameStyle}}{{this.frameStyle}}{{else}}polaroid{{/if}}{{/if}} {{#if (eq this.sourceTab "labels")}}is-label-card font-{{this.fontFamily}} size-{{this.fontSize}} bg-{{this.bgStyle}}{{/if}} {{#if (eq this.sourceTab "pins")}}is-pin-card{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-text-color="{{this.textColor}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" tabindex="-1" {{#unless @root.isBoardView}}draggable="true"{{/unless}} style="{{#if @root.isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; {{#if this.rotation}}--cb-rotation: {{this.rotation}}deg; transform: rotate({{this.rotation}}deg);{{/if}} {{#if (and @root.settings.features.galleryAlwaysBelow (eq this.sourceTab "gallery"))}}z-index: 4;{{else if (eq this.sourceTab "labels")}}z-index: 25;{{else if (eq this.sourceTab "pins")}}z-index: 20;{{else}}z-index: 10;{{/if}} {{#if (eq this.id @root.highlightedEntryId)}}animation-duration: {{@root.settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#if (and this.isCustomColor (ne this.frameStyle "frameless") (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}">
-  <div class="sticky-pin"></div>
-  {{#unless @root.isReadOnly}}
-  <div class="entry-controls">
-    {{#if @root.isGM}}
-    {{#if (and this.sceneUuid (not @root.settings.hideSceneBtn))}}
-    <a data-action="activateScene" data-scene-id="{{this.sceneUuid}}" class="btn-scene" title="{{localize "CLUEBOOK.Location.ActivateScene"}} ({{localize "CLUEBOOK.Location.ActivateSceneShift"}})"><i class="fas fa-play"></i></a>
-    {{/if}}
-    {{#if (and this.actorUuid (not @root.settings.hideActorBtn))}}
-    <a data-action="openActor" data-actor-id="{{this.actorUuid}}" class="btn-actor" title="{{localize "CLUEBOOK.Entry.OpenActorSheet"}}"><i class="fas fa-id-card"></i></a>
-    {{/if}}
-    {{#unless (or @root.settings.hideGMVisibilityBtn (eq this.sourceTab "labels") (eq this.sourceTab "pins"))}}
-    <a data-action="toggleVisibility" class="btn-visibility" title="{{localize "CLUEBOOK.Entry.Visibility"}}"><i class="fas {{#if this.isHidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
-    {{/unless}}
-    {{#unless (or @root.settings.hideGMOverlayBtn (eq this.sourceTab "labels") (eq this.sourceTab "pins"))}}
-    <a data-action="shareOverlay" class="btn-share" title="{{localize 'CLUEBOOK.AppActions.SentToOverlay'}}"><i class="fas fa-bullhorn"></i></a>
-    {{/unless}}
-    {{/if}}
-    
-    {{#if (and (eq this.sourceTab "gallery") this.img)}}
-    <a data-action="viewImage" data-img-src="{{this.img}}" data-img-title="{{this.name}}" class="btn-view-image" title="{{localize "CLUEBOOK.Entry.ViewImage"}}"><i class="fas fa-search-plus"></i></a>
-    {{/if}}
+<div class="cluebook-entry {{#if (eq this.id @root.editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id @root.highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}} {{#unless @root.isBoardView}}{{#if @root.isCompactView}}view-compact{{else if @root.isListView}}view-list{{else}}view-grid{{/if}}{{/unless}} {{#if (eq this.sourceTab "gallery")}}is-gallery-card frame-{{#if this.frameStyle}}{{this.frameStyle}}{{else}}polaroid{{/if}}{{/if}} {{#if (eq this.sourceTab "labels")}}is-label-card font-{{this.fontFamily}} size-{{this.fontSize}} bg-{{this.bgStyle}}{{/if}} {{#if (eq this.sourceTab "pins")}}is-pin-card{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-text-color="{{this.textColor}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" tabindex="-1" {{#unless @root.isBoardView}}draggable="true"{{/unless}} style="{{#if @root.isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; {{#if this.rotation}}--cb-rotation: {{this.rotation}}deg; transform: rotate({{this.rotation}}deg);{{/if}} {{#if (and @root.settings.features.galleryAlwaysBelow (eq this.sourceTab "gallery"))}}z-index: 4;{{else if (eq this.sourceTab "labels")}}z-index: 25;{{else if (eq this.sourceTab "pins")}}z-index: 20;{{else}}z-index: 10;{{/if}} {{#if (eq this.id @root.highlightedEntryId)}}animation-duration: {{@root.settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#unless @root.isBoardView}}{{#if (or @root.isCompactView @root.isListView)}}--cb-entry-color: {{#if this.color}}{{this.color}}{{else}}#7b61ff{{/if}};{{else}}{{#if (and this.isCustomColor (ne this.frameStyle "frameless") (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}{{/if}}{{else}}{{#if (and this.isCustomColor (ne this.frameStyle "frameless") (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}{{/unless}}">
 
-    {{#unless (or @root.settings.features.hideEditBtn @root.settings.hideEditBtn)}}
-    <a data-action="toggleEdit" class="btn-edit" title="{{localize "CLUEBOOK.Entry.Edit"}}"><i class="fas fa-pencil-alt"></i></a>
-    {{/unless}}
+  {{#if (and (not @root.isBoardView) @root.isCompactView (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}}
+    <!-- Compact View (Single-line row) -->
+    <div class="cb-row-content cb-compact-row">
+      <div class="cb-row-avatar-wrap">
+        {{#if this.img}}
+          <img class="cb-row-avatar" src="{{this.img}}" alt="{{this.displayTitle}}">
+        {{else}}
+          <span class="cb-row-color-dot" style="background: {{#if this.color}}{{this.color}}{{else}}#7b61ff{{/if}};"></span>
+        {{/if}}
+      </div>
 
-    {{#if (and @root.enableTracker (not @root.settings.hideTrackerBtn) (or (eq this.sourceTab "quests") (eq this.sourceTab "timeline")))}}
-    <a data-action="toggleTrack" class="btn-track {{#if this.isTracked}}active{{/if}}" title="{{localize "CLUEBOOK.Tracker.ToggleTrack"}}"><i class="fas fa-star"></i></a>
-    {{/if}}
+      <div class="cb-row-main">
+        <span class="cb-row-title">{{this.displayTitle}}</span>
+        {{#if this.snippet}}
+          <span class="cb-row-snippet">{{this.snippet}}</span>
+        {{/if}}
+      </div>
 
-    {{#if @root.isBoardView}}
-    <a class="btn-link" title="{{localize "CLUEBOOK.Entry.LinkWithThread"}}"><i class="fas fa-link"></i></a>
-    {{#unless (or (eq this.sourceTab "labels") (eq this.sourceTab "pins"))}}
-    <a data-action="jumpToTab" class="btn-jump" title="{{localize "CLUEBOOK.Entry.FindInList"}}"><i class="fas fa-layer-group"></i></a>
+      <div class="cb-row-meta">
+        {{#if (eq this.sourceTab "quests")}}
+          {{#if (eq this.status "completed")}}
+            <span class="cb-row-badge is-completed">✅ {{localize "CLUEBOOK.Filter.Completed"}}</span>
+          {{else if (eq this.status "failed")}}
+            <span class="cb-row-badge is-failed">❌ {{localize "CLUEBOOK.Filter.Failed"}}</span>
+          {{else}}
+            <span class="cb-row-badge is-active">⏳ {{localize "CLUEBOOK.Filter.Active"}}</span>
+          {{/if}}
+          {{#if this.formattedDeadline}}
+            <span class="cb-row-time" title="{{this.deadlineHint}}"><i class="fas fa-clock"></i> {{this.formattedDeadline}}</span>
+          {{/if}}
+        {{else if (eq this.sourceTab "npc")}}
+          {{#if (eq this.lifeStatus "alive")}}
+            <span class="cb-row-badge is-alive">💚 {{localize "CLUEBOOK.Filter.Alive"}}</span>
+          {{else if (eq this.lifeStatus "dead")}}
+            <span class="cb-row-badge is-dead">💀 {{localize "CLUEBOOK.Filter.Dead"}}</span>
+          {{else if (eq this.lifeStatus "unknown")}}
+            <span class="cb-row-badge is-unknown">❓ {{localize "CLUEBOOK.Filter.Unknown"}}</span>
+          {{/if}}
+        {{else if (eq this.sourceTab "locations")}}
+          {{#if this.owner}}
+            <span class="cb-row-info"><i class="fas fa-user"></i> {{this.owner}}</span>
+          {{/if}}
+        {{else if (eq this.sourceTab "timeline")}}
+          {{#if this.formattedStart}}
+            <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{this.formattedStart}}</span>
+          {{/if}}
+        {{/if}}
+
+        {{#if this.resolvedTags.length}}
+        <div class="cb-row-tags">
+          {{#each this.resolvedTags}}
+            <span class="cb-row-tag" style="background: {{this.color}}22; border-color: {{this.color}}88; color: {{this.color}};">#{{this.name}}</span>
+          {{/each}}
+        </div>
+        {{/if}}
+      </div>
+
+      {{#unless @root.isReadOnly}}
+      <div class="cb-row-actions">
+        {{#if @root.isGM}}
+          {{#if (and this.sceneUuid (not @root.settings.hideSceneBtn))}}
+          <a data-action="activateScene" data-scene-id="{{this.sceneUuid}}" class="btn-scene" title="{{localize "CLUEBOOK.Location.ActivateScene"}}"><i class="fas fa-play"></i></a>
+          {{/if}}
+          {{#if (and this.actorUuid (not @root.settings.hideActorBtn))}}
+          <a data-action="openActor" data-actor-id="{{this.actorUuid}}" class="btn-actor" title="{{localize "CLUEBOOK.Entry.OpenActorSheet"}}"><i class="fas fa-id-card"></i></a>
+          {{/if}}
+          {{#unless @root.settings.hideGMVisibilityBtn}}
+          <a data-action="toggleVisibility" class="btn-visibility" title="{{localize "CLUEBOOK.Entry.Visibility"}}"><i class="fas {{#if this.isHidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+          {{/unless}}
+        {{/if}}
+        {{#if (and @root.enableTracker (not @root.settings.hideTrackerBtn) (or (eq this.sourceTab "quests") (eq this.sourceTab "timeline")))}}
+        <a data-action="toggleTrack" class="btn-track {{#if this.isTracked}}active{{/if}}" title="{{localize "CLUEBOOK.Tracker.ToggleTrack"}}"><i class="fas fa-star"></i></a>
+        {{/if}}
+        {{#unless @root.settings.hideSendToBoardBtn}}
+        <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="{{localize "CLUEBOOK.Entry.SendToBoard"}}"><i class="fas fa-project-diagram"></i></a>
+        {{/unless}}
+        {{#unless (or @root.settings.features.hideEditBtn @root.settings.hideEditBtn)}}
+        <a data-action="toggleEdit" class="btn-edit" title="{{localize "CLUEBOOK.Entry.Edit"}}"><i class="fas fa-pencil-alt"></i></a>
+        {{/unless}}
+        {{#unless @root.settings.hideDeleteBtn}}
+        <a data-action="deleteEntry" class="btn-delete" title="{{localize "CLUEBOOK.Entry.Delete"}}"><i class="fas fa-trash"></i></a>
+        {{/unless}}
+      </div>
+      {{/unless}}
+    </div>
+
+  {{else if (and (not @root.isBoardView) @root.isListView (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}}
+    <!-- Detailed List View (2 lines) -->
+    <div class="cb-row-content cb-list-row">
+      <div class="cb-row-avatar-wrap">
+        {{#if this.img}}
+          <img class="cb-row-avatar" src="{{this.img}}" alt="{{this.displayTitle}}">
+        {{else}}
+          <span class="cb-row-color-dot is-large" style="background: {{#if this.color}}{{this.color}}{{else}}#7b61ff{{/if}};"></span>
+        {{/if}}
+      </div>
+
+      <div class="cb-list-body">
+        <div class="cb-list-line1">
+          <span class="cb-row-title">{{this.displayTitle}}</span>
+
+          <div class="cb-row-meta">
+            {{#if (eq this.sourceTab "quests")}}
+              {{#if (eq this.status "completed")}}
+                <span class="cb-row-badge is-completed">✅ {{localize "CLUEBOOK.Filter.Completed"}}</span>
+              {{else if (eq this.status "failed")}}
+                <span class="cb-row-badge is-failed">❌ {{localize "CLUEBOOK.Filter.Failed"}}</span>
+              {{else}}
+                <span class="cb-row-badge is-active">⏳ {{localize "CLUEBOOK.Filter.Active"}}</span>
+              {{/if}}
+              {{#if this.formattedDeadline}}
+                <span class="cb-row-time" title="{{this.deadlineHint}}"><i class="fas fa-clock"></i> {{this.formattedDeadline}}</span>
+              {{/if}}
+            {{else if (eq this.sourceTab "npc")}}
+              {{#if (eq this.lifeStatus "alive")}}
+                <span class="cb-row-badge is-alive">💚 {{localize "CLUEBOOK.Filter.Alive"}}</span>
+              {{else if (eq this.lifeStatus "dead")}}
+                <span class="cb-row-badge is-dead">💀 {{localize "CLUEBOOK.Filter.Dead"}}</span>
+              {{else if (eq this.lifeStatus "unknown")}}
+                <span class="cb-row-badge is-unknown">❓ {{localize "CLUEBOOK.Filter.Unknown"}}</span>
+              {{/if}}
+            {{else if (eq this.sourceTab "locations")}}
+              {{#if this.owner}}
+                <span class="cb-row-info"><i class="fas fa-user"></i> {{this.owner}}</span>
+              {{/if}}
+            {{else if (eq this.sourceTab "timeline")}}
+              {{#if this.formattedStart}}
+                <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{this.formattedStart}}</span>
+              {{/if}}
+            {{/if}}
+          </div>
+
+          <div class="cb-toolbar-spacer"></div>
+
+          {{#unless @root.isReadOnly}}
+          <div class="cb-row-actions">
+            {{#if @root.isGM}}
+              {{#if (and this.sceneUuid (not @root.settings.hideSceneBtn))}}
+              <a data-action="activateScene" data-scene-id="{{this.sceneUuid}}" class="btn-scene" title="{{localize "CLUEBOOK.Location.ActivateScene"}}"><i class="fas fa-play"></i></a>
+              {{/if}}
+              {{#if (and this.actorUuid (not @root.settings.hideActorBtn))}}
+              <a data-action="openActor" data-actor-id="{{this.actorUuid}}" class="btn-actor" title="{{localize "CLUEBOOK.Entry.OpenActorSheet"}}"><i class="fas fa-id-card"></i></a>
+              {{/if}}
+              {{#unless @root.settings.hideGMVisibilityBtn}}
+              <a data-action="toggleVisibility" class="btn-visibility" title="{{localize "CLUEBOOK.Entry.Visibility"}}"><i class="fas {{#if this.isHidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+              {{/unless}}
+            {{/if}}
+            {{#if (and @root.enableTracker (not @root.settings.hideTrackerBtn) (or (eq this.sourceTab "quests") (eq this.sourceTab "timeline")))}}
+            <a data-action="toggleTrack" class="btn-track {{#if this.isTracked}}active{{/if}}" title="{{localize "CLUEBOOK.Tracker.ToggleTrack"}}"><i class="fas fa-star"></i></a>
+            {{/if}}
+            {{#unless @root.settings.hideSendToBoardBtn}}
+            <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="{{localize "CLUEBOOK.Entry.SendToBoard"}}"><i class="fas fa-project-diagram"></i></a>
+            {{/unless}}
+            {{#unless (or @root.settings.features.hideEditBtn @root.settings.hideEditBtn)}}
+            <a data-action="toggleEdit" class="btn-edit" title="{{localize "CLUEBOOK.Entry.Edit"}}"><i class="fas fa-pencil-alt"></i></a>
+            {{/unless}}
+            {{#unless @root.settings.hideDeleteBtn}}
+            <a data-action="deleteEntry" class="btn-delete" title="{{localize "CLUEBOOK.Entry.Delete"}}"><i class="fas fa-trash"></i></a>
+            {{/unless}}
+          </div>
+          {{/unless}}
+        </div>
+
+        <div class="cb-list-line2">
+          <span class="cb-row-snippet">{{#if this.snippet}}{{this.snippet}}{{else}}<em>{{localize "CLUEBOOK.Entry.NoDescription"}}</em>{{/if}}</span>
+          {{#if this.resolvedTags.length}}
+          <div class="cb-row-tags">
+            {{#each this.resolvedTags}}
+              <span class="cb-row-tag" style="background: {{this.color}}22; border-color: {{this.color}}88; color: {{this.color}};">#{{this.name}}</span>
+            {{/each}}
+          </div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+
+  {{else}}
+    <!-- Standard Grid / Sticky Note View -->
+    <div class="sticky-pin"></div>
+    {{#unless @root.isReadOnly}}
+    <div class="entry-controls">
+      {{#if @root.isGM}}
+      {{#if (and this.sceneUuid (not @root.settings.hideSceneBtn))}}
+      <a data-action="activateScene" data-scene-id="{{this.sceneUuid}}" class="btn-scene" title="{{localize "CLUEBOOK.Location.ActivateScene"}} ({{localize "CLUEBOOK.Location.ActivateSceneShift"}})"><i class="fas fa-play"></i></a>
+      {{/if}}
+      {{#if (and this.actorUuid (not @root.settings.hideActorBtn))}}
+      <a data-action="openActor" data-actor-id="{{this.actorUuid}}" class="btn-actor" title="{{localize "CLUEBOOK.Entry.OpenActorSheet"}}"><i class="fas fa-id-card"></i></a>
+      {{/if}}
+      {{#unless (or @root.settings.hideGMVisibilityBtn (eq this.sourceTab "labels") (eq this.sourceTab "pins"))}}
+      <a data-action="toggleVisibility" class="btn-visibility" title="{{localize "CLUEBOOK.Entry.Visibility"}}"><i class="fas {{#if this.isHidden}}fa-eye-slash{{else}}fa-eye{{/if}}"></i></a>
+      {{/unless}}
+      {{#unless (or @root.settings.hideGMOverlayBtn (eq this.sourceTab "labels") (eq this.sourceTab "pins"))}}
+      <a data-action="shareOverlay" class="btn-share" title="{{localize 'CLUEBOOK.AppActions.SentToOverlay'}}"><i class="fas fa-bullhorn"></i></a>
+      {{/unless}}
+      {{/if}}
+      
+      {{#if (and (eq this.sourceTab "gallery") this.img)}}
+      <a data-action="viewImage" data-img-src="{{this.img}}" data-img-title="{{this.name}}" class="btn-view-image" title="{{localize "CLUEBOOK.Entry.ViewImage"}}"><i class="fas fa-search-plus"></i></a>
+      {{/if}}
+
+      {{#unless (or @root.settings.features.hideEditBtn @root.settings.hideEditBtn)}}
+      <a data-action="toggleEdit" class="btn-edit" title="{{localize "CLUEBOOK.Entry.Edit"}}"><i class="fas fa-pencil-alt"></i></a>
+      {{/unless}}
+
+      {{#if (and @root.enableTracker (not @root.settings.hideTrackerBtn) (or (eq this.sourceTab "quests") (eq this.sourceTab "timeline")))}}
+      <a data-action="toggleTrack" class="btn-track {{#if this.isTracked}}active{{/if}}" title="{{localize "CLUEBOOK.Tracker.ToggleTrack"}}"><i class="fas fa-star"></i></a>
+      {{/if}}
+
+      {{#if @root.isBoardView}}
+      <a class="btn-link" title="{{localize "CLUEBOOK.Entry.LinkWithThread"}}"><i class="fas fa-link"></i></a>
+      {{#unless (or (eq this.sourceTab "labels") (eq this.sourceTab "pins"))}}
+      <a data-action="jumpToTab" class="btn-jump" title="{{localize "CLUEBOOK.Entry.FindInList"}}"><i class="fas fa-layer-group"></i></a>
+      {{/unless}}
+      <a data-action="togglePin" class="btn-pin {{#if this.pinned}}active{{/if}}" title="{{#if this.pinned}}{{localize "CLUEBOOK.Entry.Unpin"}}{{else}}{{localize "CLUEBOOK.Entry.Pin"}}{{/if}}"><i class="fas {{#if this.pinned}}fa-lock{{else}}fa-lock-open{{/if}}"></i></a>
+      <a data-action="removeFromBoard" class="btn-remove-board" title="{{localize "CLUEBOOK.Entry.RemoveFromBoard"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-times"></i></a>
+      {{else}}
+      {{#if this.onBoard}}
+      <a data-action="jumpToBoard" class="btn-jump" title="{{localize "CLUEBOOK.Entry.FindOnBoard"}}"><i class="fas fa-map-marker-alt"></i></a>
+      {{/if}}
+      {{#unless @root.settings.hideSendToBoardBtn}}
+      <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="{{localize "CLUEBOOK.Entry.SendToBoard"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-project-diagram"></i></a>
+      {{/unless}}
+      {{#unless @root.settings.hideDeleteBtn}}
+      <a data-action="deleteEntry" class="btn-delete" title="{{localize "CLUEBOOK.Entry.Delete"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-trash"></i></a>
+      {{/unless}}
+      {{/if}}
+    </div>
     {{/unless}}
-    <a data-action="togglePin" class="btn-pin {{#if this.pinned}}active{{/if}}" title="{{#if this.pinned}}{{localize "CLUEBOOK.Entry.Unpin"}}{{else}}{{localize "CLUEBOOK.Entry.Pin"}}{{/if}}"><i class="fas {{#if this.pinned}}fa-lock{{else}}fa-lock-open{{/if}}"></i></a>
-    <a data-action="removeFromBoard" class="btn-remove-board" title="{{localize "CLUEBOOK.Entry.RemoveFromBoard"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-times"></i></a>
-    {{else}}
-    {{#if this.onBoard}}
-    <a data-action="jumpToBoard" class="btn-jump" title="{{localize "CLUEBOOK.Entry.FindOnBoard"}}"><i class="fas fa-map-marker-alt"></i></a>
-    {{/if}}
-    {{#unless @root.settings.hideSendToBoardBtn}}
-    <a data-action="sendToBoard" class="btn-board {{#if this.onBoard}}active{{/if}}" title="{{localize "CLUEBOOK.Entry.SendToBoard"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-project-diagram"></i></a>
-    {{/unless}}
-    {{#unless @root.settings.hideDeleteBtn}}
-    <a data-action="deleteEntry" class="btn-delete" title="{{localize "CLUEBOOK.Entry.Delete"}}" {{#if this.pinned}}style="opacity: 0.3; pointer-events: none;"{{/if}}><i class="fas fa-trash"></i></a>
-    {{/unless}}
-    {{/if}}
-  </div>
-  {{/unless}}
   
   {{#if (eq this.sourceTab "labels")}}
   <div class="entry-content" style="{{#if this.color}}--cb-label-bg: {{this.color}};{{/if}}"><div class="cb-board-label-text" style="{{#if this.textColor}}color: {{this.textColor}} !important;{{/if}} {{#if this.fontSize}}font-size: {{this.fontSize}}px !important;{{/if}}">{{#if this.name}}{{this.name}}{{else}}<em>{{localize 'CLUEBOOK.Label.EmptyPlaceholder'}}</em>{{/if}}</div></div>

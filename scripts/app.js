@@ -192,7 +192,8 @@ export class ClueBookApp extends BaseApp {
       toggleFolderPosition: ClueBookApp._onToggleFolderPosition,
       addEntryToFolder: ClueBookApp._onAddEntryToFolder,
       sendFolderToBoard: ClueBookApp._onSendFolderToBoard,
-      toggleSortMenu: ClueBookApp._onToggleSortMenu
+      toggleSortMenu: ClueBookApp._onToggleSortMenu,
+      toggleViewMenu: ClueBookApp._onToggleViewMenu
     }
   };
 
@@ -433,6 +434,22 @@ export class ClueBookApp extends BaseApp {
     context.editingEntryId = this.state.editingEntryId;
     context.highlightedEntryId = this.state.highlightedEntryId;
     
+    // View modes per tab
+    const tabViewModes = game.user?.getFlag("ClueBook", "tabViewModes") || this.state.tabViewModes || {};
+    const currentViewMode = tabViewModes[this.state.activeTab] || "grid";
+    context.currentViewMode = currentViewMode;
+    context.isGridView = currentViewMode === "grid";
+    context.isCompactView = currentViewMode === "compact";
+    context.isListView = currentViewMode === "list";
+
+    const viewModeLabels = {
+      grid: { label: game.i18n.localize("CLUEBOOK.View.Grid"), icon: "fa-th-large" },
+      compact: { label: game.i18n.localize("CLUEBOOK.View.Compact"), icon: "fa-table" },
+      list: { label: game.i18n.localize("CLUEBOOK.View.List"), icon: "fa-list-ul" }
+    };
+    context.currentViewLabel = (viewModeLabels[currentViewMode] || viewModeLabels.grid).label;
+    context.currentViewIcon = (viewModeLabels[currentViewMode] || viewModeLabels.grid).icon;
+
     // Add enableTracker to context based on user settings
     const userSettings = game.user?.getFlag("ClueBook", "settings") || {};
     context.enableTracker = userSettings.features?.enableTracker !== false;
@@ -583,7 +600,24 @@ export class ClueBookApp extends BaseApp {
 
             if (matchText && matchTags) {
               const enriched = await this._enrichEntry(entry);
-              entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, enriched });
+              const rawNoteText = (entry.note || entry.text || entry.event || "")
+                .replace(/<[^>]*>?/gm, ' ')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+              let displayTitle = (entry.name || entry.title || "").trim();
+              let snippet = "";
+              if (!displayTitle && rawNoteText) {
+                const firstSentence = rawNoteText.split(/[.\n!?]/)[0].trim() || rawNoteText;
+                displayTitle = firstSentence.length > 50 ? firstSentence.substring(0, 47) + '...' : firstSentence;
+                const rest = rawNoteText.substring(displayTitle.replace('...', '').length).trim();
+                snippet = rest.length > 100 ? rest.substring(0, 97) + '...' : rest;
+              } else if (rawNoteText) {
+                snippet = rawNoteText.length > 100 ? rawNoteText.substring(0, 97) + '...' : rawNoteText;
+              } else if (!displayTitle) {
+                displayTitle = game.i18n.localize("CLUEBOOK.Entry.Untitled");
+              }
+              entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, displayTitle, snippet, enriched });
             }
           }
         }
@@ -596,7 +630,8 @@ export class ClueBookApp extends BaseApp {
           if (!entry || !isEntryVisible(entry)) continue;
           if (entry.onBoard) {
             const enriched = await this._enrichEntry(entry);
-            entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, enriched });
+            const displayTitle = (entry.name || entry.title || "").trim() || game.i18n.localize("CLUEBOOK.Entry.Untitled");
+            entries.push({ id, sourceTab: tabKey, isTracked: trackedIds.includes(id), ...entry, displayTitle, enriched });
           }
         }
       }
@@ -720,7 +755,37 @@ export class ClueBookApp extends BaseApp {
       for (const [id, entry] of sortedEntries) {
         if (!entry || !isEntryVisible(entry)) continue;
         const enriched = await this._enrichEntry(entry);
-        entries.push({ id, sourceTab: this.state.activeTab, isTracked: trackedIds.includes(id), ...entry, enriched });
+
+        // Auto-extract title & snippet for list/compact views
+        const rawNoteText = (entry.note || entry.text || entry.event || "")
+          .replace(/<[^>]*>?/gm, ' ')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+          
+        let displayTitle = (entry.name || entry.title || "").trim();
+        let snippet = "";
+        
+        if (!displayTitle && rawNoteText) {
+          const firstSentence = rawNoteText.split(/[.\n!?]/)[0].trim() || rawNoteText;
+          displayTitle = firstSentence.length > 50 ? firstSentence.substring(0, 47) + '...' : firstSentence;
+          const rest = rawNoteText.substring(displayTitle.replace('...', '').length).trim();
+          snippet = rest.length > 100 ? rest.substring(0, 97) + '...' : rest;
+        } else if (rawNoteText) {
+          snippet = rawNoteText.length > 100 ? rawNoteText.substring(0, 97) + '...' : rawNoteText;
+        } else if (!displayTitle) {
+          displayTitle = game.i18n.localize("CLUEBOOK.Entry.Untitled");
+        }
+
+        entries.push({ 
+          id, 
+          sourceTab: this.state.activeTab, 
+          isTracked: trackedIds.includes(id), 
+          ...entry, 
+          displayTitle,
+          snippet,
+          enriched 
+        });
       }
     }
     return entries;

@@ -235,6 +235,7 @@
       "LocationPH": "Description du lieu...",
       "NPCName": "Nom du PNJ",
       "NPCPH": "Notes sur le PNJ...",
+      "NoDescription": "Aucune description",
       "NotePlaceholder": "Texte de la note...",
       "OpenActorSheet": "Ouvrir la feuille du personnage",
       "Pin": "Épingler au tableau",
@@ -256,6 +257,7 @@
       "Title": "Titre",
       "Unknown": "Inconnu",
       "Unpin": "Désépingler",
+      "Untitled": "(Sans titre)",
       "ViewImage": "Voir l'image",
       "Visibility": "Visibilité (Shift = Cacher de tous)",
       "VisibilityTitle": "Paramètres de Visibilité",
@@ -581,6 +583,14 @@
       "Title": "Événements à venir",
       "ToggleTrack": "Suivre (ajouter au Tracker)",
       "Untrack": "Ne plus suivre"
+    },
+    "View": {
+      "Compact": "Tableau compact",
+      "Grid": "Grille de cartes",
+      "List": "Liste détaillée",
+      "SwitchToGrid": "Grille de cartes",
+      "SwitchToList": "Liste/Tableau",
+      "ViewMode": "Mode d'affichage"
     },
     "Weather": {
       "Cancel": "Annuler",

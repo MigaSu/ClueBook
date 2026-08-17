@@ -228,10 +228,12 @@
       "Location": "Ort",
       "LocationName": "Ortsname",
       "LocationPH": "Ortsbeschreibung...",
-      "NPCName": "NPC-Name",
-      "NPCPH": "Notizen zum NPC...",
+      "NPCName": "NSC-Name",
+      "NPCPH": "Notizen über den NSC...",
+      "NoDescription": "Keine Beschreibung",
       "NotePlaceholder": "Notiztext...",
-      "Pin": "Ans Board pinnen",
+      "OpenActorSheet": "Charakterbogen öffnen",
+      "Pin": "Auf Board anpinnen",
       "Pinned": "Angepinnt",
       "QuestPH": "Questbeschreibung...",
       "RemoveActor": "Akteur verknüpft (Klicken zum Entfernen)",
@@ -250,6 +252,7 @@
       "Title": "Titel",
       "Unknown": "Unbekannt",
       "Unpin": "Lösen",
+      "Untitled": "(Ohne Titel)",
       "ViewImage": "Bild ansehen",
       "Visibility": "Sichtbarkeit (Shift = Vor allen verbergen)",
       "VisibilityTitle": "Sichtbarkeitseinstellungen",
@@ -575,6 +578,14 @@
       "Title": "Anstehende Ereignisse",
       "ToggleTrack": "Verfolgen (zum Tracker hinzufügen)",
       "Untrack": "Nicht mehr verfolgen"
+    },
+    "View": {
+      "Compact": "Kompakte Tabelle",
+      "Grid": "Kartenraster",
+      "List": "Detaillierte Liste",
+      "SwitchToGrid": "Kartenraster",
+      "SwitchToList": "Liste/Tabelle",
+      "ViewMode": "Ansichtsmodus"
     },
     "Weather": {
       "Cancel": "Abbrechen",

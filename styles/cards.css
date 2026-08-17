@@ -873,5 +873,311 @@
   font-weight: 600;
 }
 
+/* --- View Modes: Compact Table & Detailed List --- */
+.cluebook-window .entries-list.is-compact-view,
+.cluebook-window .entries-list.is-list-view {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+
+.cluebook-window .entries-list.is-compact-view .cb-root-entries,
+.cluebook-window .entries-list.is-compact-view .cb-folder-entries {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  width: 100% !important;
+}
+
+.cluebook-window .entries-list.is-list-view .cb-root-entries,
+.cluebook-window .entries-list.is-list-view .cb-folder-entries {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+
+/* Base style for row entries */
+.cluebook-window .cluebook-entry.view-compact,
+.cluebook-window .cluebook-entry.view-list {
+  min-height: unset !important;
+  transform: none !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease !important;
+  position: relative !important;
+  border-left-width: 4px !important;
+  border-left-style: solid !important;
+}
+
+.cluebook-window .cluebook-entry.view-compact:hover,
+.cluebook-window .cluebook-entry.view-list:hover {
+  transform: translateX(2px) !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+/* 1. Compact View (Single line ~36px) */
+.cluebook-window .cluebook-entry.view-compact {
+  height: 36px !important;
+  padding: 0 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  border-radius: 6px !important;
+  background: rgba(22, 27, 34, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-left: 4px solid var(--cb-entry-color, #7b61ff) !important;
+  color: #f1f5f9 !important;
+}
+
+.cluebook-window .cluebook-entry.view-compact .cb-row-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+}
+
+.cluebook-window .cb-row-avatar-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cluebook-window .cb-row-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cluebook-window .cb-row-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.cluebook-window .cb-row-color-dot.is-large {
+  width: 14px;
+  height: 14px;
+}
+
+.cluebook-window .cb-row-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cluebook-window .cb-row-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: #f8fafc;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cluebook-window .cb-row-snippet {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.cluebook-window .cb-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.cluebook-window .cb-row-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+
+.cluebook-window .cb-row-badge.is-completed {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.cluebook-window .cb-row-badge.is-active {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+.cluebook-window .cb-row-badge.is-failed {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.cluebook-window .cb-row-badge.is-alive {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.cluebook-window .cb-row-badge.is-dead {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.cluebook-window .cb-row-badge.is-unknown {
+  background: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+  border: 1px solid rgba(203, 213, 225, 0.3);
+}
+
+.cluebook-window .cb-row-time {
+  font-size: 11px;
+  color: #cbd5e1;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.cluebook-window .cb-row-info {
+  font-size: 11px;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.cluebook-window .cb-row-tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.cluebook-window .cb-row-tag {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.cluebook-window .cb-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.cluebook-window .cb-row-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.15s ease;
+  font-size: 11px;
+}
+
+.cluebook-window .cb-row-actions a:hover {
+  background: rgba(123, 97, 255, 0.4);
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.cluebook-window .cb-row-actions a.active {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.2);
+}
+
+/* 2. Detailed List View (2 lines ~52px) */
+.cluebook-window .cluebook-entry.view-list {
+  height: 52px !important;
+  padding: 6px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  border-radius: 8px !important;
+  background: rgba(22, 27, 34, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-left: 4px solid var(--cb-entry-color, #7b61ff) !important;
+  color: #f1f5f9 !important;
+}
+
+.cluebook-window .cluebook-entry.view-list .cb-row-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+}
+
+.cluebook-window .cb-list-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+.cluebook-window .cb-list-line1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.cluebook-window .cb-list-line2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Tab Toolbar */
+.cluebook-window .cb-tab-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.cluebook-window .cb-toolbar-spacer {
+  flex: 1;
+}
+
+.cluebook-window .cb-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
 
 
