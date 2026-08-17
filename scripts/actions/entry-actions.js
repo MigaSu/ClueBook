@@ -573,10 +573,15 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     const existingMenu = document.querySelector('.cb-context-menu');
     if (existingMenu) existingMenu.remove();
 
+    const selectedCount = this.state.selectedEntries.size;
+    const isSingle = selectedCount === 1;
+
     const menu = document.createElement('div');
     menu.className = 'cb-context-menu';
     const rawHTML = `
-      <div class="cb-menu-item" data-action="mass-edit"><i class="fas fa-pencil-alt"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Edit")}</div>
+      ${isSingle ? `<div class="cb-menu-item" data-action="single-edit"><i class="fas fa-pencil-alt"></i> ${game.i18n.localize("CLUEBOOK.Entry.Edit")}</div>` : ''}
+      <div class="cb-menu-item" data-action="mass-edit"><i class="fas fa-palette"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Edit")} (${selectedCount})</div>
+      <div class="cb-menu-item" data-action="move-folder"><i class="fas fa-folder"></i> ${game.i18n.localize("CLUEBOOK.Folder.MoveToFolder")}</div>
       <div class="cb-menu-separator"></div>
       <div class="cb-menu-item" data-action="toggle-visibility"><i class="fas fa-eye-slash"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Visibility")}</div>
       <div class="cb-menu-item" data-action="toggle-board"><i class="fas fa-project-diagram"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Board")}</div>
@@ -619,6 +624,12 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
 
     if (action === 'delete') {
       return this._onDeleteGroup();
+    } else if (action === 'single-edit') {
+      const entryId = ids[0];
+      const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
+      if (entryEl) this._openEditDialog(entryEl);
+    } else if (action === 'move-folder') {
+      return this._onMassMoveFolder(ids);
     } else if (action === 'toggle-visibility') {
       return this._onMassToggleVisibility(ids);
     } else if (action === 'toggle-board') {
@@ -626,6 +637,54 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     } else if (action === 'mass-edit') {
       return this._onMassEditDialog(ids);
     }
+  }
+
+  async _onMassMoveFolder(ids) {
+    const tab = this.state.activeTab;
+    const allFolders = this._getWorkspaceData()?.folders || {};
+    const tabFolders = Object.entries(allFolders).filter(([fId, f]) => f && f.tab === tab);
+
+    const folderOptions = [
+      { id: "", name: game.i18n.localize("CLUEBOOK.Folder.NoFolder") },
+      ...tabFolders.map(([fId, f]) => ({ id: fId, name: f.name }))
+    ];
+
+    const content = `
+      <form style="display:flex; flex-direction:column; gap:10px;">
+        <label style="font-weight:600;">${game.i18n.localize("CLUEBOOK.Folder.SelectTarget")}:</label>
+        <select name="targetFolderId" style="width:100%; padding:6px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:4px;">
+          ${folderOptions.map(f => `<option value="${f.id}">${f.name}</option>`).join("")}
+        </select>
+      </form>
+    `;
+
+    const result = await foundry.applications.api.DialogV2.wait({
+      classes: ["cluebook-window"],
+      window: { title: game.i18n.localize("CLUEBOOK.Folder.MoveTitle") },
+      content: content,
+      buttons: [
+        {
+          action: "move",
+          label: game.i18n.localize("CLUEBOOK.Folder.MoveBtn"),
+          icon: "fas fa-folder-open",
+          default: true,
+          callback: (ev, btn, dialog) => {
+            return dialog.element.querySelector('select[name="targetFolderId"]')?.value ?? "";
+          }
+        },
+        { action: "cancel", label: game.i18n.localize("CLUEBOOK.Folder.CancelBtn"), icon: "fas fa-times" }
+      ]
+    });
+
+    if (result === null || result === undefined) return;
+
+    const updates = {};
+    for (const id of ids) {
+      updates[`flags.ClueBook.data.${tab}.${id}.folderId`] = result;
+    }
+
+    await this._updateWorkspaceData(updates);
+    this.render({ parts: ["content"] });
   }
 
   async _onMassToggleVisibility(ids) {

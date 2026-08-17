@@ -1257,7 +1257,7 @@ export class ClueBookApp extends BaseApp {
            lastSelectedListEntryId = entryId;
         }
 
-        if (this.state.selectedEntries.size > 1 && this._showListContextMenu) {
+        if (this.state.selectedEntries.size >= 1 && this._showListContextMenu) {
            ev.preventDefault();
            ev.stopPropagation();
            this._showListContextMenu(ev);
