@@ -290,9 +290,13 @@
       "PositionLabel": "Position",
       "PositionTop": "Top (above cards)",
       "SaveBtn": "Save",
+      "SelectFolder": "Select Folder:",
+      "SelectPlayersHint": "Select players who can see this folder and its contents",
       "SelectTarget": "Select target folder:",
       "SendToBoard": "Send all cards in folder to board",
-      "SentToBoardSuccess": "Sent {count} cards from folder to board!"
+      "SentToBoardSuccess": "Sent {count} cards from folder to board!",
+      "Visibility": "Folder Visibility",
+      "VisibilityTitle": "Configure Folder Visibility"
     },
     "Gallery": {
       "Add": "Add Photo",

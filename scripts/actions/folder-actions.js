@@ -419,4 +419,111 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
       this.render({ parts: ["content"] });
     }
   }
+
+  static async _onToggleFolderVisibility(event, target) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (this.state.isReadOnly || !game.user.isGM) return;
+
+    const folderElement = target.closest('[data-folder-id]');
+    const folderId = folderElement?.dataset?.folderId;
+    if (!folderId) return;
+
+    const data = this._getWorkspaceData();
+    const folder = data?.folders?.[folderId];
+    if (!folder) return;
+
+    if (event?.shiftKey) {
+      const shouldHide = !folder.isHidden;
+      await this._updateWorkspaceData({
+        [`flags.ClueBook.data.folders.${folderId}.isHidden`]: shouldHide,
+        [`flags.ClueBook.data.folders.${folderId}.visibleTo`]: []
+      });
+      this.render({ parts: ["content"] });
+      return;
+    }
+
+    const allUsers = game.users.filter(u => !u.isGM);
+    const visibleTo = folder.visibleTo || [];
+    const isVisibleToAll = !folder.isHidden && (visibleTo.length === 0 || visibleTo.length === allUsers.length);
+
+    let userCheckboxes = allUsers.map(u => {
+      const isChecked = isVisibleToAll || visibleTo.includes(u.id);
+      return `
+        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer;">
+          <input type="checkbox" name="visibleTo" value="${u.id}" ${isChecked ? 'checked' : ''}>
+          <span style="font-weight: 500;">${u.name}</span>
+        </label>
+      `;
+    }).join('');
+
+    const content = `
+      <form id="cluebook-visibility-form" style="display: flex; flex-direction: column; gap: 12px; padding: 10px;">
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btn-visible-all" style="flex: 1; padding: 6px 10px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(255,255,255,0.08); border: 1px solid var(--color-border-light-2); border-radius: 4px; color: var(--color-text-light-highlight);">
+            <i class="fas fa-eye"></i> ${game.i18n.localize("CLUEBOOK.Entry.VisibleToAll")}
+          </button>
+          <button type="button" id="btn-hide-all" style="flex: 1; padding: 6px 10px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(255,255,255,0.08); border: 1px solid var(--color-border-light-2); border-radius: 4px; color: var(--color-text-light-highlight);">
+            <i class="fas fa-eye-slash"></i> ${game.i18n.localize("CLUEBOOK.Entry.HideFromAll")}
+          </button>
+        </div>
+        <p class="hint" style="margin: 0; font-size: 12px; opacity: 0.8;">${game.i18n.localize("CLUEBOOK.Folder.SelectPlayersHint") || game.i18n.localize("CLUEBOOK.Entry.SelectPlayers")}</p>
+        <div style="display: flex; flex-direction: column; max-height: 200px; overflow-y: auto; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 5px; border: 1px solid var(--color-border-light-1);">
+          ${userCheckboxes}
+        </div>
+      </form>
+    `;
+
+    const result = await foundry.applications.api.DialogV2.wait({
+      window: { title: game.i18n.localize("CLUEBOOK.Folder.VisibilityTitle") || game.i18n.localize("CLUEBOOK.Entry.VisibilityTitle") },
+      content: content,
+      render: (event) => {
+        const root = event.target?.element || event.target || document;
+        const btnVisibleAll = root.querySelector("#btn-visible-all");
+        const btnHideAll = root.querySelector("#btn-hide-all");
+        const playerCbs = root.querySelectorAll('input[name="visibleTo"]');
+
+        if (btnVisibleAll) {
+          btnVisibleAll.addEventListener("click", (e) => {
+            e.preventDefault();
+            playerCbs.forEach(cb => cb.checked = true);
+          });
+        }
+        if (btnHideAll) {
+          btnHideAll.addEventListener("click", (e) => {
+            e.preventDefault();
+            playerCbs.forEach(cb => cb.checked = false);
+          });
+        }
+      },
+      buttons: [{
+        action: "save",
+        label: game.i18n.localize("CLUEBOOK.Entry.Save"),
+        icon: "fas fa-save",
+        callback: (event, button, dialog) => {
+          const form = dialog.element.querySelector("form");
+          const selected = Array.from(form.querySelectorAll('input[name="visibleTo"]:checked')).map(cb => cb.value);
+
+          if (selected.length === allUsers.length) {
+            return { isHidden: false, visibleTo: [] };
+          } else if (selected.length === 0) {
+            return { isHidden: true, visibleTo: [] };
+          } else {
+            return { isHidden: false, visibleTo: selected };
+          }
+        }
+      }],
+      rejectClose: false
+    });
+
+    if (result) {
+      await this._updateWorkspaceData({
+        [`flags.ClueBook.data.folders.${folderId}.isHidden`]: result.isHidden,
+        [`flags.ClueBook.data.folders.${folderId}.visibleTo`]: result.visibleTo
+      });
+      this.render({ parts: ["content"] });
+    }
+  }
 };

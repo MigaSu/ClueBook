@@ -192,6 +192,7 @@ export class ClueBookApp extends BaseApp {
       deleteFolder: ClueBookApp._onDeleteFolder,
       toggleFolderCollapse: ClueBookApp._onToggleFolderCollapse,
       toggleFolderPosition: ClueBookApp._onToggleFolderPosition,
+      toggleFolderVisibility: ClueBookApp._onToggleFolderVisibility,
       addEntryToFolder: ClueBookApp._onAddEntryToFolder,
       sendFolderToBoard: ClueBookApp._onSendFolderToBoard,
       toggleSortMenu: ClueBookApp._onToggleSortMenu,
@@ -494,8 +495,16 @@ export class ClueBookApp extends BaseApp {
 
     // Group entries by folders for the active tab (partitioned into top and bottom)
     const allFolders = data.folders || {};
+    const skipHidden = context.isShared && !context.isGM;
+    const isFolderVisible = (f) => {
+      if (!skipHidden || !f) return true;
+      if (f.isHidden) return false;
+      if (f.visibleTo && f.visibleTo.length > 0 && !f.visibleTo.includes(game.user.id)) return false;
+      return true;
+    };
+
     const tabFolders = Object.entries(allFolders)
-      .filter(([fId, f]) => f && f.tab === this.state.activeTab)
+      .filter(([fId, f]) => f && f.tab === this.state.activeTab && isFolderVisible(f))
       .sort((a, b) => (a[1].sort || 0) - (b[1].sort || 0));
 
     const foldersList = tabFolders.map(([fId, f]) => {
@@ -527,6 +536,8 @@ export class ClueBookApp extends BaseApp {
         isBottom: isBottom,
         sort: f.sort || 0,
         isCollapsed: f.isCollapsed ?? false,
+        isHidden: f.isHidden ?? false,
+        visibleTo: f.visibleTo || [],
         entries: folderEntries,
         count: folderEntries.length
       };
@@ -534,7 +545,7 @@ export class ClueBookApp extends BaseApp {
 
     const foldersTop = foldersList.filter(f => f.isTop);
     const foldersBottom = foldersList.filter(f => f.isBottom);
-    const rootEntries = entries.filter(e => !e.folderId || !allFolders[e.folderId]);
+    const rootEntries = entries.filter(e => (!e.folderId || !allFolders[e.folderId]) && (!allFolders[e.folderId] || isFolderVisible(allFolders[e.folderId])));
 
     context.folders = foldersList;
     context.foldersTop = foldersTop;
@@ -681,11 +692,22 @@ export class ClueBookApp extends BaseApp {
     const entries = [];
     const skipHidden = context.isShared && !context.isGM;
     const trackedIds = game.user.getFlag("ClueBook", "trackedEvents") || [];
+    const allFolders = data.folders || {};
+
+    const isFolderVisible = (folderId) => {
+      if (!skipHidden || !folderId) return true;
+      const folder = allFolders[folderId];
+      if (!folder) return true;
+      if (folder.isHidden) return false;
+      if (folder.visibleTo && folder.visibleTo.length > 0 && !folder.visibleTo.includes(game.user.id)) return false;
+      return true;
+    };
 
     const isEntryVisible = (entry) => {
       if (!skipHidden) return true;
       if (entry.isHidden) return false;
       if (entry.visibleTo && entry.visibleTo.length > 0 && !entry.visibleTo.includes(game.user.id)) return false;
+      if (entry.folderId && !isFolderVisible(entry.folderId)) return false;
       return true;
     };
 
@@ -1539,8 +1561,8 @@ export class ClueBookApp extends BaseApp {
           return;
         }
 
-        // Right-clicking without Shift/Ctrl/Meta selects ONLY this single card
-        if (!ev.shiftKey && !ev.ctrlKey && !ev.metaKey) {
+        // If right-clicked entry is not part of multi-selection, select only this entry
+        if (!this.state.selectedEntries.has(entryId) || this.state.selectedEntries.size <= 1) {
           html.querySelectorAll('.cluebook-entry.is-selected').forEach(el => el.classList.remove('is-selected'));
           this.state.selectedEntries.clear();
           this.state.selectedEntries.add(entryId);
@@ -1548,12 +1570,9 @@ export class ClueBookApp extends BaseApp {
           this.state.selectedEntryId = entryId;
           lastSelectedListEntryId = entryId;
           this._updateSelectionHUD();
-        } else if (!this.state.selectedEntries.has(entryId)) {
-          this.state.selectedEntries.add(entryId);
-          entry.classList.add('is-selected');
+        } else {
           this.state.selectedEntryId = entryId;
           lastSelectedListEntryId = entryId;
-          this._updateSelectionHUD();
         }
 
         if (this.state.selectedEntries.size >= 1 && this._showListContextMenu) {

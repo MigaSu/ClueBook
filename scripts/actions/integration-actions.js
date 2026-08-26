@@ -16,22 +16,6 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
     const entry = data[sourceTab]?.[entryId];
     if (!entry || sourceTab === "labels" || sourceTab === "pins") return;
     
-    // Check if players have observer access to the board
-    let canPlayersSee = false;
-    if (this.state.activeWorkspace !== "personal" && !this.state.activeWorkspace.startsWith("personal_")) {
-      const journal = this._getWorkspaceJournal();
-      if (journal && journal.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) {
-        canPlayersSee = true;
-      }
-    }
-    
-    // Automatically make it public if it was hidden and players have access
-    if (entry.isHidden && canPlayersSee) {
-      await this._saveDataRaw(sourceTab, entryId, "isHidden", false);
-      entry.isHidden = false;
-      this.render({ parts: ["content"] });
-    }
-    
     // Process text for chat (enrich UUID links)
     const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
     const processUUIDs = (text) => {

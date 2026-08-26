@@ -1,4 +1,4 @@
-import { ClueBookEntryModel, ClueBookLinkModel, getForcedDeletion } from "./data-models.js";
+import { ClueBookEntryModel, ClueBookLinkModel, ClueBookFolderModel, getForcedDeletion } from "./data-models.js";
 import { TextEnrichmentService } from "./services/text-enrichment-service.js";
 
 export const ClueBookDataMixin = (Base) => class extends Base {
@@ -42,6 +42,20 @@ export const ClueBookDataMixin = (Base) => class extends Base {
 
     // 2. Ensure basic data structure exists and gather existing entry IDs
     if (!newData.links || typeof newData.links !== 'object') newData.links = {};
+    if (!newData.folders || typeof newData.folders !== 'object') newData.folders = {};
+    
+    // Sanitize folders
+    for (const [fId, folder] of Object.entries(newData.folders)) {
+      if (!folder) continue;
+      const fModel = new ClueBookFolderModel(folder);
+      const sanitizedFolder = fModel.toObject();
+      if (JSON.stringify(folder) !== JSON.stringify(sanitizedFolder)) {
+        newData.folders[fId] = sanitizedFolder;
+        updates[`flags.ClueBook.data.folders.${fId}`] = sanitizedFolder;
+        requiresUpdate = true;
+      }
+    }
+
     const tabs = ["notes", "npc", "locations", "quests", "timeline", "gallery", "labels", "pins"];
     const existingIds = new Set();
 

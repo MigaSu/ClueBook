@@ -466,6 +466,15 @@
   color: #ff5252;
 }
 
+.cluebook-window .cb-folder-btn.btn-visibility.is-hidden {
+  color: #ff6b6b;
+}
+
+.cluebook-window .cb-folder-section.is-hidden {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
 .cluebook-window .cb-folder-chevron {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.5);

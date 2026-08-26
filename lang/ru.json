@@ -290,9 +290,13 @@
       "PositionLabel": "Размещение",
       "PositionTop": "Сверху (над записями)",
       "SaveBtn": "Сохранить",
+      "SelectFolder": "Выберите папку:",
+      "SelectPlayersHint": "Выберите игроков, которые могут видеть эту папку и карточки в ней",
       "SelectTarget": "Выберите папку назначения:",
       "SendToBoard": "Отправить всю папку на доску",
-      "SentToBoardSuccess": "Отправлено {count} карточек из папки на доску!"
+      "SentToBoardSuccess": "Отправлено {count} карточек из папки на доску!",
+      "Visibility": "Видимость папки",
+      "VisibilityTitle": "Настройка видимости папки"
     },
     "Gallery": {
       "Add": "Добавить фото",

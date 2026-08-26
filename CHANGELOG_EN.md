@@ -2,6 +2,22 @@
 
 All notable changes, refactoring, and bug fixes are documented in this file.
 
+## [2.0.1] - 2026-08-26
+
+### 📢 Share Overlay & Player Clues
+* **Fixed Automatic Clue Unhiding:** Broadcasting a card to players via "Share" (`showOverlay`) no longer unhides or mutates the card in the shared database. Cards remain in their defined visibility state and are copied to player boards only when a player explicitly clicks "+ Add Clue" in the overlay window.
+
+### 📁 Folder Player-Specific Visibility
+* **Folder Visibility Controls:** Added dedicated visibility controls (`fa-eye` / `fa-eye-slash` / `fa-user-lock`) to folder headers for the Game Master.
+* **Nested Entry Isolation:** Hiding a folder from specific players now completely conceals both the folder section and all entries inside it (including tab badge counts and global search results).
+* **Quick Toggle:** `Shift + Click` on the folder visibility button instantly toggles visibility without opening the dialog.
+
+### 🖱️ Multi-Selection & Batch Actions Fixes
+* **List Selection Preservation:** Fixed an issue where right-clicking an already-selected card in the list view cleared the active multi-selection.
+* **Batch Player Visibility:** Added bulk player visibility configuration for multiple selected cards with support for individual player selection or instant `Shift + Click` toggle.
+* **Board Multi-Card Menu Actions:** Added missing batch actions (Batch Edit, GM Visibility Toggle, Remove from Board, and Batch Delete) to the Canvas multi-selection right-click menu.
+* **Atomic Batch Deletion:** Refactored group deletion to query workspace data models directly across tabs, ensuring 100% reliable cleanup independent of DOM state.
+
 ## [2.0.0] - 2026-08-17
 
 ### ⚡ Performance & Scalability (1,000+ Cards & Links)

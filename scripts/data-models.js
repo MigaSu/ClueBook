@@ -100,7 +100,9 @@ export class ClueBookFolderModel extends foundry.abstract.DataModel {
       color: new StringField({ initial: "purple" }),
       position: new StringField({ initial: "top" }), // "top" | "bottom"
       sort: new NumberField({ initial: 0 }),
-      isCollapsed: new BooleanField({ initial: false })
+      isCollapsed: new BooleanField({ initial: false }),
+      isHidden: new BooleanField({ initial: false }),
+      visibleTo: new ArrayField(new StringField(), { initial: [] })
     };
   }
 }

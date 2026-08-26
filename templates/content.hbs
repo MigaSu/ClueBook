@@ -132,15 +132,25 @@
       {{/each}}
     {{else if (not isBoardView)}}
       {{#each foldersTop}}
-      <div class="cb-folder-section color-{{this.color}} {{#if this.isCollapsed}}is-collapsed{{/if}}" data-folder-id="{{this.id}}" {{#if this.customStyle}}style="{{this.customStyle}}"{{/if}}>
+      <div class="cb-folder-section color-{{this.color}} {{#if this.isCollapsed}}is-collapsed{{/if}} {{#if this.isHidden}}is-hidden{{/if}}" data-folder-id="{{this.id}}" {{#if this.customStyle}}style="{{this.customStyle}}"{{/if}}>
         <div class="cb-folder-header" draggable="true" data-action="toggleFolderCollapse" data-folder-id="{{this.id}}">
           <div class="cb-folder-title-wrap">
             <i class="fas {{#if this.isCollapsed}}fa-folder{{else}}fa-folder-open{{/if}} cb-folder-icon" {{#if this.customIconStyle}}style="{{this.customIconStyle}}"{{/if}}></i>
             <span class="cb-folder-name">{{this.name}}</span>
             <span class="cb-folder-badge">{{this.count}}</span>
+            {{#if this.isHidden}}
+              <i class="fas fa-eye-slash cb-folder-hidden-icon" style="color: #ff6b6b; font-size: 11px; margin-left: 4px;" title="{{localize 'CLUEBOOK.Entry.Hidden'}}"></i>
+            {{else if this.visibleTo.length}}
+              <i class="fas fa-user-lock cb-folder-hidden-icon" style="color: #ffb642; font-size: 11px; margin-left: 4px;" title="{{localize 'CLUEBOOK.Entry.PartiallyHidden'}}"></i>
+            {{/if}}
           </div>
           <div class="cb-folder-controls">
             {{#unless @root.isReadOnly}}
+            {{#if @root.isGM}}
+            <button type="button" class="cb-folder-btn btn-visibility {{#if this.isHidden}}is-hidden{{/if}}" data-action="toggleFolderVisibility" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.Visibility'}}">
+              <i class="fas {{#if this.isHidden}}fa-eye-slash{{else if this.visibleTo.length}}fa-user-lock{{else}}fa-eye{{/if}}"></i>
+            </button>
+            {{/if}}
             <button type="button" class="cb-folder-btn btn-add-entry" data-action="addEntryToFolder" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.AddEntry'}}">
               <i class="fas fa-plus"></i>
             </button>
@@ -180,15 +190,25 @@
       </div>
 
       {{#each foldersBottom}}
-      <div class="cb-folder-section color-{{this.color}} {{#if this.isCollapsed}}is-collapsed{{/if}}" data-folder-id="{{this.id}}" {{#if this.customStyle}}style="{{this.customStyle}}"{{/if}}>
+      <div class="cb-folder-section color-{{this.color}} {{#if this.isCollapsed}}is-collapsed{{/if}} {{#if this.isHidden}}is-hidden{{/if}}" data-folder-id="{{this.id}}" {{#if this.customStyle}}style="{{this.customStyle}}"{{/if}}>
         <div class="cb-folder-header" draggable="true" data-action="toggleFolderCollapse" data-folder-id="{{this.id}}">
           <div class="cb-folder-title-wrap">
             <i class="fas {{#if this.isCollapsed}}fa-folder{{else}}fa-folder-open{{/if}} cb-folder-icon" {{#if this.customIconStyle}}style="{{this.customIconStyle}}"{{/if}}></i>
             <span class="cb-folder-name">{{this.name}}</span>
             <span class="cb-folder-badge">{{this.count}}</span>
+            {{#if this.isHidden}}
+              <i class="fas fa-eye-slash cb-folder-hidden-icon" style="color: #ff6b6b; font-size: 11px; margin-left: 4px;" title="{{localize 'CLUEBOOK.Entry.Hidden'}}"></i>
+            {{else if this.visibleTo.length}}
+              <i class="fas fa-user-lock cb-folder-hidden-icon" style="color: #ffb642; font-size: 11px; margin-left: 4px;" title="{{localize 'CLUEBOOK.Entry.PartiallyHidden'}}"></i>
+            {{/if}}
           </div>
           <div class="cb-folder-controls">
             {{#unless @root.isReadOnly}}
+            {{#if @root.isGM}}
+            <button type="button" class="cb-folder-btn btn-visibility {{#if this.isHidden}}is-hidden{{/if}}" data-action="toggleFolderVisibility" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.Visibility'}}">
+              <i class="fas {{#if this.isHidden}}fa-eye-slash{{else if this.visibleTo.length}}fa-user-lock{{else}}fa-eye{{/if}}"></i>
+            </button>
+            {{/if}}
             <button type="button" class="cb-folder-btn btn-add-entry" data-action="addEntryToFolder" data-folder-id="{{this.id}}" title="{{localize 'CLUEBOOK.Folder.AddEntry'}}">
               <i class="fas fa-plus"></i>
             </button>

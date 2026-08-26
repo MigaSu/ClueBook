@@ -912,7 +912,11 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     let rawHTML = '';
 
     if (selectedCount > 1) {
+      const isGM = game.user.isGM;
       rawHTML = `
+        <div class="cb-menu-item" data-action="mass-edit"><i class="fas fa-palette"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Edit")} (${selectedCount})</div>
+        ${isGM ? `<div class="cb-menu-item" data-action="toggle-visibility"><i class="fas fa-eye-slash"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Visibility")}</div>` : ''}
+        <div class="cb-menu-separator"></div>
         <div class="cb-menu-item" data-action="align-left"><i class="fas fa-align-left"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignLeft")}</div>
         <div class="cb-menu-item" data-action="align-center"><i class="fas fa-align-center"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignCenter")}</div>
         <div class="cb-menu-item" data-action="align-right"><i class="fas fa-align-right"></i> ${game.i18n.localize("CLUEBOOK.Board.AlignRight")}</div>
@@ -923,7 +927,8 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         <div class="cb-menu-item" data-action="unpin-group"><i class="fas fa-unlock"></i> ${game.i18n.localize("CLUEBOOK.Board.UnpinGroup")}</div>
         <div class="cb-menu-item" data-action="reset-rotation-group"><i class="fas fa-square"></i> ${game.i18n.localize("CLUEBOOK.Board.ResetRotationGroup")}</div>
         <div class="cb-menu-separator"></div>
-        <div class="cb-menu-item danger" data-action="remove-board"><i class="fas fa-times"></i> ${game.i18n.localize("CLUEBOOK.Entry.RemoveFromBoard")} (${selectedCount})</div>
+        <div class="cb-menu-item" data-action="remove-board"><i class="fas fa-times"></i> ${game.i18n.localize("CLUEBOOK.Entry.RemoveFromBoard")} (${selectedCount})</div>
+        <div class="cb-menu-item danger" data-action="delete"><i class="fas fa-trash"></i> ${game.i18n.localize("CLUEBOOK.Entry.Delete")} (${selectedCount}) [Del]</div>
       `;
     } else if (entryData) {
       // Single Card Context Menu
@@ -1062,6 +1067,14 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         if (entryEl) {
           return this.constructor._onDeleteEntry.call(this, event, entryEl);
         }
+      }
+    } else {
+      if (action === 'mass-edit') {
+        return this._onMassEditDialog(selectedIds);
+      } else if (action === 'toggle-visibility') {
+        return this._onMassToggleVisibility(selectedIds, event);
+      } else if (action === 'delete') {
+        return this._onDeleteGroup();
       }
     }
 

@@ -290,9 +290,13 @@
       "PositionLabel": "Position",
       "PositionTop": "Oben (über den Karten)",
       "SaveBtn": "Speichern",
+      "SelectFolder": "Ordner auswählen:",
+      "SelectPlayersHint": "Spieler auswählen, die diesen Ordner und seinen Inhalt sehen können",
       "SelectTarget": "Zielordner auswählen:",
       "SendToBoard": "Alle Karten im Ordner an die Pinnwand senden",
-      "SentToBoardSuccess": "{count} Karten aus dem Ordner an die Pinnwand gesendet!"
+      "SentToBoardSuccess": "{count} Karten aus dem Ordner an die Pinnwand gesendet!",
+      "Visibility": "Ordnersichtbarkeit",
+      "VisibilityTitle": "Ordnersichtbarkeit konfigurieren"
     },
     "Gallery": {
       "Add": "Foto hinzufügen",

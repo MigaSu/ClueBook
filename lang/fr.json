@@ -290,9 +290,13 @@
       "PositionLabel": "Position",
       "PositionTop": "En haut (au-dessus des cartes)",
       "SaveBtn": "Enregistrer",
+      "SelectFolder": "Sélectionnez le dossier :",
+      "SelectPlayersHint": "Sélectionnez les joueurs autorisés à voir ce dossier et ses cartes",
       "SelectTarget": "Sélectionnez le dossier de destination :",
       "SendToBoard": "Envoyer toutes les cartes du dossier sur le tableau",
-      "SentToBoardSuccess": "{count} cartes du dossier envoyées sur le tableau!"
+      "SentToBoardSuccess": "{count} cartes du dossier envoyées sur le tableau!",
+      "Visibility": "Visibilité du dossier",
+      "VisibilityTitle": "Configurer la visibilité du dossier"
     },
     "Gallery": {
       "Add": "Ajouter une photo",

@@ -642,7 +642,7 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
         const entryEl = this.element?.querySelector(`.cluebook-entry[data-entry-id="${entryId}"]`);
         if (entryEl) return this.constructor._onToggleVisibility.call(this, event, entryEl);
       }
-      return this._onMassToggleVisibility(ids);
+      return this._onMassToggleVisibility(ids, event);
     } else if (action === 'toggle-board') {
       return this._onMassToggleBoard(ids);
     } else if (action === 'mass-edit') {
@@ -661,67 +661,171 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     ];
 
     const content = `
-      <form style="display:flex; flex-direction:column; gap:10px;">
-        <label style="font-weight:600;">${game.i18n.localize("CLUEBOOK.Folder.SelectTarget")}:</label>
-        <select name="targetFolderId" style="width:100%; padding:6px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:4px;">
-          ${folderOptions.map(f => `<option value="${f.id}">${f.name}</option>`).join("")}
-        </select>
+      <form style="display:flex; flex-direction:column; gap:12px; padding:10px;">
+        <p class="notes" style="margin:0; font-weight:bold; color:var(--color-text-highlight);">
+          ${game.i18n.format("CLUEBOOK.MassEdit.SelectedCount", { count: ids.length })}
+        </p>
+        <div class="form-group">
+          <label style="font-weight:600; margin-bottom:4px; display:block;">${game.i18n.localize("CLUEBOOK.Folder.SelectFolder")}:</label>
+          <select name="targetFolderId" style="width:100%; padding:6px; border-radius:4px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.2); color:#fff;">
+            ${folderOptions.map(fo => `<option value="${fo.id}">${fo.name}</option>`).join("")}
+          </select>
+        </div>
       </form>
     `;
 
     const result = await foundry.applications.api.DialogV2.wait({
-      classes: ["cluebook-window"],
-      window: { title: game.i18n.localize("CLUEBOOK.Folder.MoveTitle") },
+      window: { title: game.i18n.localize("CLUEBOOK.Folder.MoveToFolder") },
       content: content,
       buttons: [
         {
           action: "move",
-          label: game.i18n.localize("CLUEBOOK.Folder.MoveBtn"),
-          icon: "fas fa-folder-open",
+          label: game.i18n.localize("CLUEBOOK.Entry.Save"),
+          icon: "fas fa-check",
           default: true,
-          callback: (ev, btn, dialog) => {
-            return dialog.element.querySelector('select[name="targetFolderId"]')?.value ?? "";
+          callback: (event, button, dialog) => {
+            const form = dialog.element.querySelector("form");
+            return form.querySelector('select[name="targetFolderId"]')?.value ?? "";
           }
         },
-        { action: "cancel", label: game.i18n.localize("CLUEBOOK.Folder.CancelBtn"), icon: "fas fa-times" }
+        {
+          action: "cancel",
+          label: game.i18n.localize("CLUEBOOK.Folder.CancelBtn"),
+          icon: "fas fa-times"
+        }
       ]
     });
 
-    if (result === null || result === undefined) return;
+    if (result === undefined || result === null) return;
 
-    const updates = {};
-    for (const id of ids) {
-      updates[`flags.ClueBook.data.${tab}.${id}.folderId`] = result;
-    }
-
-    await this._updateWorkspaceData(updates);
-    this.render({ parts: ["content"] });
-  }
-
-  async _onMassToggleVisibility(ids) {
     const updates = {};
     const workspaceData = this._getWorkspaceData();
-    let hideAll = false;
-    
-    // If any selected entry is visible, the action will hide all. Otherwise show all.
-    for (const id of ids) {
-       for (const [tab, list] of Object.entries(workspaceData)) {
-         if (list[id]) {
-           if (!list[id].isHidden) hideAll = true;
-           break;
-         }
-       }
-    }
-
     ids.forEach(id => {
-      for (const [tab, list] of Object.entries(workspaceData)) {
-        if (list[id]) {
-          updates[`flags.ClueBook.data.${tab}.${id}.isHidden`] = hideAll;
+      for (const [t, list] of Object.entries(workspaceData)) {
+        if (list && list[id]) {
+          updates[`flags.ClueBook.data.${t}.${id}.folderId`] = result;
+          break;
         }
       }
     });
 
     if (Object.keys(updates).length > 0) {
+      await this._updateWorkspaceData(updates);
+      this.render({ parts: ["content"] });
+    }
+  }
+
+  async _onMassToggleVisibility(ids, event = null) {
+    if (!game.user.isGM) return;
+    const workspaceData = this._getWorkspaceData();
+    const entries = [];
+    ids.forEach(id => {
+      for (const [tab, list] of Object.entries(workspaceData)) {
+        if (tab === "links" || tab === "folders") continue;
+        if (list && list[id]) {
+          entries.push({ tab, id, data: list[id] });
+          break;
+        }
+      }
+    });
+    if (entries.length === 0) return;
+
+    if (event?.shiftKey) {
+      let hideAll = false;
+      for (const e of entries) {
+        if (!e.data.isHidden) {
+          hideAll = true;
+          break;
+        }
+      }
+      const updates = {};
+      entries.forEach(e => {
+        updates[`flags.ClueBook.data.${e.tab}.${e.id}.isHidden`] = hideAll;
+        updates[`flags.ClueBook.data.${e.tab}.${e.id}.visibleTo`] = [];
+      });
+      await this._updateWorkspaceData(updates);
+      this.render({ parts: ["content"] });
+      return;
+    }
+
+    const allUsers = game.users.filter(u => !u.isGM);
+    let userCheckboxes = allUsers.map(u => {
+      return `
+        <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer;">
+          <input type="checkbox" name="visibleTo" value="${u.id}" checked>
+          <span style="font-weight: 500;">${u.name}</span>
+        </label>
+      `;
+    }).join('');
+
+    const content = `
+      <form id="cluebook-visibility-form" style="display: flex; flex-direction: column; gap: 12px; padding: 10px;">
+        <p class="notes" style="margin: 0; font-weight: bold; color: var(--color-text-highlight);">
+          ${game.i18n.format("CLUEBOOK.MassEdit.SelectedCount", { count: entries.length })}
+        </p>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btn-visible-all" style="flex: 1; padding: 6px 10px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(255,255,255,0.08); border: 1px solid var(--color-border-light-2); border-radius: 4px; color: var(--color-text-light-highlight);">
+            <i class="fas fa-eye"></i> ${game.i18n.localize("CLUEBOOK.Entry.VisibleToAll")}
+          </button>
+          <button type="button" id="btn-hide-all" style="flex: 1; padding: 6px 10px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(255,255,255,0.08); border: 1px solid var(--color-border-light-2); border-radius: 4px; color: var(--color-text-light-highlight);">
+            <i class="fas fa-eye-slash"></i> ${game.i18n.localize("CLUEBOOK.Entry.HideFromAll")}
+          </button>
+        </div>
+        <p class="hint" style="margin: 0; font-size: 12px; opacity: 0.8;">${game.i18n.localize("CLUEBOOK.Entry.SelectPlayers")}</p>
+        <div style="display: flex; flex-direction: column; max-height: 200px; overflow-y: auto; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 5px; border: 1px solid var(--color-border-light-1);">
+          ${userCheckboxes}
+        </div>
+      </form>
+    `;
+
+    const result = await foundry.applications.api.DialogV2.wait({
+      window: { title: game.i18n.localize("CLUEBOOK.Entry.VisibilityTitle") },
+      content: content,
+      render: (dialogEvent) => {
+        const root = dialogEvent.target?.element || dialogEvent.target || document;
+        const btnVisibleAll = root.querySelector("#btn-visible-all");
+        const btnHideAll = root.querySelector("#btn-hide-all");
+        const playerCbs = root.querySelectorAll('input[name="visibleTo"]');
+
+        if (btnVisibleAll) {
+          btnVisibleAll.addEventListener("click", (e) => {
+            e.preventDefault();
+            playerCbs.forEach(cb => cb.checked = true);
+          });
+        }
+        if (btnHideAll) {
+          btnHideAll.addEventListener("click", (e) => {
+            e.preventDefault();
+            playerCbs.forEach(cb => cb.checked = false);
+          });
+        }
+      },
+      buttons: [{
+        action: "save",
+        label: game.i18n.localize("CLUEBOOK.Entry.Save"),
+        icon: "fas fa-save",
+        callback: (btnEvent, button, dialog) => {
+          const form = dialog.element.querySelector("form");
+          const selected = Array.from(form.querySelectorAll('input[name="visibleTo"]:checked')).map(cb => cb.value);
+
+          if (selected.length === allUsers.length) {
+            return { isHidden: false, visibleTo: [] };
+          } else if (selected.length === 0) {
+            return { isHidden: true, visibleTo: [] };
+          } else {
+            return { isHidden: false, visibleTo: selected };
+          }
+        }
+      }],
+      rejectClose: false
+    });
+
+    if (result) {
+      const updates = {};
+      entries.forEach(e => {
+        updates[`flags.ClueBook.data.${e.tab}.${e.id}.isHidden`] = result.isHidden;
+        updates[`flags.ClueBook.data.${e.tab}.${e.id}.visibleTo`] = result.visibleTo;
+      });
       await this._updateWorkspaceData(updates);
       this.render({ parts: ["content"] });
     }
@@ -767,7 +871,8 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     // First pass to get all entries and their tags
     ids.forEach(id => {
       for (const [tab, list] of Object.entries(workspaceData)) {
-        if (list[id]) {
+        if (tab === "links" || tab === "folders") continue;
+        if (list && list[id]) {
            entries.push({ tab, id, data: list[id] });
            break;
         }
@@ -810,6 +915,9 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
           if (savedData.textColor) {
              updates[`${pathPrefix}.textColor`] = savedData.textColor;
           }
+          if (savedData.folderId !== undefined) {
+             updates[`${pathPrefix}.folderId`] = savedData.folderId;
+          }
           
           if (tagsToAdd.length > 0 || tagsToRemove.length > 0) {
              let currentTags = [...(entry.data.tags || [])];
@@ -839,13 +947,22 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
     const ids = Array.from(this.state.selectedEntries);
     if (ids.length === 0) return;
 
-    // Filter out pinned entries
-    const nonPinnedIds = ids.filter(id => {
-      const el = this.element.querySelector(`[data-entry-id="${id}"]`);
-      return !el || el.dataset.pinned !== "true";
+    const workspaceData = this._getWorkspaceData();
+    const entries = [];
+    ids.forEach(id => {
+      for (const [tab, list] of Object.entries(workspaceData)) {
+        if (tab === "links" || tab === "folders") continue;
+        if (list && list[id]) {
+          entries.push({ tab, id, data: list[id] });
+          break;
+        }
+      }
     });
 
-    if (nonPinnedIds.length === 0) {
+    // Filter out pinned entries
+    const nonPinnedEntries = entries.filter(e => !e.data.pinned);
+
+    if (nonPinnedEntries.length === 0) {
       ui.notifications.warn(game.i18n.localize("CLUEBOOK.Board.AllPinnedWarn"));
       return;
     }
@@ -854,33 +971,25 @@ export const ClueBookEntryActionsMixin = (Base) => class extends Base {
 
     const proceed = await foundry.applications.api.DialogV2.confirm({
       window: { title: isBoard ? game.i18n.localize("CLUEBOOK.AppActions.RemoveFromBoardTitle") : game.i18n.localize("CLUEBOOK.AppActions.DeleteGroupTitle") },
-      content: game.i18n.format(isBoard ? "CLUEBOOK.AppActions.RemoveFromBoardPrompt" : "CLUEBOOK.AppActions.DeleteGroupPrompt", { count: nonPinnedIds.length }),
+      content: game.i18n.format(isBoard ? "CLUEBOOK.AppActions.RemoveFromBoardPrompt" : "CLUEBOOK.AppActions.DeleteGroupPrompt", { count: nonPinnedEntries.length }),
       rejectClose: false
     });
 
     if (!proceed) return;
 
     const updates = {};
-    let links = this._getWorkspaceLinks();
-
+    const links = this._getWorkspaceLinks();
     const del = getForcedDeletion();
-    nonPinnedIds.forEach(id => {
-      const entryEl = this.element.querySelector(`[data-entry-id="${id}"]`);
-      if (entryEl) {
-        const sourceTab = entryEl.dataset.sourceTab;
-        if (sourceTab) {
-          if (isBoard) {
-            updates[`flags.ClueBook.data.${sourceTab}.${id}.onBoard`] = false;
-          } else {
-            updates[`flags.ClueBook.data.${sourceTab}.${id}`] = del;
-          }
-        }
+
+    nonPinnedEntries.forEach(e => {
+      if (isBoard) {
+        updates[`flags.ClueBook.data.${e.tab}.${e.id}.onBoard`] = false;
+      } else {
+        updates[`flags.ClueBook.data.${e.tab}.${e.id}`] = del;
       }
-      
-      // Delete associated links if we are completely deleting the entries, OR if we are removing them from the board (since they are no longer on the board to be linked)
-      // Actually, removing from board should also delete links attached to it
+
       for (const [key, l] of Object.entries(links)) {
-        if (l.source === id || l.target === id) {
+        if (l.source === e.id || l.target === e.id) {
           updates[`flags.ClueBook.data.links.${key}`] = del;
         }
       }
