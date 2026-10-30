@@ -98,6 +98,9 @@
             </div>
           </div>
         </div>
+        <div class="setting-row" style="margin-top: 8px;">
+          <button type="button" class="cluebook-btn" data-action="resetWidgetPositions" style="width: 100%; justify-content: center;"><i class="fas fa-undo"></i> {{localize "CLUEBOOK.Settings.ResetWidgetPositions"}}</button>
+        </div>
       </div>
 
 
@@ -168,6 +171,20 @@
           <div class="cb-toggle">
             <input type="checkbox" class="setting-input" id="cb-sw-photo-tilt" data-key="features.disablePhotoTilt" data-invert="true" {{#if (ne settings.features.disablePhotoTilt true)}}checked{{/if}}>
             <label for="cb-sw-photo-tilt"></label>
+          </div>
+        </div>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.ShowCardPortraits"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-card-portraits" data-key="features.showCardPortraits" {{#if settings.features.showCardPortraits}}checked{{/if}}>
+            <label for="cb-sw-card-portraits"></label>
+          </div>
+        </div>
+        <div class="setting-row flex-checkbox">
+          <label>{{localize "CLUEBOOK.Settings.ShowBacklinks"}}</label>
+          <div class="cb-toggle">
+            <input type="checkbox" class="setting-input" id="cb-sw-backlinks" data-key="features.showBacklinks" {{#if (ne settings.features.showBacklinks false)}}checked{{/if}}>
+            <label for="cb-sw-backlinks"></label>
           </div>
         </div>
       </div>

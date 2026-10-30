@@ -1,8 +1,8 @@
 export class TimeService {
 
   /**
-   * Identifies which calendar module is currently active.
-   * @returns {string} "simple-calendar", "calendaria", or "none"
+   * Identifies which calendar/time provider is currently active.
+   * @returns {"simple-calendar" | "calendaria" | "native"}
    */
   static getProvider() {
     if (window.SimpleCalendar?.api) return "simple-calendar";
@@ -11,11 +11,20 @@ export class TimeService {
   }
 
   /**
-   * Checks if any supported calendar module is active.
+   * Checks if time tracking is available (always true via native worldTime or external calendar).
    * @returns {boolean}
    */
   static isActive() {
     return this.getProvider() !== "none";
+  }
+
+  /**
+   * Checks whether an external calendar module (Simple Calendar or Calendaria) is active.
+   * @returns {boolean}
+   */
+  static hasExternalCalendar() {
+    const provider = this.getProvider();
+    return provider === "simple-calendar" || provider === "calendaria";
   }
 
   /**
@@ -363,58 +372,11 @@ export class TimeService {
     if (!this.isActive()) return;
     const provider = this.getProvider();
     if (provider === "simple-calendar") {
-      window.SimpleCalendar.api.showCalendar(); // SC has one UI for all
+      window.SimpleCalendar.api.showCalendar();
     } else if (provider === "calendaria") {
       if (window.CALENDARIA.api.showTimeKeeper) {
         window.CALENDARIA.api.showTimeKeeper();
       }
     }
-  }
-
-  /**
-   * Opens the weather UI (if supported).
-   */
-  static openWeather() {
-    if (!this.isActive()) return;
-    const provider = this.getProvider();
-    if (provider === "simple-calendar") {
-      window.SimpleCalendar.api.showCalendar();
-    } else if (provider === "calendaria") {
-      if (window.CALENDARIA.api.showChronicle) {
-        window.CALENDARIA.api.showChronicle();
-      }
-    }
-  }
-
-  /**
-   * Gets weather from the active provider or falls back to local.
-   * @returns {Object|null}
-   */
-  static getWeather() {
-    const provider = this.getProvider();
-    if (provider === "calendaria") {
-      try {
-        const w = window.CALENDARIA.api.getCurrentWeather();
-        const t = window.CALENDARIA.api.getTemperature();
-        const tempStr = window.CALENDARIA.api.formatTemperature ? window.CALENDARIA.api.formatTemperature(t) : `${t}°C`;
-        return {
-          weatherId: w?.id || "unknown",
-          weatherName: game.i18n.localize(w?.label || "CLUEBOOK.Weather.Unknown"),
-          weatherIcon: w?.icon || "fa-smog",
-          temperature: tempStr,
-          provider: "calendaria"
-        };
-      } catch (e) {
-        console.warn("ClueBook | Calendaria weather error:", e);
-      }
-    }
-    
-    // Fallback to ClueBook internal
-    const saved = game.settings.get("ClueBook", "calendarData") || {};
-    return {
-      weatherId: saved.weatherId ?? "fog",
-      temperature: saved.temperature ?? 13,
-      provider: "cluebook"
-    };
   }
 }

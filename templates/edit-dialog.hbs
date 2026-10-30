@@ -1,9 +1,7 @@
 <div class="cb-edit-dialog-form" style="padding: 10px; display: flex; flex-direction: column; gap: 10px; height: 100%; box-sizing: border-box;">
   
-  {{#if isGM}}
-    <input type="hidden" name="sceneUuid" value="{{entry.sceneUuid}}">
-    <input type="hidden" name="actorUuid" value="{{entry.actorUuid}}">
-  {{/if}}
+  <input type="hidden" name="sceneUuid" value="{{entry.sceneUuid}}">
+  <input type="hidden" name="actorUuid" value="{{entry.actorUuid}}">
 
   {{#if isMassEdit}}
   <p class="notes" style="margin-bottom: 5px; font-weight: bold; color: var(--color-text-highlight);">
@@ -86,6 +84,52 @@
         <input type="text" name="attitude" value="{{entry.attitude}}" class="cluebook-input" placeholder="🤝 {{localize 'CLUEBOOK.Entry.Attitude'}}" maxlength="150">
       </div>
     </div>
+    {{#if showCardPortraits}}
+    <div class="form-group cb-image-group" style="display: flex; flex-direction: column; gap: 6px;">
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <i class="fas fa-image" style="color: rgba(255,255,255,0.6); margin-left: 2px;"></i>
+        <input type="text" name="img" value="{{entry.img}}" class="cluebook-input" placeholder="🖼️ {{localize 'CLUEBOOK.Gallery.ImagePlaceholder'}}" style="flex: 1;">
+        <button type="button" class="btn-file-picker cluebook-btn" data-target="img" title="{{localize 'CLUEBOOK.Gallery.ChooseFile'}}" style="padding: 4px 10px; cursor: pointer; background: rgba(123, 97, 255, 0.3); border: 1px solid var(--cb-accent); color: white; border-radius: 4px;">
+          <i class="fas fa-folder-open"></i>
+        </button>
+        <button type="button" class="btn-remove-image cluebook-btn" title="{{localize 'CLUEBOOK.Gallery.RemoveImage'}}" style="padding: 4px 10px; cursor: pointer; background: rgba(255, 82, 82, 0.2); border: 1px solid #ff5252; color: #ff5252; border-radius: 4px;">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="cb-portrait-fit-controls" style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <div style="flex: 1;">
+            <label style="font-size: 11px; opacity: 0.7; margin-bottom: 2px; display: block;">{{localize 'CLUEBOOK.Gallery.FitMode'}}:</label>
+            <select name="cropMode" class="cluebook-input" style="width: 100%;">
+              <option value="contain" {{#if (or (eq entry.cropMode "contain") (not entry.cropMode))}}selected{{/if}}>🖼️ {{localize 'CLUEBOOK.Gallery.FitContain'}}</option>
+              <option value="cover" {{#if (eq entry.cropMode "cover")}}selected{{/if}}>📐 {{localize 'CLUEBOOK.Gallery.FitCover'}}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="cb-crop-advanced-controls" style="display: {{#if (eq entry.cropMode 'cover')}}flex{{else}}none{{/if}}; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <label style="font-size: 11px; opacity: 0.8; margin: 0; display: flex; align-items: center; gap: 5px;">
+              <i class="fas fa-search-plus"></i> {{localize 'CLUEBOOK.Gallery.CropZoom'}}:
+            </label>
+            <span class="cb-crop-val cb-crop-zoom-val" style="font-size: 11px; font-weight: bold; color: var(--cb-accent);">{{#if entry.cropZoom}}{{entry.cropZoom}}{{else}}100{{/if}}%</span>
+          </div>
+          <input type="range" name="cropZoom" min="10" max="300" step="5" value="{{#if entry.cropZoom}}{{entry.cropZoom}}{{else}}100{{/if}}" class="cluebook-slider" style="width: 100%; cursor: pointer;">
+
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px;">
+            <label style="font-size: 11px; opacity: 0.8; margin: 0; display: flex; align-items: center; gap: 5px;">
+              <i class="fas fa-arrows-alt-v"></i> {{localize 'CLUEBOOK.Gallery.CropOffsetY'}}:
+            </label>
+            <span class="cb-crop-val cb-crop-offsety-val" style="font-size: 11px; font-weight: bold; color: var(--cb-accent);">{{#if entry.cropOffsetY}}{{entry.cropOffsetY}}{{else if (eq entry.cropPosition 'top')}}15{{else if (eq entry.cropPosition 'bottom')}}85{{else}}50{{/if}}%</span>
+          </div>
+          <input type="range" name="cropOffsetY" min="0" max="100" step="1" value="{{#if entry.cropOffsetY}}{{entry.cropOffsetY}}{{else if (eq entry.cropPosition 'top')}}15{{else if (eq entry.cropPosition 'bottom')}}85{{else}}50{{/if}}" class="cluebook-slider" style="width: 100%; cursor: pointer;">
+        </div>
+      </div>
+      <div class="cb-img-preview-container" style="display: {{#if previewImg}}flex{{else}}none{{/if}}; justify-content: center; align-items: center; width: 100%; max-width: 240px; height: 180px; aspect-ratio: 4 / 3; margin: 0 auto; overflow: hidden; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); position: relative;">
+        <img class="cb-img-preview" src="{{previewImg}}" data-fallback-src="{{fallbackPortrait}}" style="width: 100%; height: 100%; object-fit: {{#if (eq entry.cropMode 'cover')}}cover{{else}}contain{{/if}}; border-radius: 4px;">
+      </div>
+    </div>
+    {{/if}}
   {{/if}}
 
   {{#if (eq sourceTab "locations")}}
@@ -100,6 +144,52 @@
         <input type="text" name="owner" value="{{entry.owner}}" class="cluebook-input" placeholder="👤 {{localize 'CLUEBOOK.Location.Owner'}}" maxlength="150">
       </div>
     </div>
+    {{#if showCardPortraits}}
+    <div class="form-group cb-image-group" style="display: flex; flex-direction: column; gap: 6px;">
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <i class="fas fa-image" style="color: rgba(255,255,255,0.6); margin-left: 2px;"></i>
+        <input type="text" name="img" value="{{entry.img}}" class="cluebook-input" placeholder="🖼️ {{localize 'CLUEBOOK.Gallery.ImagePlaceholder'}}" style="flex: 1;">
+        <button type="button" class="btn-file-picker cluebook-btn" data-target="img" title="{{localize 'CLUEBOOK.Gallery.ChooseFile'}}" style="padding: 4px 10px; cursor: pointer; background: rgba(123, 97, 255, 0.3); border: 1px solid var(--cb-accent); color: white; border-radius: 4px;">
+          <i class="fas fa-folder-open"></i>
+        </button>
+        <button type="button" class="btn-remove-image cluebook-btn" title="{{localize 'CLUEBOOK.Gallery.RemoveImage'}}" style="padding: 4px 10px; cursor: pointer; background: rgba(255, 82, 82, 0.2); border: 1px solid #ff5252; color: #ff5252; border-radius: 4px;">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="cb-portrait-fit-controls" style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <div style="flex: 1;">
+            <label style="font-size: 11px; opacity: 0.7; margin-bottom: 2px; display: block;">{{localize 'CLUEBOOK.Gallery.FitMode'}}:</label>
+            <select name="cropMode" class="cluebook-input" style="width: 100%;">
+              <option value="contain" {{#if (or (eq entry.cropMode "contain") (not entry.cropMode))}}selected{{/if}}>🖼️ {{localize 'CLUEBOOK.Gallery.FitContain'}}</option>
+              <option value="cover" {{#if (eq entry.cropMode "cover")}}selected{{/if}}>📐 {{localize 'CLUEBOOK.Gallery.FitCover'}}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="cb-crop-advanced-controls" style="display: {{#if (eq entry.cropMode 'cover')}}flex{{else}}none{{/if}}; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <label style="font-size: 11px; opacity: 0.8; margin: 0; display: flex; align-items: center; gap: 5px;">
+              <i class="fas fa-search-plus"></i> {{localize 'CLUEBOOK.Gallery.CropZoom'}}:
+            </label>
+            <span class="cb-crop-val cb-crop-zoom-val" style="font-size: 11px; font-weight: bold; color: var(--cb-accent);">{{#if entry.cropZoom}}{{entry.cropZoom}}{{else}}100{{/if}}%</span>
+          </div>
+          <input type="range" name="cropZoom" min="10" max="300" step="5" value="{{#if entry.cropZoom}}{{entry.cropZoom}}{{else}}100{{/if}}" class="cluebook-slider" style="width: 100%; cursor: pointer;">
+
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px;">
+            <label style="font-size: 11px; opacity: 0.8; margin: 0; display: flex; align-items: center; gap: 5px;">
+              <i class="fas fa-arrows-alt-v"></i> {{localize 'CLUEBOOK.Gallery.CropOffsetY'}}:
+            </label>
+            <span class="cb-crop-val cb-crop-offsety-val" style="font-size: 11px; font-weight: bold; color: var(--cb-accent);">{{#if entry.cropOffsetY}}{{entry.cropOffsetY}}{{else if (eq entry.cropPosition 'top')}}15{{else if (eq entry.cropPosition 'bottom')}}85{{else}}50{{/if}}%</span>
+          </div>
+          <input type="range" name="cropOffsetY" min="0" max="100" step="1" value="{{#if entry.cropOffsetY}}{{entry.cropOffsetY}}{{else if (eq entry.cropPosition 'top')}}15{{else if (eq entry.cropPosition 'bottom')}}85{{else}}50{{/if}}" class="cluebook-slider" style="width: 100%; cursor: pointer;">
+        </div>
+      </div>
+      <div class="cb-img-preview-container" style="display: {{#if previewImg}}flex{{else}}none{{/if}}; justify-content: center; align-items: center; width: 100%; max-width: 240px; height: 180px; aspect-ratio: 4 / 3; margin: 0 auto; overflow: hidden; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); position: relative;">
+        <img class="cb-img-preview" src="{{previewImg}}" data-fallback-src="{{fallbackPortrait}}" style="width: 100%; height: 100%; object-fit: {{#if (eq entry.cropMode 'cover')}}cover{{else}}contain{{/if}}; border-radius: 4px;">
+      </div>
+    </div>
+    {{/if}}
   {{/if}}
 
   {{#if (eq sourceTab "quests")}}
@@ -111,7 +201,19 @@
       </select>
     </div>
 
-    {{#if isSimpleCalendarActive}}
+    <!-- Time Mode Switch (Calendar vs Free-Text) -->
+    <div class="cb-segmented-control cb-time-mode-switch" style="margin-bottom: 8px;">
+      <label>
+        <input type="radio" name="timeInputType" value="calendar" {{#unless entry.useTextTime}}checked{{/unless}}>
+        <span><i class="fas fa-calendar-alt"></i> {{localize 'CLUEBOOK.Time.ModeCalendar'}}</span>
+      </label>
+      <label>
+        <input type="radio" name="timeInputType" value="text" {{#if entry.useTextTime}}checked{{/if}}>
+        <span><i class="fas fa-pen"></i> {{localize 'CLUEBOOK.Time.ModeText'}}</span>
+      </label>
+    </div>
+
+    <div class="cb-time-calendar-pane" {{#if entry.useTextTime}}style="display: none;"{{/if}}>
       <fieldset style="border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin: 0;">
         <legend style="padding: 0 5px; font-size: 13px; font-weight: bold;">
           <label style="cursor: pointer; display: flex; align-items: center; gap: 5px;">
@@ -133,22 +235,24 @@
           {{{deadlineDateHTML}}}
         </div>
       </fieldset>
-    {{else}}
+    </div>
+
+    <div class="cb-time-text-pane" {{#unless entry.useTextTime}}style="display: none;"{{/unless}}>
       <fieldset style="border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin: 0;">
         <legend style="padding: 0 5px; font-size: 13px; font-weight: bold;">{{localize 'CLUEBOOK.Time.TimeDeadline'}}</legend>
         <div class="cb-segmented-control">
           <label>
-            <input type="radio" name="timeMode" value="by" {{#if (or (eq entry.timeMode "by") (not entry.timeMode))}}checked{{/if}}>
+            <input type="radio" name="textTimeMode" value="by" {{#if (or (eq entry.timeMode "by") (not entry.timeMode))}}checked{{/if}}>
             <span><i class="fas fa-hourglass-end"></i> {{localize 'CLUEBOOK.Time.By'}}</span>
           </label>
           <label>
-            <input type="radio" name="timeMode" value="at" {{#if (eq entry.timeMode "at")}}checked{{/if}}>
+            <input type="radio" name="textTimeMode" value="at" {{#if (eq entry.timeMode "at")}}checked{{/if}}>
             <span><i class="fas fa-clock"></i> {{localize 'CLUEBOOK.Time.At'}}</span>
           </label>
         </div>
         <input type="text" name="deadline" value="{{entry.deadline}}" class="cluebook-input" placeholder="{{localize 'CLUEBOOK.Time.InputPlaceholder'}}">
       </fieldset>
-    {{/if}}
+    </div>
 
     <fieldset class="cb-completed-time-fieldset" style="border: 1px solid rgba(76, 175, 80, 0.3); padding: 10px; border-radius: 4px; margin-top: 8px; {{#unless (eq entry.status 'completed')}}display: none;{{/unless}}">
       <legend style="padding: 0 5px; font-size: 13px; font-weight: bold; color: #81c784;">
@@ -164,7 +268,19 @@
   {{/if}}
 
   {{#if (eq sourceTab "timeline")}}
-    {{#if isSimpleCalendarActive}}
+    <!-- Time Mode Switch (Calendar vs Free-Text) -->
+    <div class="cb-segmented-control cb-time-mode-switch" style="margin-bottom: 8px;">
+      <label>
+        <input type="radio" name="timeInputType" value="calendar" {{#unless entry.useTextTime}}checked{{/unless}}>
+        <span><i class="fas fa-calendar-alt"></i> {{localize 'CLUEBOOK.Time.ModeCalendar'}}</span>
+      </label>
+      <label>
+        <input type="radio" name="timeInputType" value="text" {{#if entry.useTextTime}}checked{{/if}}>
+        <span><i class="fas fa-pen"></i> {{localize 'CLUEBOOK.Time.ModeText'}}</span>
+      </label>
+    </div>
+
+    <div class="cb-time-calendar-pane" {{#if entry.useTextTime}}style="display: none;"{{/if}}>
       <fieldset style="border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin: 0;">
         <legend style="padding: 0 5px; font-size: 13px; font-weight: bold; color: #4caf50;">
           <i class="fas fa-play"></i> {{localize 'CLUEBOOK.Time.StartTime'}}
@@ -172,7 +288,7 @@
         {{{startDateHTML}}}
       </fieldset>
       
-      <fieldset style="border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin: 0;">
+      <fieldset style="border: 1px solid rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin-top: 8px;">
         <legend style="padding: 0 5px; font-size: 13px; font-weight: bold; color: #ff5252;">
           <i class="fas fa-stop"></i> {{localize 'CLUEBOOK.Time.EndTime'}}
         </legend>
@@ -203,11 +319,13 @@
           </div>
         </div>
       </fieldset>
-    {{else}}
+    </div>
+
+    <div class="cb-time-text-pane" {{#unless entry.useTextTime}}style="display: none;"{{/unless}}>
       <div class="form-group" style="display: flex; flex-direction: column;">
-        <input type="text" name="time" value="{{entry.time}}" class="cluebook-input cb-input-lg" placeholder="🕑 {{localize 'CLUEBOOK.Time.TimeDate'}}">
+        <input type="text" name="time" value="{{entry.time}}" class="cluebook-input cb-input-lg" placeholder="🕑 {{localize 'CLUEBOOK.Time.InputPlaceholder'}}">
       </div>
-    {{/if}}
+    </div>
   {{/if}}
 
   {{#if (eq sourceTab "gallery")}}
@@ -215,7 +333,7 @@
       <input type="text" name="name" value="{{entry.name}}" class="cluebook-input cb-input-lg" placeholder="📸 {{localize 'CLUEBOOK.Gallery.TitlePlaceholder'}}">
     </div>
 
-    <!-- Style Selector: Polaroid vs Frameless -->
+    <!-- Style Selector: Polaroid vs Frameless vs Backdrop -->
     <div class="form-group" style="display: flex; gap: 8px; align-items: center;">
       <label style="font-size: 12px; font-weight: bold; color: rgba(255,255,255,0.7); margin-left: 2px;">{{localize 'CLUEBOOK.Gallery.Style'}}:</label>
       <div class="cb-segmented-control" style="flex: 1;">
@@ -225,27 +343,43 @@
         </label>
         <label>
           <input type="radio" name="frameStyle" value="frameless" {{#if (eq entry.frameStyle "frameless")}}checked{{/if}}>
-          <span><i class="fas fa-map"></i> {{localize 'CLUEBOOK.Gallery.StyleFrameless'}}</span>
+          <span><i class="fas fa-border-none"></i> {{localize 'CLUEBOOK.Gallery.StyleFrameless'}}</span>
+        </label>
+        <label>
+          <input type="radio" name="frameStyle" value="backdrop" {{#if (eq entry.frameStyle "backdrop")}}checked{{/if}}>
+          <span><i class="fas fa-map"></i> {{localize 'CLUEBOOK.Gallery.StyleBackdrop'}}</span>
         </label>
       </div>
     </div>
 
     <!-- Crop / Fit Mode Selector -->
-    <div class="form-group" style="display: flex; gap: 8px; align-items: center;">
-      <div style="flex: 1;">
-        <label style="font-size: 11px; opacity: 0.7; margin-bottom: 2px; display: block;">{{localize 'CLUEBOOK.Gallery.FitMode'}}:</label>
-        <select name="cropMode" class="cluebook-input" style="width: 100%;">
-          <option value="contain" {{#if (or (eq entry.cropMode "contain") (not entry.cropMode))}}selected{{/if}}>🖼️ {{localize 'CLUEBOOK.Gallery.FitContain'}}</option>
-          <option value="cover" {{#if (eq entry.cropMode "cover")}}selected{{/if}}>📐 {{localize 'CLUEBOOK.Gallery.FitCover'}}</option>
-        </select>
+    <div class="cb-portrait-fit-controls" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px;">
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <div style="flex: 1;">
+          <label style="font-size: 11px; opacity: 0.7; margin-bottom: 2px; display: block;">{{localize 'CLUEBOOK.Gallery.FitMode'}}:</label>
+          <select name="cropMode" class="cluebook-input" style="width: 100%;">
+            <option value="contain" {{#if (or (eq entry.cropMode "contain") (not entry.cropMode))}}selected{{/if}}>🖼️ {{localize 'CLUEBOOK.Gallery.FitContain'}}</option>
+            <option value="cover" {{#if (eq entry.cropMode "cover")}}selected{{/if}}>📐 {{localize 'CLUEBOOK.Gallery.FitCover'}}</option>
+          </select>
+        </div>
       </div>
-      <div style="flex: 1;">
-        <label style="font-size: 11px; opacity: 0.7; margin-bottom: 2px; display: block;">{{localize 'CLUEBOOK.Gallery.FocalPoint'}}:</label>
-        <select name="cropPosition" class="cluebook-input" style="width: 100%;">
-          <option value="center" {{#if (or (eq entry.cropPosition "center") (not entry.cropPosition))}}selected{{/if}}>🎯 {{localize 'CLUEBOOK.Gallery.PosCenter'}}</option>
-          <option value="top" {{#if (eq entry.cropPosition "top")}}selected{{/if}}>⬆️ {{localize 'CLUEBOOK.Gallery.PosTop'}}</option>
-          <option value="bottom" {{#if (eq entry.cropPosition "bottom")}}selected{{/if}}>⬇️ {{localize 'CLUEBOOK.Gallery.PosBottom'}}</option>
-        </select>
+
+      <div class="cb-crop-advanced-controls" style="display: {{#if (eq entry.cropMode 'cover')}}flex{{else}}none{{/if}}; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <label style="font-size: 11px; opacity: 0.8; margin: 0; display: flex; align-items: center; gap: 5px;">
+            <i class="fas fa-search-plus"></i> {{localize 'CLUEBOOK.Gallery.CropZoom'}}:
+          </label>
+          <span class="cb-crop-val cb-crop-zoom-val" style="font-size: 11px; font-weight: bold; color: var(--cb-accent);">{{#if entry.cropZoom}}{{entry.cropZoom}}{{else}}100{{/if}}%</span>
+        </div>
+        <input type="range" name="cropZoom" min="10" max="300" step="5" value="{{#if entry.cropZoom}}{{entry.cropZoom}}{{else}}100{{/if}}" class="cluebook-slider" style="width: 100%; cursor: pointer;">
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px;">
+          <label style="font-size: 11px; opacity: 0.8; margin: 0; display: flex; align-items: center; gap: 5px;">
+            <i class="fas fa-arrows-alt-v"></i> {{localize 'CLUEBOOK.Gallery.CropOffsetY'}}:
+          </label>
+          <span class="cb-crop-val cb-crop-offsety-val" style="font-size: 11px; font-weight: bold; color: var(--cb-accent);">{{#if entry.cropOffsetY}}{{entry.cropOffsetY}}{{else if (eq entry.cropPosition 'top')}}15{{else if (eq entry.cropPosition 'bottom')}}85{{else}}50{{/if}}%</span>
+        </div>
+        <input type="range" name="cropOffsetY" min="0" max="100" step="1" value="{{#if entry.cropOffsetY}}{{entry.cropOffsetY}}{{else if (eq entry.cropPosition 'top')}}15{{else if (eq entry.cropPosition 'bottom')}}85{{else}}50{{/if}}" class="cluebook-slider" style="width: 100%; cursor: pointer;">
       </div>
     </div>
 
@@ -263,12 +397,12 @@
       </div>
 
       <!-- Image Preview Container -->
-      <div class="cb-img-preview-container" style="display: {{#if entry.img}}flex{{else}}none{{/if}}; justify-content: center; align-items: center; max-height: 160px; overflow: hidden; border-radius: 4px; background: rgba(0,0,0,0.3); position: relative;">
-        <img class="cb-img-preview" src="{{entry.img}}" style="max-height: 160px; max-width: 100%; object-fit: contain; border-radius: 4px;">
+      <div class="cb-img-preview-container" style="display: {{#if entry.img}}flex{{else}}none{{/if}}; justify-content: center; align-items: center; width: 100%; max-width: 240px; height: 180px; aspect-ratio: 4 / 3; margin: 0 auto; overflow: hidden; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); position: relative;">
+        <img class="cb-img-preview" src="{{entry.img}}" style="width: 100%; height: 100%; object-fit: {{#if (eq entry.cropMode 'cover')}}cover{{else}}contain{{/if}}; border-radius: 4px;">
       </div>
 
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <input type="text" name="caption" value="{{entry.caption}}" class="cluebook-input" placeholder="✍️ {{localize 'CLUEBOOK.Gallery.CaptionPlaceholder'}}" style="flex: 1;">
+      <div style="display: flex; gap: 8px; align-items: flex-start;">
+        <textarea name="caption" rows="3" class="cluebook-input" placeholder="✍️ {{localize 'CLUEBOOK.Gallery.CaptionPlaceholder'}}" style="flex: 1; resize: vertical;">{{entry.caption}}</textarea>
       </div>
     </div>
   {{/if}}
@@ -332,6 +466,14 @@
           <option value="transparent" {{#if (eq entry.bgStyle "transparent")}}selected{{/if}}>🚫 {{localize 'CLUEBOOK.Label.BgTransparent'}}</option>
         </select>
       </div>
+    </div>
+
+    <!-- Table of Contents Toggle for Whiteboard Navigation -->
+    <div class="form-group" style="margin-top: 10px;">
+      <label class="cb-checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px 12px; user-select: none;">
+        <input type="checkbox" name="isToc" {{#if entry.isToc}}checked{{/if}} style="cursor: pointer; width: 16px; height: 16px;">
+        <span style="font-size: 12.5px; font-weight: 600; color: #fff;"><i class="fas fa-list-ol" style="color: var(--cb-accent); margin-right: 4px;"></i> {{localize 'CLUEBOOK.Label.IsToc'}}</span>
+      </label>
     </div>
   {{/if}}
 

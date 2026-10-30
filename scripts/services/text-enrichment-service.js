@@ -44,12 +44,13 @@ export class TextEnrichmentService {
    */
   static enrichMentionsToHTML(text) {
     if (!text) return "";
+    const esc = (s) => foundry.utils?.escapeHTML ? foundry.utils.escapeHTML(String(s ?? "")) : String(s ?? "");
     return String(text).replace(
       this.MENTION_REGEX,
       (match, id, name, customText) => {
-        const displayText = (customText && customText.trim()) || name || "";
-        const titleHint = game.i18n ? game.i18n.format("CLUEBOOK.App.GoToEntry", { name: name }) : name;
-        return `<a class="content-link cb-mention-link" data-mention-id="${id}" title="${titleHint}"><i class="fas fa-link" style="font-size: 9px; opacity: 0.7;"></i>${displayText}</a>`;
+        const displayText = esc((customText && customText.trim()) || name || "");
+        const safeId = esc(id);
+        return `<a class="content-link cb-mention-link" data-mention-id="${safeId}"><i class="fas fa-link" style="font-size: 9px; opacity: 0.7;"></i>${displayText}</a>`;
       }
     );
   }

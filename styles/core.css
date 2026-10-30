@@ -11,7 +11,7 @@
   --cb-text-muted: #8b8b99;
   --cb-input-bg: rgba(0, 0, 0, 0.25);
   --cb-danger: #ff5252;
-  transition: opacity 0.3s ease !important;
+  transition: opacity 0.3s ease;
 }
 
 
@@ -118,7 +118,7 @@
 
 
 /* --- Tabs Sidebar --- */
-.cluebook-tabs {
+.cluebook-window .cluebook-tabs {
   flex: 0 0 60px;
   background: rgba(0, 0, 0, 0.3);
   border-right: 1px solid var(--cb-border);
@@ -126,14 +126,14 @@
   flex-direction: column;
 }
 
-.cluebook-tabs .tabs {
+.cluebook-window .cluebook-tabs .tabs {
   display: flex;
   flex-direction: column;
   height: 100%;
   padding-top: 10px;
 }
 
-.cluebook-tabs .item {
+.cluebook-window .cluebook-tabs .item {
   width: 100%;
   height: 54px;
   display: flex;
@@ -146,17 +146,17 @@
   position: relative;
 }
 
-.cluebook-tabs .item:hover {
+.cluebook-window .cluebook-tabs .item:hover {
   color: white;
   background: rgba(255, 255, 255, 0.05);
 }
 
-.cluebook-tabs .item.active {
+.cluebook-window .cluebook-tabs .item.active {
   color: var(--cb-accent);
   background: rgba(123, 97, 255, 0.1);
 }
 
-.cluebook-tabs .item.active::before {
+.cluebook-window .cluebook-tabs .item.active::before {
   content: '';
   position: absolute;
   left: 0;
@@ -168,7 +168,7 @@
   box-shadow: 0 0 8px var(--cb-accent-glow);
 }
 
-.cluebook-tabs .item .cb-tab-badge {
+.cluebook-window .cluebook-tabs .item .cb-tab-badge {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -189,20 +189,20 @@
   user-select: none;
 }
 
-.cluebook-tabs .item.active .cb-tab-badge {
+.cluebook-window .cluebook-tabs .item.active .cb-tab-badge {
   background: #ffffff;
   color: var(--cb-accent, #7b61ff);
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
   border-color: #ffffff;
 }
 
-.cluebook-tabs .mode-toggle {
+.cluebook-window .cluebook-tabs .mode-toggle {
   margin-top: auto;
   border-top: 1px solid var(--cb-border);
   background: rgba(0,0,0,0.1);
 }
 
-.cluebook-tabs .mode-toggle a {
+.cluebook-window .cluebook-tabs .mode-toggle a {
   width: 100%;
   height: 60px;
   display: flex;
@@ -214,18 +214,18 @@
   transition: all 0.3s ease;
 }
 
-.cluebook-tabs .mode-toggle a:hover {
+.cluebook-window .cluebook-tabs .mode-toggle a:hover {
   color: var(--cb-accent);
   text-shadow: 0 0 8px var(--cb-accent-glow);
 }
 
 
 /* --- Search --- */
-.search-container {
+.cluebook-window .search-container {
   position: relative;
   width: 100%;
 }
-.search-icon {
+.cluebook-window .search-icon {
   position: absolute;
   left: 10px;
   top: 50%;
@@ -233,7 +233,7 @@
   color: rgba(255,255,255,0.5);
   font-size: 14px;
 }
-.cluebook-search-input {
+.cluebook-window .cluebook-search-input {
   width: 100%;
   background: rgba(0,0,0,0.3);
   border: 1px solid rgba(255,255,255,0.2);
@@ -242,6 +242,21 @@
   padding: 8px 10px 8px 30px;
   font-family: 'Signika', sans-serif;
   transition: all 0.2s ease;
+}
+.cluebook-window .search-clear-btn,
+.cluebook-window #cluebook-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: rgba(255,255,255,0.6);
+  font-size: 14px;
+  transition: color 0.2s;
+}
+.cluebook-window .search-clear-btn:hover,
+.cluebook-window #cluebook-search-clear:hover {
+  color: #fff;
 }
 
 /* --- Segmented Status Filters --- */
@@ -374,13 +389,13 @@
 }
 
 .cluebook-window .cb-folder-section.is-dragover {
-  border: 2px dashed var(--cb-accent, #7b61ff) !important;
-  background: rgba(123, 97, 255, 0.15) !important;
+  border: 2px dashed var(--cb-accent, #7b61ff);
+  background: rgba(123, 97, 255, 0.15);
   box-shadow: 0 0 16px rgba(123, 97, 255, 0.35);
 }
 
 .cluebook-window .cb-folder-section.is-folder-dragover {
-  border-top: 3px solid var(--cb-accent, #7b61ff) !important;
+  border-top: 3px solid var(--cb-accent, #7b61ff);
 }
 
 .cluebook-window .cb-folder-section.is-folder-dragging {
@@ -517,14 +532,17 @@
   display: contents;
 }
 
-.cb-folder-form .color-swatch:has(input:checked) {
+.cb-folder-form .color-swatch:has(input:checked),
+.cb-edit-dialog .color-swatch:has(input:checked),
+.cluebook-window .color-swatch:has(input:checked) {
   outline: 2px solid #ffffff;
   outline-offset: 2px;
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
   transform: scale(1.2);
 }
 
-.board-recenter-btn {
+.cluebook-window .board-recenter-btn,
+.cluebook-window .cb-zen-exit-btn {
   position: absolute;
   top: 15px;
   right: 15px;
@@ -544,15 +562,116 @@
   transition: all 0.2s ease;
 }
 
-.board-recenter-btn:hover {
+.cluebook-window .board-recenter-btn:hover,
+.cluebook-window .cb-zen-exit-btn:hover {
   background: var(--cb-accent);
   color: #fff;
   transform: scale(1.1);
   box-shadow: 0 0 15px var(--cb-accent-glow);
 }
 
+.cluebook-window .board-toc-btn {
+  position: absolute;
+  top: 15px;
+  right: 65px;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--cb-accent);
+  border: 1px solid var(--cb-border);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  font-size: 16px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  transition: all 0.2s ease;
+}
+
+.cluebook-window .board-toc-btn:hover {
+  background: var(--cb-accent);
+  color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 0 15px var(--cb-accent-glow);
+}
+
+.cluebook-window .cb-board-toc-popover {
+  position: absolute;
+  top: 62px;
+  right: 65px;
+  z-index: 110;
+  min-width: 220px;
+  max-width: 320px;
+  max-height: 380px;
+  overflow-y: auto;
+  background: rgba(22, 25, 35, 0.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cluebook-window .cb-board-toc-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cluebook-window .cb-board-toc-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cluebook-window .cb-board-toc-item:hover {
+  background: rgba(123, 97, 255, 0.25);
+  color: #fff;
+  transform: translateX(3px);
+}
+
+.cluebook-window .cb-board-zoom-badge {
+  position: absolute;
+  top: 18px;
+  right: 115px;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.6);
+  color: #e0e0e0;
+  border: 1px solid var(--cb-border);
+  border-radius: 12px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
 /* --- Multi-Selection Floating HUD --- */
-.cb-selection-hud {
+.cluebook-window .cb-selection-hud {
   position: absolute;
   bottom: 20px;
   left: 50%;
@@ -583,7 +702,7 @@
   }
 }
 
-.cb-selection-hud-info {
+.cluebook-window .cb-selection-hud-info {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -592,16 +711,16 @@
   color: #ffffff;
 }
 
-.cb-selection-hud-info i {
+.cluebook-window .cb-selection-hud-info i {
   color: var(--cb-accent, #7b61ff);
 }
 
-.cb-selection-count {
+.cluebook-window .cb-selection-count {
   color: #93c5fd;
   font-weight: 700;
 }
 
-.cb-selection-hud-clear {
+.cluebook-window .cb-selection-hud-clear {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #cbd5e1;
@@ -617,14 +736,14 @@
   padding: 0;
 }
 
-.cb-selection-hud-clear:hover {
+.cluebook-window .cb-selection-hud-clear:hover {
   background: rgba(239, 68, 68, 0.3);
   border-color: #ef4444;
   color: #ffffff;
   transform: scale(1.1);
 }
 
-.cluebook-search-input:focus {
+.cluebook-window .cluebook-search-input:focus {
   border-color: var(--cb-accent);
   box-shadow: 0 0 5px var(--cb-accent-glow);
   outline: none;
@@ -632,7 +751,7 @@
 
 
 /* --- Content Area --- */
-.cluebook-content {
+.cluebook-window .cluebook-content {
   flex: 1;
   padding: 15px 20px;
   overflow-y: auto;
@@ -641,16 +760,17 @@
   flex-direction: column;
 }
 
-.cluebook-content::-webkit-scrollbar {
+.cluebook-window .cluebook-content::-webkit-scrollbar {
   width: 6px;
 }
-.cluebook-content::-webkit-scrollbar-track {
+.cluebook-window .cluebook-content::-webkit-scrollbar-track {
   background: transparent;
 }
 
 
 /* --- Inputs (Adapted for Light BG) --- */
-.cluebook-input {
+.cluebook-window .cluebook-input,
+.cb-edit-dialog .cluebook-input {
   width: 100%;
   background: rgba(0,0,0,0.05);
   border: 1px solid transparent;
@@ -663,26 +783,30 @@
   transition: all 0.2s ease;
 }
 
-.cluebook-input::placeholder {
+.cluebook-window .cluebook-input::placeholder,
+.cb-edit-dialog .cluebook-input::placeholder {
   color: rgba(0,0,0,0.4);
   font-style: italic;
 }
 
-.cluebook-input:focus {
+.cluebook-window .cluebook-input:focus,
+.cb-edit-dialog .cluebook-input:focus {
   outline: none;
   background: rgba(255, 255, 255, 0.5);
   border-bottom-color: var(--cb-accent);
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-textarea.cluebook-input {
+.cluebook-window textarea.cluebook-input,
+.cb-edit-dialog textarea.cluebook-input {
   resize: none;
   overflow-y: hidden;
   min-height: 80px;
   line-height: 1.4;
 }
 
-select.cluebook-input {
+.cluebook-window select.cluebook-input,
+.cb-edit-dialog select.cluebook-input {
   appearance: none;
   cursor: pointer;
   background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
@@ -697,7 +821,8 @@ select.cluebook-input {
 }
 
 /* --- Pin Icon Picker Options --- */
-.cb-icon-option {
+.cluebook-window .cb-icon-option,
+.cb-edit-dialog .cb-icon-option {
   cursor: pointer;
   width: 36px;
   height: 36px;
@@ -713,24 +838,26 @@ select.cluebook-input {
   user-select: none;
 }
 
-.cb-icon-option:hover {
+.cluebook-window .cb-icon-option:hover,
+.cb-edit-dialog .cb-icon-option:hover {
   background: rgba(255, 255, 255, 0.16);
   border-color: rgba(255, 255, 255, 0.35);
   color: #ffffff;
   transform: translateY(-2px);
 }
 
-.cb-icon-option.active {
-  background: var(--cb-accent, #7b61ff) !important;
-  border-color: #ffffff !important;
-  color: #ffffff !important;
+.cluebook-window .cb-icon-option.active,
+.cb-edit-dialog .cb-icon-option.active {
+  background: var(--cb-accent, #7b61ff);
+  border-color: #ffffff;
+  color: #ffffff;
   box-shadow: 0 0 12px var(--cb-accent-glow, rgba(123, 97, 255, 0.6)), inset 0 0 4px rgba(255, 255, 255, 0.4);
   transform: scale(1.1);
 }
 
 
 /* --- Buttons --- */
-.cluebook-content .add-entry-btn-container {
+.cluebook-window .cluebook-content .add-entry-btn-container {
   position: sticky;
   bottom: 20px;
   margin-top: 20px;
@@ -741,7 +868,7 @@ select.cluebook-input {
   pointer-events: none; /* Let clicks pass through container */
 }
 
-.cluebook-content .add-entry-btn-container button {
+.cluebook-window .cluebook-content .add-entry-btn-container button {
   pointer-events: auto; /* Re-enable clicks for button */
   width: auto;
   min-width: 170px;
@@ -762,20 +889,20 @@ select.cluebook-input {
   backdrop-filter: blur(8px);
 }
 
-.cluebook-content .add-entry-btn-container button:hover {
+.cluebook-window .cluebook-content .add-entry-btn-container button:hover {
   background: white;
   color: var(--cb-accent);
   box-shadow: 0 6px 25px var(--cb-accent-glow);
   transform: translateY(-2px) scale(1.02);
 }
 
-.cluebook-content .add-entry-btn-container button.cb-folder-add-btn {
+.cluebook-window .cluebook-content .add-entry-btn-container button.cb-folder-add-btn {
   background: rgba(30, 30, 45, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.9);
 }
 
-.cluebook-content .add-entry-btn-container button.cb-folder-add-btn:hover {
+.cluebook-window .cluebook-content .add-entry-btn-container button.cb-folder-add-btn:hover {
   background: rgba(255, 255, 255, 0.18);
   border-color: rgba(255, 255, 255, 0.4);
   color: #ffffff;
@@ -791,10 +918,10 @@ select.cluebook-input {
 
 /* --- Quest Time Modes --- */
 
-
-
 /* --- Premium Quest Time Badge --- */
-.cb-quest-time-badge {
+.cluebook-window .cb-quest-time-badge,
+.cb-hover-popover .cb-quest-time-badge,
+.cb-epic-overlay .cb-quest-time-badge {
   display: flex;
   align-items: stretch;
   background: rgba(0, 0, 0, 0.4);
@@ -804,7 +931,9 @@ select.cluebook-input {
   margin-top: 5px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
-.cb-quest-time-badge.is-overdue {
+.cluebook-window .cb-quest-time-badge.is-overdue,
+.cb-hover-popover .cb-quest-time-badge.is-overdue,
+.cb-epic-overlay .cb-quest-time-badge.is-overdue {
   border-color: #ff5252;
   box-shadow: 0 0 8px rgba(255, 82, 82, 0.5);
   animation: qnPulseOverdue 2s infinite;
@@ -884,7 +1013,8 @@ select.cluebook-input {
 
 
 /* --- Segmented Control --- */
-.cb-segmented-control {
+.cluebook-window .cb-segmented-control,
+.cb-edit-dialog .cb-segmented-control {
   display: flex;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 6px;
@@ -892,7 +1022,8 @@ select.cluebook-input {
   border: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 10px;
 }
-.cb-segmented-control label {
+.cluebook-window .cb-segmented-control label,
+.cb-edit-dialog .cb-segmented-control label {
   flex: 1;
   text-align: center;
   padding: 6px 10px;
@@ -904,49 +1035,60 @@ select.cluebook-input {
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   margin: 0;
 }
-.cb-segmented-control label:last-child {
+.cluebook-window .cb-segmented-control label:last-child,
+.cb-edit-dialog .cb-segmented-control label:last-child {
   border-right: none;
 }
-.cb-segmented-control input[type="radio"] {
+.cluebook-window .cb-segmented-control input[type="radio"],
+.cb-edit-dialog .cb-segmented-control input[type="radio"] {
   display: none;
 }
-.cb-segmented-control label:has(input[type="radio"]:checked) {
+.cluebook-window .cb-segmented-control label:has(input[type="radio"]:checked),
+.cb-edit-dialog .cb-segmented-control label:has(input[type="radio"]:checked) {
   background: rgba(123, 97, 255, 0.35);
   box-shadow: inset 0 0 10px rgba(123, 97, 255, 0.25);
   color: #c4b5fd;
 }
-.cb-segmented-control label:has(input[value="polaroid"]:checked) {
+.cluebook-window .cb-segmented-control label:has(input[value="polaroid"]:checked),
+.cb-edit-dialog .cb-segmented-control label:has(input[value="polaroid"]:checked) {
   background: rgba(255, 183, 77, 0.35);
   box-shadow: inset 0 0 10px rgba(255, 183, 77, 0.25);
   color: #ffb74d;
 }
-.cb-segmented-control label:has(input[value="frameless"]:checked) {
+.cluebook-window .cb-segmented-control label:has(input[value="frameless"]:checked),
+.cb-edit-dialog .cb-segmented-control label:has(input[value="frameless"]:checked) {
   background: rgba(0, 188, 212, 0.35);
   box-shadow: inset 0 0 10px rgba(0, 188, 212, 0.25);
   color: #4dd0e1;
 }
-.cb-segmented-control label:has(input[value="by"]:checked) {
+.cluebook-window .cb-segmented-control label:has(input[value="by"]:checked),
+.cb-edit-dialog .cb-segmented-control label:has(input[value="by"]:checked) {
   background: rgba(33, 150, 243, 0.3);
   box-shadow: inset 0 0 10px rgba(33, 150, 243, 0.2);
   color: #64b5f6;
 }
-.cb-segmented-control label:has(input[value="at"]:checked),
-.cb-segmented-control label:has(input[value="true"]:checked) {
+.cluebook-window .cb-segmented-control label:has(input[value="at"]:checked),
+.cluebook-window .cb-segmented-control label:has(input[value="true"]:checked),
+.cb-edit-dialog .cb-segmented-control label:has(input[value="at"]:checked),
+.cb-edit-dialog .cb-segmented-control label:has(input[value="true"]:checked) {
   background: rgba(76, 175, 80, 0.3);
   box-shadow: inset 0 0 10px rgba(76, 175, 80, 0.2);
   color: #81c784;
 }
-.cb-segmented-control.npc-status-control label:has(input[value="alive"]:checked) {
+.cluebook-window .cb-segmented-control.npc-status-control label:has(input[value="alive"]:checked),
+.cb-edit-dialog .cb-segmented-control.npc-status-control label:has(input[value="alive"]:checked) {
   background: rgba(76, 175, 80, 0.3);
   box-shadow: inset 0 0 10px rgba(76, 175, 80, 0.2);
   color: #81c784;
 }
-.cb-segmented-control.npc-status-control label:has(input[value="dead"]:checked) {
+.cluebook-window .cb-segmented-control.npc-status-control label:has(input[value="dead"]:checked),
+.cb-edit-dialog .cb-segmented-control.npc-status-control label:has(input[value="dead"]:checked) {
   background: rgba(255, 82, 82, 0.3);
   box-shadow: inset 0 0 10px rgba(255, 82, 82, 0.2);
   color: #ff5252;
 }
-.cb-segmented-control.npc-status-control label:has(input[value="unknown"]:checked) {
+.cluebook-window .cb-segmented-control.npc-status-control label:has(input[value="unknown"]:checked),
+.cb-edit-dialog .cb-segmented-control.npc-status-control label:has(input[value="unknown"]:checked) {
   background: rgba(255, 152, 0, 0.3);
   box-shadow: inset 0 0 10px rgba(255, 152, 0, 0.2);
   color: #ffb74d;
@@ -954,10 +1096,10 @@ select.cluebook-input {
 
 
 /* --- Dead NPC Highlight --- */
-.cluebook-entry.is-dead {
+.cluebook-window .cluebook-entry.is-dead {
   filter: grayscale(0.8) opacity(0.85);
 }
-.cluebook-entry.is-dead .display-title {
+.cluebook-window .cluebook-entry.is-dead .display-title {
   text-decoration: line-through;
   text-decoration-thickness: 2px;
   text-decoration-color: rgba(0,0,0,0.6);
@@ -966,7 +1108,7 @@ select.cluebook-input {
 
 
 /* --- Premium Board Legend --- */
-.board-hotkeys-hint.premium-legend {
+.cluebook-window .board-hotkeys-hint.premium-legend {
   position: absolute;
   bottom: 25px;
   right: 25px;
@@ -982,7 +1124,7 @@ select.cluebook-input {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   min-width: 250px;
 }
-.premium-legend .legend-header {
+.cluebook-window .premium-legend .legend-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -995,26 +1137,26 @@ select.cluebook-input {
   letter-spacing: 1px;
   font-size: 11px;
 }
-.premium-legend .legend-header .close-legend {
+.cluebook-window .premium-legend .legend-header .close-legend {
   cursor: pointer;
   opacity: 0.5;
   transition: opacity 0.2s, color 0.2s;
 }
-.premium-legend .legend-header .close-legend:hover {
+.cluebook-window .premium-legend .legend-header .close-legend:hover {
   opacity: 1;
   color: #ff5252;
 }
-.premium-legend .legend-grid {
+.cluebook-window .premium-legend .legend-grid {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.premium-legend .legend-item {
+.cluebook-window .premium-legend .legend-item {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-.premium-legend .legend-item kbd {
+.cluebook-window .premium-legend .legend-item kbd {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
@@ -1026,10 +1168,8 @@ select.cluebook-input {
   text-align: center;
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
 }
-
-
 /* --- Lasso and Group Selection --- */
-.cb-lasso-box {
+.cluebook-window .cb-lasso-box {
   position: absolute;
   border: 1px solid var(--cb-accent);
   background: rgba(123, 97, 255, 0.15);
@@ -1040,10 +1180,10 @@ select.cluebook-input {
 }
 
 .cluebook-window .cluebook-entry.is-selected {
-  outline: 2px solid #7b61ff !important;
-  outline-offset: 2px !important;
-  box-shadow: 0 0 0 2px rgba(123, 97, 255, 0.4), 0 0 20px rgba(123, 97, 255, 0.6), 0 10px 25px rgba(0, 0, 0, 0.35) !important;
-  z-index: 50 !important;
+  outline: 2px solid #7b61ff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(123, 97, 255, 0.4), 0 0 20px rgba(123, 97, 255, 0.6), 0 10px 25px rgba(0, 0, 0, 0.35);
+  z-index: 50;
 }
 
 .cluebook-window .cluebook-entry.is-selected::after {
@@ -1068,7 +1208,8 @@ select.cluebook-input {
 
 
 /* --- GM Notes Callout (Obsidian Style) --- */
-.cb-gm-callout {
+.cluebook-window .cb-gm-callout,
+.cb-edit-dialog .cb-gm-callout {
   margin-top: 12px;
   background: rgba(0, 0, 0, 0.08);
   border-left: 4px solid rgba(0, 0, 0, 0.4);
@@ -1077,7 +1218,7 @@ select.cluebook-input {
   flex-direction: column;
 }
 
-.cb-gm-callout-header {
+.cb-gm-callout .cb-gm-callout-header {
   padding: 6px 10px 4px 10px;
   font-size: 11px;
   font-weight: 700;
@@ -1090,97 +1231,97 @@ select.cluebook-input {
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.cb-gm-callout-body {
+.cb-gm-callout .cb-gm-callout-body {
   padding: 6px 10px 8px 10px;
   font-size: 14.5px;
   color: rgba(0, 0, 0, 0.9);
   line-height: 1.4;
 }
 
-/* Force override Foundry's default paragraph margins inside GM Notes */
-.cb-gm-callout-body > *:first-child {
-  margin-top: 0 !important;
+/* Override Foundry's default paragraph margins inside GM Notes */
+.cb-gm-callout .cb-gm-callout-body > *:first-child {
+  margin-top: 0;
 }
-.cb-gm-callout-body > *:last-child {
-  margin-bottom: 0 !important;
+.cb-gm-callout .cb-gm-callout-body > *:last-child {
+  margin-bottom: 0;
 }
 
-.cb-gm-callout-body p {
-  margin: 0 0 6px 0 !important;
+.cb-gm-callout .cb-gm-callout-body p {
+  margin: 0 0 6px 0;
 }
-.cb-gm-callout-body p:last-child {
-  margin-bottom: 0 !important;
+.cb-gm-callout .cb-gm-callout-body p:last-child {
+  margin-bottom: 0;
 }
 
 /* Hide accidental empty paragraphs created by TinyMCE at the start */
-.cb-gm-callout-body > p:empty,
-.cb-gm-callout-body > p > br:only-child {
-  display: none !important;
+.cb-gm-callout .cb-gm-callout-body > p:empty,
+.cb-gm-callout .cb-gm-callout-body > p > br:only-child {
+  display: none;
 }
 
 
 /* --- Hover Link Highlight --- */
-.board-canvas.is-dimmed .cluebook-entry:not(.is-highlighted-node) {
-  opacity: 0.3 !important;
+.cluebook-window .board-canvas.is-dimmed .cluebook-entry:not(.is-highlighted-node) {
+  opacity: 0.3;
   filter: grayscale(0.6);
   transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.2s ease;
 }
 
-.board-canvas.is-dimmed .cluebook-entry.is-highlighted-node {
-  z-index: 100 !important;
-  box-shadow: 0 0 25px var(--cb-accent-glow), 0 0 10px rgba(255,255,255,0.2) !important;
+.cluebook-window .board-canvas.is-dimmed .cluebook-entry.is-highlighted-node {
+  z-index: 100;
+  box-shadow: 0 0 25px var(--cb-accent-glow), 0 0 10px rgba(255,255,255,0.2);
   transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.3s ease;
 }
 
-.board-canvas .cluebook-entry {
+.cluebook-window .board-canvas .cluebook-entry {
   transition: opacity 0.3s ease, filter 0.3s ease, box-shadow 0.2s ease, stroke-width 0.3s ease;
 }
 
 /* Custom Text Color for Cards */
-.cluebook-entry[data-text-color="light"] {
+.cluebook-window .cluebook-entry[data-text-color="light"] {
   color: #f8f9fa;
 }
-.cluebook-entry[data-text-color="light"] .display-text,
-.cluebook-entry[data-text-color="light"] .display-text p,
-.cluebook-entry[data-text-color="light"] .display-text span,
-.cluebook-entry[data-text-color="light"] .display-text a,
-.cluebook-entry[data-text-color="light"] .display-text h1,
-.cluebook-entry[data-text-color="light"] .display-text h2,
-.cluebook-entry[data-text-color="light"] .display-text h3,
-.cluebook-entry[data-text-color="light"] .display-title,
-.cluebook-entry[data-text-color="light"] .cb-smart-badge,
-.cluebook-entry[data-text-color="light"] .timeline-event {
-  color: #f8f9fa !important;
+.cluebook-window .cluebook-entry[data-text-color="light"] .display-text,
+.cluebook-window .cluebook-entry[data-text-color="light"] .display-text p,
+.cluebook-window .cluebook-entry[data-text-color="light"] .display-text span,
+.cluebook-window .cluebook-entry[data-text-color="light"] .display-text a,
+.cluebook-window .cluebook-entry[data-text-color="light"] .display-text h1,
+.cluebook-window .cluebook-entry[data-text-color="light"] .display-text h2,
+.cluebook-window .cluebook-entry[data-text-color="light"] .display-text h3,
+.cluebook-window .cluebook-entry[data-text-color="light"] .display-title,
+.cluebook-window .cluebook-entry[data-text-color="light"] .cb-smart-badge,
+.cluebook-window .cluebook-entry[data-text-color="light"] .timeline-event {
+  color: #f8f9fa;
 }
-.cluebook-entry[data-text-color="light"] .cb-smart-badge {
+.cluebook-window .cluebook-entry[data-text-color="light"] .cb-smart-badge {
   background: rgba(255,255,255,0.15);
 }
-.cluebook-entry[data-text-color="light"] .entry-controls a {
+.cluebook-window .cluebook-entry[data-text-color="light"] .entry-controls a {
   color: #f8f9fa;
 }
-.cluebook-entry[data-text-color="light"] .cb-quest-time-badge .qtb-value-text,
-.cluebook-entry[data-text-color="light"] .cb-quest-time-badge .qtb-label-small {
+.cluebook-window .cluebook-entry[data-text-color="light"] .cb-quest-time-badge .qtb-value-text,
+.cluebook-window .cluebook-entry[data-text-color="light"] .cb-quest-time-badge .qtb-label-small {
   color: rgba(255,255,255,0.9);
 }
-.cluebook-entry[data-text-color="light"] .cb-quest-time-badge .qtb-value {
+.cluebook-window .cluebook-entry[data-text-color="light"] .cb-quest-time-badge .qtb-value {
   color: #fff;
 }
-.cluebook-entry[data-text-color="light"] .cb-link-chip {
+.cluebook-window .cluebook-entry[data-text-color="light"] .cb-link-chip {
   color: #f8f9fa;
   background: rgba(255,255,255,0.15);
 }
-.cluebook-entry[data-text-color="light"] i.fa-heartbeat {
-  color: #69f0ae !important;
+.cluebook-window .cluebook-entry[data-text-color="light"] i.fa-heartbeat {
+  color: #69f0ae;
 }
-.cluebook-entry[data-text-color="light"] i.fa-skull {
-  color: rgba(255,255,255,0.8) !important;
+.cluebook-window .cluebook-entry[data-text-color="light"] i.fa-skull {
+  color: rgba(255,255,255,0.8);
 }
-.cluebook-entry[data-text-color="light"] i.fa-question-circle {
-  color: rgba(255,255,255,0.6) !important;
+.cluebook-window .cluebook-entry[data-text-color="light"] i.fa-question-circle {
+  color: rgba(255,255,255,0.6);
 }
-.cluebook-entry[data-text-color="light"].is-dead .display-title {
+.cluebook-window .cluebook-entry[data-text-color="light"].is-dead .display-title {
   text-decoration-color: rgba(255, 255, 255, 0.6);
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* --- Links & Mentions styling across ClueBook (Clean Typography) --- */
@@ -1202,26 +1343,26 @@ select.cluebook-input {
 .cb-edit-dialog .cb-mention-link,
 .cb-tracker-widget a.content-link,
 .cb-tracker-widget a[data-action="jumpToMention"] {
-  background: transparent !important;
-  background-color: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  color: inherit !important;
-  font-weight: 700 !important;
-  text-decoration: underline !important;
-  text-decoration-thickness: 1px !important;
-  text-underline-offset: 2px !important;
-  display: inline !important;
-  cursor: pointer !important;
-  white-space: normal !important;
-  word-break: normal !important;
-  overflow-wrap: break-word !important;
-  hyphens: manual !important;
-  line-height: inherit !important;
-  transition: opacity 0.2s ease !important;
+  background: transparent;
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  display: inline;
+  cursor: pointer;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: manual;
+  line-height: inherit;
+  transition: opacity 0.2s ease;
 }
 
 .cluebook-window a.content-link:hover,
@@ -1242,11 +1383,11 @@ select.cluebook-input {
 .cb-edit-dialog .cb-mention-link:hover,
 .cb-tracker-widget a.content-link:hover,
 .cb-tracker-widget a[data-action="jumpToMention"]:hover {
-  background: transparent !important;
-  background-color: transparent !important;
-  border: none !important;
-  opacity: 0.75 !important;
-  text-decoration: underline !important;
+  background: transparent;
+  background-color: transparent;
+  border: none;
+  opacity: 0.75;
+  text-decoration: underline;
 }
 
 .cluebook-window a.content-link i,
@@ -1267,12 +1408,15 @@ select.cluebook-input {
 .cb-edit-dialog .cb-mention-link i,
 .cb-tracker-widget a.content-link i,
 .cb-tracker-widget a[data-action="jumpToMention"] i {
-  display: none !important;
+  font-size: 0.85em;
+  opacity: 0.85;
+  margin-right: 2px;
+  color: inherit;
 }
 
 
 /* --- Empty State --- */
-.cb-empty-state {
+.cluebook-window .cb-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1287,12 +1431,12 @@ select.cluebook-input {
   pointer-events: none;
 }
 
-.cb-empty-state i {
+.cluebook-window .cb-empty-state i {
   font-size: 48px;
   margin-bottom: 15px;
   opacity: 0.5;
 }
-.cb-empty-state p {
+.cluebook-window .cb-empty-state p {
   font-size: 16px;
   line-height: 1.5;
   margin: 0;
@@ -1302,24 +1446,24 @@ select.cluebook-input {
 
 /* --- Custom Scene Dialog --- */
 .cluebook-scene-dialog {
-  background: rgba(26, 26, 36, 0.85) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 8px !important;
-  color: #fff !important;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
+  background: rgba(26, 26, 36, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
 
 .cluebook-scene-dialog .window-header {
-  background: rgba(0,0,0,0.3) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: #fff !important;
-  border-radius: 8px 8px 0 0 !important;
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 8px 8px 0 0;
 }
 
 .cluebook-scene-dialog .window-content {
-  background: transparent !important;
+  background: transparent;
 }
 
 .cluebook-scene-dialog .dialog-content {
@@ -1327,46 +1471,40 @@ select.cluebook-input {
 }
 
 .cluebook-scene-dialog .dialog-buttons .dialog-button {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  color: #fff !important;
-  transition: all 0.2s ease !important;
-  border-radius: 6px !important;
-  margin: 0 5px !important;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  margin: 0 5px;
 }
 
 .cluebook-scene-dialog .dialog-buttons .dialog-button:hover {
-  background: rgba(123, 97, 255, 0.4) !important;
-  border-color: #7b61ff !important;
-  box-shadow: 0 0 10px rgba(123, 97, 255, 0.3) !important;
+  background: rgba(123, 97, 255, 0.4);
+  border-color: #7b61ff;
+  box-shadow: 0 0 10px rgba(123, 97, 255, 0.3);
 }
-
-
-
-
-
-
 
 
 /* --- Edit Dialog Restyling --- */
-.cb-input-lg {
-  font-size: 16px !important;
+.cb-edit-dialog .cb-input-lg {
+  font-size: 16px;
   font-weight: bold;
-  height: 36px !important;
+  height: 36px;
 }
 
-.cb-dropzone {
+.cb-edit-dialog .cb-dropzone {
   position: relative;
 }
 
-.cb-linked-badges {
+.cb-edit-dialog .cb-linked-badges {
   display: flex;
   gap: 5px;
   flex-wrap: wrap;
   margin-bottom: 5px;
 }
 
-.cb-badge {
+.cb-edit-dialog .cb-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1380,20 +1518,20 @@ select.cluebook-input {
   transition: all 0.2s;
 }
 
-.cb-badge:hover {
+.cb-edit-dialog .cb-badge:hover {
   filter: brightness(1.2);
   transform: translateY(-1px);
 }
 
-.cb-badge-scene {
+.cb-edit-dialog .cb-badge-scene {
   background: #4caf50;
 }
-.cb-badge-actor {
+.cb-edit-dialog .cb-badge-actor {
   background: #2196F3;
 }
 
 /* Tabs */
-.cb-tabs-container {
+.cb-edit-dialog .cb-tabs-container {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -1403,13 +1541,13 @@ select.cluebook-input {
   overflow: hidden;
 }
 
-.cb-tab-headers {
+.cb-edit-dialog .cb-tab-headers {
   display: flex;
   background: rgba(0,0,0,0.2);
   border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-.cb-tab-header {
+.cb-edit-dialog .cb-tab-header {
   flex: 1;
   padding: 6px 10px;
   text-align: center;
@@ -1424,39 +1562,39 @@ select.cluebook-input {
   gap: 6px;
 }
 
-.cb-tab-header:hover {
+.cb-edit-dialog .cb-tab-header:hover {
   opacity: 1;
   background: rgba(255,255,255,0.05);
 }
 
-.cb-tab-header.active {
+.cb-edit-dialog .cb-tab-header.active {
   opacity: 1;
   background: rgba(255,255,255,0.1);
   box-shadow: inset 0 -2px 0 var(--cb-accent);
 }
 
-.cb-tab-content {
+.cb-edit-dialog .cb-tab-content {
   display: none;
   padding: 8px;
   flex-direction: column;
 }
 
-.cb-tab-content.active {
+.cb-edit-dialog .cb-tab-content.active {
   display: flex;
   flex: 1;
 }
 
-.cb-tab-content textarea {
-  border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  box-shadow: none !important;
+.cb-edit-dialog .cb-tab-content textarea {
+  border: none;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
   flex: 1;
   resize: none;
 }
 
-.cb-tab-content textarea:focus {
-  box-shadow: none !important;
+.cb-edit-dialog .cb-tab-content textarea:focus {
+  box-shadow: none;
 }
 
 
@@ -1695,14 +1833,19 @@ select.cluebook-input {
 /* TAGS SYSTEM                                                               */
 /* ========================================================================= */
 
-.cluebook-tags-container {
+.cluebook-window .cluebook-tags-container,
+.cb-edit-dialog .cluebook-tags-container,
+.cb-overlay-card .cluebook-tags-container {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
   margin-top: 10px;
 }
 
-.cb-tag {
+.cluebook-window .cb-tag,
+.cb-edit-dialog .cb-tag,
+.cb-tag-manager .cb-tag,
+.cb-overlay-card .cb-tag {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -1719,23 +1862,29 @@ select.cluebook-input {
   cursor: default;
 }
 
-.cb-tag.cb-tag-secret {
+.cluebook-window .cb-tag.cb-tag-secret,
+.cb-edit-dialog .cb-tag.cb-tag-secret,
+.cb-tag-manager .cb-tag.cb-tag-secret,
+.cb-overlay-card .cb-tag.cb-tag-secret {
   border-style: dashed;
   opacity: 0.8;
 }
 
-.cb-tag:hover {
+.cluebook-window .cb-tag:hover,
+.cb-edit-dialog .cb-tag:hover,
+.cb-tag-manager .cb-tag:hover,
+.cb-overlay-card .cb-tag:hover {
   transform: translateY(-1px);
   filter: brightness(1.2);
 }
 
-.cb-tag-remove {
+.cb-tag .cb-tag-remove {
   cursor: pointer;
   opacity: 0.6;
   transition: opacity 0.2s;
 }
 
-.cb-tag-remove:hover {
+.cb-tag .cb-tag-remove:hover {
   opacity: 1;
   color: #ff5252;
 }
@@ -1748,11 +1897,11 @@ select.cluebook-input {
   gap: 15px;
 }
 
-.cb-tm-header {
+.cluebook-tag-manager .cb-tm-header {
   flex: 0 0 auto;
 }
 
-.cb-tm-list {
+.cluebook-tag-manager .cb-tm-list {
   flex: 1;
   overflow-y: auto;
   display: flex;
@@ -1761,7 +1910,7 @@ select.cluebook-input {
   padding-right: 5px;
 }
 
-.cb-tm-row {
+.cluebook-tag-manager .cb-tm-row {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1771,7 +1920,7 @@ select.cluebook-input {
   border: 1px solid rgba(255,255,255,0.1);
 }
 
-.cb-tm-color {
+.cluebook-tag-manager .cb-tm-color {
   width: 30px;
   height: 30px;
   border: none;
@@ -1781,11 +1930,11 @@ select.cluebook-input {
   background: transparent;
 }
 
-.cb-tm-name {
+.cluebook-tag-manager .cb-tm-name {
   flex: 1;
 }
 
-.cb-tm-secret {
+.cluebook-tag-manager .cb-tm-secret {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1798,12 +1947,12 @@ select.cluebook-input {
   transition: all 0.2s;
 }
 
-.cb-tm-secret:has(input:checked) {
+.cluebook-tag-manager .cb-tm-secret:has(input:checked) {
   color: #fbc02d;
   background: rgba(251, 192, 45, 0.2);
 }
 
-.cb-tm-delete {
+.cluebook-tag-manager .cb-tm-delete {
   width: 30px;
   height: 30px;
   background: rgba(255, 0, 0, 0.1);
@@ -1817,32 +1966,36 @@ select.cluebook-input {
   transition: all 0.2s;
 }
 
-.cb-tm-delete:hover {
+.cluebook-tag-manager .cb-tm-delete:hover {
   background: rgba(255, 0, 0, 0.3);
 }
 
-.cb-tm-empty {
+.cluebook-tag-manager .cb-tm-empty {
   text-align: center;
   color: rgba(255,255,255,0.4);
   font-style: italic;
   padding: 20px;
 }
 
-.cb-tm-footer {
+.cluebook-tag-manager .cb-tm-footer {
   flex: 0 0 auto;
   display: flex;
   justify-content: space-between;
   gap: 10px;
 }
 
-.cb-ws-item {
+.cb-overlay-workspaces .cb-ws-item,
+.cb-floating-menu .cb-ws-item,
+.cluebook-window .cb-ws-item {
   padding: 8px 16px;
   color: #e0e0e0;
   cursor: pointer;
   transition: background 0.2s;
 }
 
-.cb-ws-item:hover {
+.cb-overlay-workspaces .cb-ws-item:hover,
+.cb-floating-menu .cb-ws-item:hover,
+.cluebook-window .cb-ws-item:hover {
   background: rgba(123, 97, 255, 0.3);
   color: white;
 }
@@ -1939,17 +2092,116 @@ select.cluebook-input {
 }
 
 /* Light Text Color overrides for dark themes */
-.cluebook-entry[data-text-color="light"] {
+.cluebook-window .cluebook-entry[data-text-color="light"] {
   color: #ffffff;
 }
-.cluebook-entry[data-text-color="light"] .entry-subtitle,
-.cluebook-entry[data-text-color="light"] .entry-time,
-.cluebook-entry[data-text-color="light"] .entry-location,
-.cluebook-entry[data-text-color="light"] .entry-owner {
+.cluebook-window .cluebook-entry[data-text-color="light"] .entry-subtitle,
+.cluebook-window .cluebook-entry[data-text-color="light"] .entry-time,
+.cluebook-window .cluebook-entry[data-text-color="light"] .entry-location,
+.cluebook-window .cluebook-entry[data-text-color="light"] .entry-owner {
   color: rgba(255, 255, 255, 0.7);
 }
-.cluebook-entry[data-text-color="light"] .entry-header i {
+.cluebook-window .cluebook-entry[data-text-color="light"] .entry-header i {
   color: rgba(255, 255, 255, 0.9);
+}
+
+/* --- Board Connection Settings Dialog (DialogV2) --- */
+.cb-board-link-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 6px 2px;
+  color: var(--cb-text, #e0e0e0);
+}
+
+.cb-board-link-dialog .cb-link-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cb-board-link-dialog .cb-link-setting,
+.cb-board-link-dialog .cb-link-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cb-board-link-dialog .cb-link-setting label,
+.cb-board-link-dialog .cb-link-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cb-text, #e0e0e0);
+}
+
+.cb-board-link-dialog input[type="text"],
+.cb-board-link-dialog select {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+.cb-board-link-dialog input[type="text"]:focus,
+.cb-board-link-dialog select:focus {
+  border-color: var(--cb-accent, #7b61ff);
+  outline: none;
+  box-shadow: 0 0 6px var(--cb-accent-glow, rgba(123, 97, 255, 0.4));
+}
+
+.cb-board-link-dialog .cb-link-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cb-board-link-dialog .cb-link-color-picker,
+.cb-board-link-dialog input[type="color"] {
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.cb-board-link-dialog .cb-link-color-reset {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cb-board-link-dialog .cb-link-color-reset:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.cb-board-link-dialog .cb-color-presets {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.cb-board-link-dialog .cb-color-preset {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.cb-board-link-dialog .cb-color-preset:hover {
+  transform: scale(1.2);
+  border-color: #fff;
 }
 
 /* --- Zen Mode --- */

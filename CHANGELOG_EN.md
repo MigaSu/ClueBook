@@ -2,6 +2,44 @@
 
 All notable changes, refactoring, and bug fixes are documented in this file.
 
+## [2.1.0] - 2026-10-30
+
+### 🛡️ Data Integrity & Dual Foundry VTT v13 / v14 Compatibility (Issues #8, #9)
+* **Centralized `WorkspaceRepository`:** Routed all `User` and `JournalEntry` flag mutations through a per-document write serialization queue (`#writeQueues`) with sibling-preserving merges, completely eliminating card/category overwrites in Foundry v14.365+.
+* **Dual v13/v14 Safe Deletions & Self-Healing:** Added `assignDeletion()` (`ForcedDeletion` on v14, `"-=key": null` on v13) and automatic cleanup of corrupted `null` entries/folders in `_sanitizeData()`.
+
+### ⏪ Global Undo System (Ctrl+Z / Cmd+Z Undo Service)
+* **25-Step History & Coalescing:** Added `UndoService` with 850ms coalescing of rapid keystrokes/slider adjustments and fine-grained inverse dot-path rollbacks that never overwrite concurrent actions by other players on shared boards.
+* **Window-Level Capture Listener:** Added a global `capture: true` keyboard handler (`window.addEventListener('keydown', ..., true)`) with immediate propagation suppression to prevent Foundry's canvas from inadvertently rolling back tokens when working within ClueBook.
+* **Canvas Movement Rollback:** Instant canvas redraw when undoing card moves on the Whiteboard.
+
+### 🔍 Smart Backlinks & Rich Hover Preview Popovers
+* **Automatic Backlinks:** Added a collapsible "Mentioned In (N)" (`cb-backlinks-details`) section on cards with chips for cards referencing the current entry. Toggleable in module settings.
+* **Rich Glassmorphic Hover Popover:** Hovering over backlink chips (`.cb-backlink-chip`), explicit link chips (`.cb-link-chip`), and inline `@mentions` (`.cb-mention-link`) displays a preview popover containing category color, title, task status / NPC health / location badges, portrait thumbnail (with Actor avatar fallback for NPCs), and text snippet.
+* **Native Tooltip Elimination:** Stripped native `title` attributes from chips and links to prevent ugly default browser tooltips from obscuring the rich popover.
+* **Viewport-Aware Fixed Positioning:** Uses `position: fixed !important` with dynamic measurement, automatic vertical flip when near screen bottom, and clamping to viewport edges.
+* **Whiteboard Click Isolation:** Interacting with backlink chips or expanding the details section is isolated from whiteboard dragging logic.
+
+### 🖼️ Whiteboard Enhancements, Backdrops & Card Zooming
+* **Backdrop Mode for Gallery:** Added a "Backdrop" option for gallery cards with zero z-index and `pointer-events: none` on the artwork, enabling map underlays with unrestricted card placement and pin placement above. Controls are accessible via a corner menu handle `.cb-backdrop-menu-handle`.
+* **Flexible Zoom Slider (10%–300%):** Expanded the card image zoom slider down to 10% (for creating miniatures and wide-angle overviews) and up to 300%, with a 4:3 preview container in the edit dialog matching card display 1:1.
+* **Whiteboard Table of Contents:** Added a "Make Table of Contents" (`isToc: true`) setting for board labels, providing a quick navigation list on the whiteboard floating toolbar with smooth pan/zoom centering.
+* **Double Click Edit for Labels:** Double clicking a whiteboard label opens the full editing dialog cleanly.
+
+### 🔒 Access Control & Security Hardening (`WorkspaceAccessService`)
+* **Unified Visibility Filtering (ACL):** Hidden cards, secret folders, and secret tags are now strictly filtered across tab counters, pin popovers, links, `@mention` autocomplete, task tracker, 3D overlay broadcasts, and JSON exports.
+* **Read-Only Board Enforcement & Category Edit Fix (Issue #6):** Fixed card editing across category tabs and `personal_<userId>` notebooks, and enforced `isReadOnly` guards across board context menus and link actions.
+
+### ✨ Community Feature Requests & UX Enhancements (Issues #1, #2, #10, #11)
+* **Portraits on NPC & Location Cards (Issue #1):** Added a toggleable setting to display portraits/thumbnails resolved from linked `Actor`/`Scene` documents or custom images across Grid, Board, Table, and List views.
+* **Flexible Time Mode (`Calendar & Timer` vs `Free Text`):** Added a mode switcher in Task & Timeline editors to support free-form text dates without Unix `1970` timestamps, plus manual Drag & Drop reordering for untimed/text items in `TrackerWidget`.
+* **Detective Terminology (Issue #2):** Updated UI labels from RPG "Quests" to investigation-themed **"Tasks"** (`Tasks / Задачи / Aufgaben / Tâches`) across all 4 languages with 100% backward data compatibility.
+* **Multi-Line Polaroid Captions (Issue #11):** Upgraded photo captions to multi-line `<textarea>` inputs with `white-space: pre-line` rendering.
+* **Safe FAB Position & Reset Action (Issue #10):** Moved the default floating widget startup position above Foundry's `#players` box and added a "Reset Floating Widget Positions" button (`api.resetWidgetPositions()`).
+
+### 🧹 Codebase Cleanup & CSS Isolation
+* Extracted `MentionAutocompleteController`, deleted dead `styles/calendar.css` and unused methods/localization keys, and tightened root-scoped CSS rules.
+
 ## [2.0.1] - 2026-08-26
 
 ### 📢 Share Overlay & Player Clues

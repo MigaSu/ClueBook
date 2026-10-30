@@ -48,6 +48,11 @@
   <button class="board-recenter-btn" title="{{localize "CLUEBOOK.Board.Recenter"}}" data-action="recenterBoard">
     <i class="fas fa-crosshairs"></i>
   </button>
+  {{#if boardTocItems.length}}
+  <button class="board-toc-btn" title="{{localize "CLUEBOOK.Board.Toc"}}" data-action="openBoardToc">
+    <i class="fas fa-list-ol"></i>
+  </button>
+  {{/if}}
   {{/if}}
 
   {{#unless (or isBoardView (eq activeTab "gallery"))}}

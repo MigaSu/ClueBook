@@ -1,40 +1,40 @@
-import { ClueBookEntryModel } from "./data-models.js";
-import { TextEnrichmentService } from "./services/text-enrichment-service.js";
+import { WorkspaceRepository } from "./services/workspace-repository.js";
+import { WorkspaceAccessService } from "./services/workspace-access-service.js";
 
 export class ClueBookOverlay {
   static init() {
-    // Listen for socket events to show overlay
     game.socket.on("module.ClueBook", (message) => {
-      if (message.action === "showOverlay" && message.content) {
-        this.show(message.content, message.entry, message.sourceTab);
+      try {
+        if (message?.action === "showOverlay" && message.content) {
+          this.show(message.content, message.entry, message.sourceTab);
+        }
+      } catch (err) {
+        console.error("ClueBook | Overlay socket error:", err);
       }
     });
   }
 
   static show(contentHTML, entry = null, sourceTab = null) {
-    // Remove existing overlay if any
-    const existing = document.getElementById('cb-share-overlay');
+    const existing = document.getElementById("cb-share-overlay");
     if (existing) existing.remove();
 
-    // Create backdrop container
-    const backdrop = document.createElement('div');
-    backdrop.id = 'cb-share-overlay';
-    backdrop.className = 'cb-overlay-backdrop';
+    const backdrop = document.createElement("div");
+    backdrop.id = "cb-share-overlay";
+    backdrop.className = "cb-overlay-backdrop";
 
-    // Create 3D container
-    const container = document.createElement('div');
-    container.className = 'cb-overlay-container';
+    const container = document.createElement("div");
+    container.className = "cb-overlay-container";
 
-    // Create the card
-    const card = document.createElement('div');
-    card.className = 'cb-overlay-card app window-app cb-epic-overlay';
-    card.insertAdjacentHTML('beforeend', contentHTML);
+    const card = document.createElement("div");
+    card.className = "cb-overlay-card app window-app cb-epic-overlay";
+    const parsedContent = new DOMParser().parseFromString(String(contentHTML || ""), "text/html");
+    parsedContent.querySelectorAll("script, iframe, object, embed").forEach(el => el.remove());
+    card.append(...parsedContent.body.childNodes);
 
-    // Create Close Button
-    const closeBtn = document.createElement('div');
-    closeBtn.className = 'cb-overlay-close';
-    const closeIcon = document.createElement('i');
-    closeIcon.className = 'fas fa-times';
+    const closeBtn = document.createElement("div");
+    closeBtn.className = "cb-overlay-close";
+    const closeIcon = document.createElement("i");
+    closeIcon.className = "fas fa-times";
     closeBtn.appendChild(closeIcon);
     closeBtn.onclick = (e) => {
       e.stopPropagation();
@@ -42,47 +42,53 @@ export class ClueBookOverlay {
     };
     card.appendChild(closeBtn);
 
-    // If entry data is provided, add the 'Add Clue' button
     if (entry && sourceTab) {
-      const addBtnContainer = document.createElement('div');
-      addBtnContainer.className = 'cb-overlay-add-container';
-      
-      const addBtn = document.createElement('button');
-      addBtn.className = 'cb-overlay-add-btn';
-      const addIcon = document.createElement('i');
-      addIcon.className = 'fas fa-plus';
+      const addBtnContainer = document.createElement("div");
+      addBtnContainer.className = "cb-overlay-add-container";
+
+      const addBtn = document.createElement("button");
+      addBtn.type = "button";
+      addBtn.className = "cb-overlay-add-btn";
+      const addIcon = document.createElement("i");
+      addIcon.className = "fas fa-plus";
       addBtn.appendChild(addIcon);
       addBtn.appendChild(document.createTextNode(" " + game.i18n.localize("CLUEBOOK.Overlay.AddClue")));
-      
-      const dropdown = document.createElement('div');
-      dropdown.className = 'cb-overlay-workspaces hidden';
-      
-      // Collect valid workspaces (Personal + Owned Shared)
-      const validWorkspaces = [{ id: 'personal', name: game.i18n.localize("CLUEBOOK.Workspace.Personal") }];
+
+      const dropdown = document.createElement("div");
+      dropdown.className = "cb-overlay-workspaces hidden";
+
+      // Offer Personal + all writable Shared Boards (Owner OR Observer when not Read-Only)
+      const validWorkspaces = [{ id: "personal", name: game.i18n.localize("CLUEBOOK.Workspace.Personal") }];
       game.journal.forEach(j => {
-        if (j.getFlag("ClueBook", "isWorkspace") && j.isOwner) {
+        if (!j.getFlag("ClueBook", "isWorkspace")) return;
+        const target = WorkspaceRepository.resolveTarget(j.id);
+        if (target.canRead && (target.canWriteDirect || target.canWriteSocket)) {
           validWorkspaces.push({ id: j.id, name: j.name });
         }
       });
-      
+
       validWorkspaces.forEach(ws => {
-        const wsItem = document.createElement('div');
-        wsItem.className = 'cb-ws-item';
-        wsItem.innerText = ws.name;
+        const wsItem = document.createElement("div");
+        wsItem.className = "cb-ws-item";
+        wsItem.textContent = ws.name;
         wsItem.onclick = async (e) => {
           e.stopPropagation();
-          await this._saveClue(ws.id, sourceTab, entry);
-          dropdown.classList.add('hidden');
-          ui.notifications.info(game.i18n.localize("CLUEBOOK.Overlay.CopiedSuccess"));
+          try {
+            await this._saveClue(ws.id, sourceTab, entry);
+            dropdown.classList.add("hidden");
+            ui.notifications.info(game.i18n.localize("CLUEBOOK.Overlay.CopiedSuccess"));
+          } catch (err) {
+            console.error("ClueBook | Failed to save overlay clue:", err);
+          }
         };
         dropdown.appendChild(wsItem);
       });
-      
+
       addBtn.onclick = (e) => {
         e.stopPropagation();
-        dropdown.classList.toggle('hidden');
+        dropdown.classList.toggle("hidden");
       };
-      
+
       addBtnContainer.appendChild(addBtn);
       addBtnContainer.appendChild(dropdown);
       card.appendChild(addBtnContainer);
@@ -90,8 +96,7 @@ export class ClueBookOverlay {
 
     container.appendChild(card);
     backdrop.appendChild(container);
-    
-    // Clicking backdrop closes it
+
     backdrop.onclick = (e) => {
       if (e.target === backdrop || e.target === container) {
         this.hide(backdrop);
@@ -100,33 +105,30 @@ export class ClueBookOverlay {
 
     document.body.appendChild(backdrop);
 
-    // Activate content link listeners on overlay card
-    card.querySelectorAll('a.content-link').forEach(link => {
-      link.addEventListener('click', async (ev) => {
+    card.querySelectorAll("a.content-link").forEach(link => {
+      link.addEventListener("click", async (ev) => {
         ev.preventDefault();
         const uuid = link.dataset.uuid;
         if (uuid) {
           try {
             const doc = await fromUuid(uuid);
             if (doc?.sheet) doc.sheet.render(true);
-          } catch(err) {
+          } catch (err) {
             console.warn("ClueBook | Failed to open linked document:", err);
           }
         }
       });
     });
 
-    // Trigger animations in next frame
     requestAnimationFrame(() => {
-      backdrop.classList.add('cb-overlay-enter');
+      backdrop.classList.add("cb-overlay-enter");
     });
   }
 
   static hide(backdrop) {
-    backdrop.classList.remove('cb-overlay-enter');
-    backdrop.classList.add('cb-overlay-exit');
-    
-    // Wait for CSS transition (0.5s)
+    backdrop.classList.remove("cb-overlay-enter");
+    backdrop.classList.add("cb-overlay-exit");
+
     setTimeout(() => {
       if (backdrop && backdrop.parentNode) {
         backdrop.remove();
@@ -135,47 +137,24 @@ export class ClueBookOverlay {
   }
 
   static async _saveClue(workspaceId, tab, entryData) {
-    // Clone entry to avoid modifying the original if it's referenced
-    const newEntry = foundry.utils.deepClone(entryData);
-    newEntry.id = foundry.utils.randomID();
-    
-    // Do not add copied clues to the board or pinned list automatically
-    newEntry.onBoard = false;
-    newEntry.pinned = false;
-    
-    // Strip qnmention links from text fields
-    if (newEntry.text) newEntry.text = TextEnrichmentService.stripToPlainText(newEntry.text);
-    if (newEntry.event) newEntry.event = TextEnrichmentService.stripToPlainText(newEntry.event);
-    if (newEntry.note) newEntry.note = TextEnrichmentService.stripToPlainText(newEntry.note);
-    if (newEntry.name) newEntry.name = TextEnrichmentService.stripToPlainText(newEntry.name);
-    if (newEntry.subtitle) newEntry.subtitle = TextEnrichmentService.stripToPlainText(newEntry.subtitle);
-    if (newEntry.owner) newEntry.owner = TextEnrichmentService.stripToPlainText(newEntry.owner);
-    if (newEntry.location) newEntry.location = TextEnrichmentService.stripToPlainText(newEntry.location);
-    if (newEntry.attitude) newEntry.attitude = TextEnrichmentService.stripToPlainText(newEntry.attitude);
-
-    // Determine target data path
-    const finalEntry = new ClueBookEntryModel(newEntry).toObject();
-    const updates = { [`flags.ClueBook.data.${tab}.${newEntry.id}`]: finalEntry };
-    
-    // Save without overwriting everything (BUG-01 Fix)
-    if (workspaceId === "personal") {
-      await game.user.update(updates);
-    } else {
-      const journal = game.journal.get(workspaceId);
-      if (journal) {
-        await journal.update(updates);
+    const newId = foundry.utils.randomID();
+    const existingTabEntries = WorkspaceRepository.getData(workspaceId)?.[tab] || {};
+    let maxSort = 0;
+    for (const item of Object.values(existingTabEntries)) {
+      if (item && typeof item.sort === "number" && item.sort > maxSort) {
+        maxSort = item.sort;
       }
     }
-    
-    // If cluebook is open, re-render if it's on this workspace (BUG-02 Fix)
+
+    const sanitizedEntry = WorkspaceAccessService.sanitizeClueCopy(tab, entryData, maxSort + 1);
+    await WorkspaceRepository.saveEntry(workspaceId, tab, newId, sanitizedEntry);
+
     const app = Array.from(foundry.applications.instances.values())
       .find(w => w.constructor.name === "ClueBookApp");
     if (app && app.rendered && app.state.activeWorkspace === workspaceId) {
-       app.render({ parts: ["content"] });
+      app.render({ parts: ["tabs", "content"] });
     }
   }
 }
 
-// Attach to window so it can be called from app-actions.js directly
 window.ClueBookOverlay = ClueBookOverlay;
-

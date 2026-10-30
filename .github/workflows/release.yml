@@ -6,7 +6,7 @@ on:
       version:
         description: Version from module.json, for example 1.0 or 1.0.1
         required: true
-        default: "1.0"
+        default: "2.1.0"
         type: string
       publish_to_foundry:
         description: Add this version to the Foundry package library
@@ -67,6 +67,25 @@ jobs:
           jq empty module.json
           jq empty lang/en.json
           jq empty lang/ru.json
+          jq empty lang/de.json
+          jq empty lang/fr.json
+
+          node -e '
+            const fs = require("fs");
+            const flatten = (obj, p = "") => Object.entries(obj).reduce((acc, [k, v]) => {
+              const full = p ? `${p}.${k}` : k;
+              return (v && typeof v === "object" && !Array.isArray(v)) ? { ...acc, ...flatten(v, full) } : { ...acc, [full]: true };
+            }, {});
+            const langs = ["en", "ru", "de", "fr"];
+            const sets = langs.map(l => Object.keys(flatten(JSON.parse(fs.readFileSync(`lang/${l}.json`, "utf8")))).sort());
+            const ref = JSON.stringify(sets[0]);
+            for (let i = 1; i < langs.length; i++) {
+              if (JSON.stringify(sets[i]) !== ref) {
+                console.error(`Localization parity mismatch between ${langs[0]} and ${langs[i]}!`);
+                process.exit(1);
+              }
+            }
+          '
 
           while IFS= read -r file; do
             node --check "${file}"
@@ -102,7 +121,7 @@ jobs:
           cp module.json dist/module.json
 
           awk -v version="${RELEASE_VERSION}" '
-            $0 == "## [" version "]" { capture=1; next }
+            index($0, "## [" version "]") == 1 { capture=1; next }
             capture && /^## \[/ { exit }
             capture { print }
           ' CHANGELOG_EN.md > dist/release-notes.md

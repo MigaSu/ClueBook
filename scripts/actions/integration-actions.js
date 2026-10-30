@@ -1,20 +1,20 @@
-import { ClueBookEditDialog } from "../edit-dialog.js";
-import { ClueBookSocket } from "../socket.js";
-import { ClueBookTagManager } from "../tag-manager.js";
 import { TimeService } from "../services/time-service.js";
 import { TextEnrichmentService } from "../services/text-enrichment-service.js";
+import { WorkspaceRepository } from "../services/workspace-repository.js";
+import { WorkspaceAccessService } from "../services/workspace-access-service.js";
+import { sanitizeEntryForStorage } from "../data-models.js";
 
 export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
   static async _onShareOverlay(event, target) {
     if (event?.stopPropagation) event.stopPropagation();
     const entryElement = target.closest('.cluebook-entry');
-    const entryId = entryElement.dataset.entryId;
-    const sourceTab = entryElement.dataset.sourceTab || this.state.activeTab;
+    const entryId = entryElement?.dataset?.entryId;
+    const sourceTab = entryElement?.dataset?.sourceTab || this.state.activeTab;
     
     let data = this._getWorkspaceData();
     
-    const entry = data[sourceTab]?.[entryId];
-    if (!entry || sourceTab === "labels" || sourceTab === "pins") return;
+    const rawEntry = data[sourceTab]?.[entryId];
+    if (!rawEntry || sourceTab === "labels" || sourceTab === "pins") return;
     
     // Process text for chat (enrich UUID links)
     const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
@@ -26,65 +26,80 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
     
     const enrich = async (t) => await TE.enrichHTML(processUUIDs(t), { async: true });
     
-    let contentHTML = `<div class="cb-overlay-inner color-${entry.color || 'yellow'}">`;
+    let contentHTML = `<div class="cb-overlay-inner color-${rawEntry.color || 'yellow'}">`;
     
+    const showPortraits = this.getSettings()?.features?.showCardPortraits !== false;
+    const portraitSrc = (showPortraits && (sourceTab === "npc" || sourceTab === "locations") && this._resolveCardPortrait)
+      ? await this._resolveCardPortrait(rawEntry, sourceTab, true)
+      : "";
+
     if (sourceTab === "notes") {
-      contentHTML += `<div class="cb-overlay-body">${await enrich(entry.text)}</div>`;
+      contentHTML += `<div class="cb-overlay-body">${await enrich(rawEntry.text)}</div>`;
     } else if (sourceTab === "npc") {
-      const npcIcon = entry.isDead ? "fa-skull" : "fa-user";
-      contentHTML += `<h3 class="cb-overlay-title"><i class="fas ${npcIcon}"></i> ${entry.name ? processUUIDs(entry.name) : game.i18n.localize("CLUEBOOK.AppActions.UnknownNPC")}</h3>`;
-      if (entry.isDead) contentHTML += `<p><strong><i class="fas fa-skull" style="color:#ff5252;"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Status")}:</strong> ${game.i18n.localize("CLUEBOOK.AppActions.Dead")}</p>`;
-      if (entry.location) contentHTML += `<p><strong>${game.i18n.localize("CLUEBOOK.AppActions.Location")}:</strong> ${await enrich(entry.location)}</p>`;
-      if (entry.attitude) contentHTML += `<p><strong>${game.i18n.localize("CLUEBOOK.AppActions.Attitude")}:</strong> ${await enrich(entry.attitude)}</p>`;
-      if (entry.note) contentHTML += `<div class="cb-overlay-body">${await enrich(entry.note)}</div>`;
+      const npcIcon = rawEntry.isDead ? "fa-skull" : "fa-user";
+      contentHTML += `<h3 class="cb-overlay-title"><i class="fas ${npcIcon}"></i> ${rawEntry.name ? processUUIDs(rawEntry.name) : game.i18n.localize("CLUEBOOK.AppActions.UnknownNPC")}</h3>`;
+      if (portraitSrc) contentHTML += `<div class="cb-overlay-image" style="margin: 10px 0; text-align: center;"><img src="${portraitSrc}" style="max-height: 280px; max-width: 100%; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); object-fit: contain;"></div>`;
+      if (rawEntry.isDead) contentHTML += `<p><strong><i class="fas fa-skull" style="color:#ff5252;"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Status")}:</strong> ${game.i18n.localize("CLUEBOOK.AppActions.Dead")}</p>`;
+      if (rawEntry.location) contentHTML += `<p><strong>${game.i18n.localize("CLUEBOOK.AppActions.Location")}:</strong> ${await enrich(rawEntry.location)}</p>`;
+      if (rawEntry.attitude) contentHTML += `<p><strong>${game.i18n.localize("CLUEBOOK.AppActions.Attitude")}:</strong> ${await enrich(rawEntry.attitude)}</p>`;
+      if (rawEntry.note) contentHTML += `<div class="cb-overlay-body">${await enrich(rawEntry.note)}</div>`;
     } else if (sourceTab === "locations") {
-      contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-map-marked-alt"></i> ${entry.name ? processUUIDs(entry.name) : game.i18n.localize("CLUEBOOK.AppActions.UnknownLocation")}</h3>`;
-      if (entry.subtitle) contentHTML += `<p><strong><i class="fas fa-map"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Subtitle")}:</strong> ${await enrich(entry.subtitle)}</p>`;
-      if (entry.owner) contentHTML += `<p><strong><i class="fas fa-crown"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Owner")}:</strong> ${await enrich(entry.owner)}</p>`;
-      if (entry.note) contentHTML += `<div class="cb-overlay-body">${await enrich(entry.note)}</div>`;
+      contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-map-marked-alt"></i> ${rawEntry.name ? processUUIDs(rawEntry.name) : game.i18n.localize("CLUEBOOK.AppActions.UnknownLocation")}</h3>`;
+      if (portraitSrc) contentHTML += `<div class="cb-overlay-image" style="margin: 10px 0; text-align: center;"><img src="${portraitSrc}" style="max-height: 280px; max-width: 100%; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); object-fit: contain;"></div>`;
+      if (rawEntry.subtitle) contentHTML += `<p><strong><i class="fas fa-map"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Subtitle")}:</strong> ${await enrich(rawEntry.subtitle)}</p>`;
+      if (rawEntry.owner) contentHTML += `<p><strong><i class="fas fa-crown"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Owner")}:</strong> ${await enrich(rawEntry.owner)}</p>`;
+      if (rawEntry.note) contentHTML += `<div class="cb-overlay-body">${await enrich(rawEntry.note)}</div>`;
     } else if (sourceTab === "quests") {
-      const statusIcon = entry.status === "completed" ? "fa-check-circle" : (entry.status === "failed" ? "fa-times-circle" : "fa-clock");
-      contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-scroll"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Quest")} <i class="fas ${statusIcon} cb-status-${entry.status}"></i></h3>`;
+      const statusIcon = rawEntry.status === "completed" ? "fa-check-circle" : (rawEntry.status === "failed" ? "fa-times-circle" : "fa-clock");
+      contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-scroll"></i> ${game.i18n.localize("CLUEBOOK.AppActions.Quest")} <i class="fas ${statusIcon} cb-status-${rawEntry.status}"></i></h3>`;
       
-      if (entry.deadlineTimestamp && TimeService.isActive()) {
-        const formatted = TimeService.formatTimestamp(entry.deadlineTimestamp).fullStr;
-        if (entry.timeMode === "at") contentHTML += `<p><strong><i class="fas fa-clock"></i> ${game.i18n.localize("CLUEBOOK.AppActions.StrictlyAt")}:</strong> ${formatted}</p>`;
+      if (!rawEntry.useTextTime && rawEntry.deadlineTimestamp && TimeService.isActive()) {
+        const formatted = TimeService.formatTimestamp(rawEntry.deadlineTimestamp).fullStr;
+        if (rawEntry.timeMode === "at") contentHTML += `<p><strong><i class="fas fa-clock"></i> ${game.i18n.localize("CLUEBOOK.AppActions.StrictlyAt")}:</strong> ${formatted}</p>`;
         else contentHTML += `<p><strong><i class="fas fa-hourglass-end"></i> ${game.i18n.localize("CLUEBOOK.AppActions.DoBy")}:</strong> ${formatted}</p>`;
-      } else if (entry.deadline) {
-        if (entry.timeMode === "at") contentHTML += `<p><strong><i class="fas fa-clock"></i> ${game.i18n.localize("CLUEBOOK.AppActions.StrictlyAt")}:</strong> ${entry.deadline}</p>`;
-        else contentHTML += `<p><strong><i class="fas fa-hourglass-end"></i> ${game.i18n.localize("CLUEBOOK.AppActions.DoBy")}:</strong> ${entry.deadline}</p>`;
+      } else if (rawEntry.deadline) {
+        if (rawEntry.timeMode === "at") contentHTML += `<p><strong><i class="fas fa-clock"></i> ${game.i18n.localize("CLUEBOOK.AppActions.StrictlyAt")}:</strong> ${rawEntry.deadline}</p>`;
+        else contentHTML += `<p><strong><i class="fas fa-hourglass-end"></i> ${game.i18n.localize("CLUEBOOK.AppActions.DoBy")}:</strong> ${rawEntry.deadline}</p>`;
       }
 
-      contentHTML += `<div class="cb-overlay-body">${await enrich(entry.text)}</div>`;
+      contentHTML += `<div class="cb-overlay-body">${await enrich(rawEntry.text)}</div>`;
     } else if (sourceTab === "gallery") {
-      contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-camera-retro"></i> ${entry.name ? processUUIDs(entry.name) : game.i18n.localize("CLUEBOOK.Gallery.Title")}</h3>`;
-      if (entry.img) {
-        contentHTML += `<div class="cb-overlay-image" style="margin: 10px 0; text-align: center;"><img src="${entry.img}" style="max-height: 400px; max-width: 100%; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); object-fit: contain;"></div>`;
+      contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-camera-retro"></i> ${rawEntry.name ? processUUIDs(rawEntry.name) : game.i18n.localize("CLUEBOOK.Gallery.Title")}</h3>`;
+      if (rawEntry.img) {
+        contentHTML += `<div class="cb-overlay-image" style="margin: 10px 0; text-align: center;"><img src="${rawEntry.img}" style="max-height: 400px; max-width: 100%; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); object-fit: contain;"></div>`;
       }
-      if (entry.caption) {
-        contentHTML += `<p class="cb-overlay-caption" style="text-align: center; font-style: italic; opacity: 0.9;">${await enrich(entry.caption)}</p>`;
+      if (rawEntry.caption) {
+        contentHTML += `<p class="cb-overlay-caption" style="text-align: center; font-style: italic; opacity: 0.9;">${await enrich(rawEntry.caption)}</p>`;
       }
-      if (entry.text) {
-        contentHTML += `<div class="cb-overlay-body">${await enrich(entry.text)}</div>`;
+      if (rawEntry.text) {
+        contentHTML += `<div class="cb-overlay-body">${await enrich(rawEntry.text)}</div>`;
       }
     } else if (sourceTab === "timeline") {
-      contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-hourglass-half"></i> ${entry.time || game.i18n.localize("CLUEBOOK.AppActions.UnknownTime")}</h3>`;
-      contentHTML += `<div class="cb-overlay-body">${await enrich(entry.event)}</div>`;
+      contentHTML += `<h3 class="cb-overlay-title"><i class="fas fa-hourglass-half"></i> ${rawEntry.time || game.i18n.localize("CLUEBOOK.AppActions.UnknownTime")}</h3>`;
+      contentHTML += `<div class="cb-overlay-body">${await enrich(rawEntry.event)}</div>`;
     }
     
     contentHTML += `</div>`;
+
+    // Strip any secret elements (.cb-gm-callout, .gm-notes-block, .secret) so GM secrets are NEVER leaked in overlay
+    const doc = new DOMParser().parseFromString(contentHTML, "text/html");
+    doc.querySelectorAll(".cb-gm-callout, .gm-notes-block, .secret, [data-secret='true']").forEach(el => el.remove());
+    const sanitizedHTML = doc.body.innerHTML;
+
+    // Sanitize entry data for players (removes gmNotes, isHidden, visibleTo, secret tags)
+    const sanitizedEntry = WorkspaceAccessService.sanitizeEntryForPlayer(rawEntry, this.getSettings(), { isGM: false }, true);
     
     // Broadcast via socket to all players (and self)
     game.socket.emit("module.ClueBook", {
       action: "showOverlay",
-      content: contentHTML,
-      entry: entry,
+      content: sanitizedHTML,
+      entry: sanitizedEntry,
       sourceTab: sourceTab
     });
     
     // Show to GM as well
     if (window.ClueBookOverlay) {
-      window.ClueBookOverlay.show(contentHTML, entry, sourceTab);
+      window.ClueBookOverlay.show(sanitizedHTML, sanitizedEntry, sourceTab);
     }
     
     ui.notifications.info(game.i18n.localize("CLUEBOOK.AppActions.SentSuccess") || game.i18n.localize("CLUEBOOK.AppActions.SentToOverlay"));
@@ -147,7 +162,9 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
     }
 
     const closeBtn = document.createElement('div');
-    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    const closeIcon = document.createElement('i');
+    closeIcon.className = 'fas fa-times';
+    closeBtn.appendChild(closeIcon);
     closeBtn.style.cssText = `
       position: absolute;
       top: 20px;
@@ -270,25 +287,69 @@ export const ClueBookIntegrationActionsMixin = (Base) => class extends Base {
 
   static async _onUploadBatchGallery(event, target) {
     event.stopPropagation();
-    const container = target.closest('.add-entry-btn-container');
+    if (this.state.isReadOnly) return;
+
+    const FP = foundry.applications?.apps?.FilePicker?.implementation ?? FilePicker;
+
+    if (event.shiftKey) {
+      const { MediaService } = await import("../services/media-service.js");
+      new FP({
+        type: "image",
+        current: MediaService.folderPath,
+        callback: async (path) => {
+          if (!path || this.state.isReadOnly) return;
+          const fileName = path.split("/").pop() || "Image";
+          const newEntry = this._getEmptyEntryForTab ? this._getEmptyEntryForTab("gallery") : { type: "gallery" };
+          delete newEntry.id;
+          newEntry.name = fileName;
+          newEntry.img = path;
+          newEntry.onBoard = false;
+          newEntry.boardX = 100;
+          newEntry.boardY = 100;
+          newEntry.sort = 9999;
+          const id = foundry.utils.randomID();
+          await WorkspaceRepository.saveEntry(this.state.activeWorkspace, "gallery", id, newEntry);
+          this.render({ parts: ["content"] });
+        }
+      }).browse();
+      return;
+    }
+
+    const container = target.closest('.add-entry-btn-container') || target;
     const fileInput = container ? container.querySelector('.cb-batch-file-input') : null;
     if (!fileInput) return;
 
     fileInput.onchange = async () => {
+      if (this.state.isReadOnly) return;
       if (fileInput.files?.length > 0) {
         const { MediaService } = await import("../services/media-service.js");
         const uploaded = await MediaService.uploadFiles(fileInput.files);
         if (uploaded.length > 0) {
           const items = uploaded.map(u => ({ imgPath: u.path, title: u.name }));
-          const app = Array.from(foundry.applications.instances.values()).find(w => w.constructor.name === "ClueBookApp");
-          if (app) {
-            await app._createQuickMediaBatch(items, false, 100, 100);
-            ui.notifications.info(game.i18n.format("CLUEBOOK.Gallery.BatchUploaded", { count: items.length }));
+          if (this._createQuickMediaBatch) {
+            await this._createQuickMediaBatch(items, false, 100, 100);
+          } else {
+            const updates = {};
+            items.forEach((item, index) => {
+              const id = foundry.utils.randomID();
+              const newEntry = this._getEmptyEntryForTab ? this._getEmptyEntryForTab("gallery") : { type: "gallery" };
+              delete newEntry.id;
+              newEntry.name = item.title;
+              newEntry.img = item.imgPath;
+              newEntry.onBoard = false;
+              newEntry.boardX = 100;
+              newEntry.boardY = 100;
+              newEntry.sort = 9999 + index;
+              updates[`flags.ClueBook.data.gallery.${id}`] = sanitizeEntryForStorage("gallery", newEntry);
+            });
+            await WorkspaceRepository.updatePaths(this.state.activeWorkspace, updates);
+            this.render({ parts: ["content"] });
           }
+          ui.notifications.info(game.i18n.format("CLUEBOOK.Gallery.BatchUploaded", { count: items.length }));
         }
       }
       fileInput.value = "";
     };
     fileInput.click();
   }
-}
+};

@@ -1,5 +1,6 @@
 import { MediaService } from "../services/media-service.js";
-import { getRandomPhotoTilt } from "../data-models.js";
+import { getRandomPhotoTilt, isEntryTab, sanitizeEntryForStorage } from "../data-models.js";
+import { WorkspaceRepository } from "../services/workspace-repository.js";
 
 export const ClueBookDragDropMixin = (Base) => class extends Base {
   _setupListDragDrop(html) {
@@ -72,7 +73,7 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
     // 1. Cards Drag & Drop (into folders, root, or re-sorting)
     html.querySelectorAll('.entries-list .cluebook-entry').forEach(entry => {
       entry.addEventListener('dragstart', (ev) => {
-        if (ev.target.closest('.entry-controls') || ev.target.closest('.edit-mode')) {
+        if (ev.target.closest('.entry-controls') || ev.target.closest('input, textarea, select, button, a, [contenteditable="true"]')) {
           ev.preventDefault();
           return;
         }
@@ -286,12 +287,13 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
 
   /**
    * Helper to create multiple gallery entries in a single batched atomic update
-   * @param {Array<{imgPath: string, title: string}>} items 
+   * @param {Array<{imgPath: string, title: string, sceneUuid?: string, actorUuid?: string}>} items 
    * @param {boolean} onBoard 
    * @param {number} startX 
    * @param {number} startY 
    */
   async _createQuickMediaBatch(items, onBoard = false, startX = 100, startY = 100) {
+    if (this.state.isReadOnly) return;
     if (!items || items.length === 0) return;
 
     const updates = {};
@@ -300,27 +302,27 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
 
     items.forEach((item, index) => {
       const id = foundry.utils.randomID();
-      const newEntry = this._getEmptyEntryForTab("gallery");
-      newEntry.id = id;
-      newEntry.name = item.title;
-      newEntry.img = item.imgPath;
-      if (item.sceneUuid) newEntry.sceneUuid = item.sceneUuid;
-      if (item.actorUuid) newEntry.actorUuid = item.actorUuid;
-      newEntry.onBoard = onBoard;
+      const rawEntry = this._getEmptyEntryForTab ? this._getEmptyEntryForTab("gallery") : { type: "gallery" };
+      delete rawEntry.id;
+      rawEntry.name = item.title;
+      rawEntry.img = item.imgPath;
+      if (item.sceneUuid) rawEntry.sceneUuid = item.sceneUuid;
+      if (item.actorUuid) rawEntry.actorUuid = item.actorUuid;
+      rawEntry.onBoard = onBoard;
       
       if (onBoard) {
         const col = index % cols;
         const row = Math.floor(index / cols);
-        newEntry.boardX = startX + (col * cardStep);
-        newEntry.boardY = startY + (row * cardStep);
-        newEntry.rotation = getRandomPhotoTilt(index);
+        rawEntry.boardX = startX + (col * cardStep);
+        rawEntry.boardY = startY + (row * cardStep);
+        rawEntry.rotation = getRandomPhotoTilt(index);
       } else {
-        newEntry.boardX = 100;
-        newEntry.boardY = 100;
+        rawEntry.boardX = 100;
+        rawEntry.boardY = 100;
       }
       
-      newEntry.sort = 9999 + index;
-      updates[`flags.ClueBook.data.gallery.${id}`] = newEntry;
+      rawEntry.sort = 9999 + index;
+      updates[`flags.ClueBook.data.gallery.${id}`] = sanitizeEntryForStorage("gallery", rawEntry);
     });
 
     await this._updateWorkspaceData(updates);
@@ -341,7 +343,7 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
 
     html.addEventListener('paste', async (ev) => {
       const target = ev.target;
-      const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+      const isInput = target && target.closest('input, textarea, select, button, a, [contenteditable="true"]');
       if (isInput) return;
 
       if (this.state.isReadOnly || this._isPasting) return;
@@ -396,12 +398,5 @@ export const ClueBookDragDropMixin = (Base) => class extends Base {
         this._isPasting = false;
       }
     });
-  }
-
-  /**
-   * Legacy single entry helper (calls batch)
-   */
-  async _createQuickMediaEntry(imgPath, title, onBoard = false, boardX = 100, boardY = 100) {
-    return this._createQuickMediaBatch([{ imgPath, title }], onBoard, boardX, boardY);
   }
 };

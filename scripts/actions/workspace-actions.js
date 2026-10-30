@@ -1,48 +1,45 @@
-import { ClueBookEditDialog } from "../edit-dialog.js";
-import { ClueBookSocket } from "../socket.js";
-import { ClueBookTagManager } from "../tag-manager.js";
-import { getForcedDeletion } from "../data-models.js";
+import { ENTRY_TABS, isEntryTab, sanitizeEntryForStorage } from "../data-models.js";
+import { WorkspaceRepository } from "../services/workspace-repository.js";
+import { WorkspaceAccessService } from "../services/workspace-access-service.js";
 import { TimeService } from "../services/time-service.js";
 import { TextEnrichmentService } from "../services/text-enrichment-service.js";
+
 export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
   static async _onExportJSON(event, target) {
-    let data = {};
-    let settingsObj = {};
-    const workspaceName = this.state.activeWorkspace !== "personal" 
-      ? game.journal.get(this.state.activeWorkspace)?.name || "shared_board"
-      : "personal_board";
+    const wsId = this.state.activeWorkspace || "personal";
+    const targetInfo = WorkspaceRepository.resolveTarget(wsId);
+    if (!targetInfo.canRead) return;
 
-    if (this.state.activeWorkspace !== "personal") {
-      const journal = this._getWorkspaceJournal();
-      if (journal) {
-        data = journal.getFlag("ClueBook", "data") || {};
-        settingsObj = journal.getFlag("ClueBook", "settings") || {};
-      }
-    } else {
-      data = game.user.getFlag("ClueBook", "data") || {};
-      settingsObj = game.user.getFlag("ClueBook", "settings") || {};
+    let wsName = "personal_board";
+    if (targetInfo.kind === "shared" && targetInfo.journal) {
+      wsName = targetInfo.journal.name || "shared_board";
+    } else if (targetInfo.kind === "playerPersonal" && targetInfo.doc) {
+      wsName = targetInfo.doc.getFlag("ClueBook", "personalWorkspaceName") || `${targetInfo.doc.name}_personal_board`;
+    } else if (targetInfo.kind === "personal") {
+      wsName = game.user.getFlag("ClueBook", "personalWorkspaceName") || "personal_board";
     }
 
-    const exportData = {
-      entries: [],
-      links: Object.values(data.links || {}),
-      tags: Object.values(settingsObj.tags || {})
+    const data = WorkspaceRepository.getData(wsId);
+    const settings = WorkspaceRepository.getSettings(wsId);
+
+    const filtered = WorkspaceAccessService.filterWorkspaceExport(
+      data,
+      settings,
+      game.user,
+      Boolean(targetInfo.isShared)
+    );
+
+    const exportPayload = {
+      version: "2.1",
+      workspace: wsName,
+      entries: filtered.entries,
+      folders: filtered.folders,
+      links: filtered.links,
+      tags: filtered.tags
     };
 
-    // Flatten entries across tabs
-    for (const [tabKey, tabData] of Object.entries(data)) {
-      if (tabKey === "links" || tabKey === "board" || tabKey === "search") continue;
-      for (const [id, entry] of Object.entries(tabData || {})) {
-        if (!entry) continue;
-        exportData.entries.push({
-          id,
-          tab: tabKey,
-          ...entry
-        });
-      }
-    }
-
-    const jsonStr = JSON.stringify(exportData, null, 2);
+    const jsonStr = JSON.stringify(exportPayload, null, 2);
+    const filename = `cluebook_${wsName.replace(/\s+/g, '_')}.json`;
     
     const content = `
       <p>${game.i18n.localize("CLUEBOOK.AppActions.ExportPrompt")}</p>
@@ -58,7 +55,8 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
           label: game.i18n.localize("CLUEBOOK.AppActions.DownloadFile"),
           icon: "fas fa-download",
           callback: () => {
-            saveDataToFile(jsonStr, "application/json", `cluebook_${workspaceName.replace(/\s+/g, '_')}.json`);
+            const saveFn = foundry.utils?.saveDataToFile ?? saveDataToFile;
+            saveFn(jsonStr, "application/json", filename);
             ui.notifications.info(game.i18n.localize("CLUEBOOK.AppActions.BoardExported"));
           }
         },
@@ -76,35 +74,43 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
   }
 
   static async _onEditWorkspace(event, target) {
-    const isPersonal = this.state.activeWorkspace === "personal" || this.state.activeWorkspace.startsWith("personal_");
-    
-    let currentName;
-    let settingsObj = {};
-    let isOwner = false;
-    let journal = null;
+    const wsId = this.state.activeWorkspace || "personal";
+    const targetInfo = WorkspaceRepository.resolveTarget(wsId);
+    if (!targetInfo.canRead || targetInfo.isReadOnly) {
+      ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.OnlyOwnerCanEditSettings"));
+      return;
+    }
 
-    if (isPersonal) {
-      if (this.state.activeWorkspace.startsWith("personal_")) {
+    let currentName = "";
+    let settingsObj = WorkspaceRepository.getSettings(wsId) || {};
+    let isOwner = false;
+    let journal = targetInfo.journal;
+
+    if (targetInfo.kind === "playerPersonal") {
+      if (!game.user.isGM) {
         ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.CannotRenameOthers"));
         return;
       }
-      currentName = game.user.getFlag("ClueBook", "personalWorkspaceName") || game.i18n.localize("CLUEBOOK.Workspace.Personal");
-      settingsObj = game.user.getFlag("ClueBook", "settings") || {};
+      currentName = targetInfo.doc?.getFlag("ClueBook", "personalWorkspaceName") || targetInfo.doc?.name || "Player Personal";
       isOwner = true;
-    } else {
-      journal = game.journal.get(this.state.activeWorkspace);
+    } else if (targetInfo.kind === "personal") {
+      currentName = game.user.getFlag("ClueBook", "personalWorkspaceName") || game.i18n.localize("CLUEBOOK.Workspace.Personal");
+      isOwner = true;
+    } else if (targetInfo.kind === "shared") {
+      journal = targetInfo.journal;
       if (!journal) return;
-      isOwner = journal.isOwner;
+      isOwner = Boolean(journal.isOwner || game.user.isGM);
       if (!isOwner) {
         ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.OnlyOwnerCanEditSettings"));
         return;
       }
       currentName = journal.name || "shared_board";
-      settingsObj = journal.getFlag("ClueBook", "settings") || {};
     }
 
+    const isPersonal = targetInfo.kind === "personal" || targetInfo.kind === "playerPersonal";
+
     let accessHTML = '';
-    if (!isPersonal) {
+    if (!isPersonal && journal) {
       const currentOwnership = journal.ownership || {};
       let userCheckboxes = '';
       game.users.forEach(u => {
@@ -327,19 +333,19 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
           icon: "fas fa-save",
           default: true,
           callback: (event, button, dialog) => {
-            const form = button.form;
-            const newName = form.elements.workspaceName?.value?.trim();
+            const form = button.form || dialog.element;
+            const newName = form.querySelector('input[name="workspaceName"]')?.value?.trim();
             if (!newName) return;
 
-            const isReadOnly = game.user.isGM ? (form.elements.readOnly?.checked ?? false) : (settingsObj.readOnly ?? false);
-            const hideEditBtn = !(form.elements.showBtnEdit?.checked ?? true);
-            const hideSendToBoardBtn = !(form.elements.showBtnBoard?.checked ?? true);
-            const hideTrackerBtn = !(form.elements.showBtnTrack?.checked ?? true);
-            const hideActorBtn = !(form.elements.showBtnActor?.checked ?? true);
-            const hideSceneBtn = !(form.elements.showBtnScene?.checked ?? true);
-            const hideGMVisibilityBtn = !(form.elements.showBtnVisibility?.checked ?? true);
-            const hideGMOverlayBtn = !(form.elements.showBtnOverlay?.checked ?? true);
-            const hideDeleteBtn = !(form.elements.showBtnDelete?.checked ?? true);
+            const isReadOnly = game.user.isGM ? (form.querySelector('input[name="readOnly"]')?.checked ?? false) : (settingsObj.readOnly ?? false);
+            const hideEditBtn = !(form.querySelector('input[name="showBtnEdit"]')?.checked ?? true);
+            const hideSendToBoardBtn = !(form.querySelector('input[name="showBtnBoard"]')?.checked ?? true);
+            const hideTrackerBtn = !(form.querySelector('input[name="showBtnTrack"]')?.checked ?? true);
+            const hideActorBtn = !(form.querySelector('input[name="showBtnActor"]')?.checked ?? true);
+            const hideSceneBtn = !(form.querySelector('input[name="showBtnScene"]')?.checked ?? true);
+            const hideGMVisibilityBtn = !(form.querySelector('input[name="showBtnVisibility"]')?.checked ?? true);
+            const hideGMOverlayBtn = !(form.querySelector('input[name="showBtnOverlay"]')?.checked ?? true);
+            const hideDeleteBtn = !(form.querySelector('input[name="showBtnDelete"]')?.checked ?? true);
             
             const updatedSettings = {
                 ...settingsObj,
@@ -353,20 +359,20 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
                 hideGMOverlayBtn: hideGMOverlayBtn,
                 hideDeleteBtn: hideDeleteBtn,
                 hiddenTabs: {
-                  search: !(form.elements.tab_search?.checked ?? true),
-                  notes: !(form.elements.tab_notes?.checked ?? true),
-                  npc: !(form.elements.tab_npc?.checked ?? true),
-                  locations: !(form.elements.tab_locations?.checked ?? true),
-                  quests: !(form.elements.tab_quests?.checked ?? true),
-                  timeline: !(form.elements.tab_timeline?.checked ?? true),
-                  gallery: !(form.elements.tab_gallery?.checked ?? true),
-                  board: !(form.elements.tab_board?.checked ?? true)
+                  search: !(form.querySelector('input[name="tab_search"]')?.checked ?? true),
+                  notes: !(form.querySelector('input[name="tab_notes"]')?.checked ?? true),
+                  npc: !(form.querySelector('input[name="tab_npc"]')?.checked ?? true),
+                  locations: !(form.querySelector('input[name="tab_locations"]')?.checked ?? true),
+                  quests: !(form.querySelector('input[name="tab_quests"]')?.checked ?? true),
+                  timeline: !(form.querySelector('input[name="tab_timeline"]')?.checked ?? true),
+                  gallery: !(form.querySelector('input[name="tab_gallery"]')?.checked ?? true),
+                  board: !(form.querySelector('input[name="tab_board"]')?.checked ?? true)
                 },
                 theme: {
                   ...(settingsObj.theme || {}),
-                  hoverHighlight: form.elements.theme_hoverHighlight?.checked ?? (settingsObj.theme?.hoverHighlight ?? true),
-                  hoverDelay: parseInt(form.elements.theme_hoverDelay?.value) || (settingsObj.theme?.hoverDelay ?? 1000),
-                  highlightDuration: parseInt(form.elements.theme_highlightDuration?.value) || (settingsObj.theme?.highlightDuration ?? 2)
+                  hoverHighlight: form.querySelector('input[name="theme_hoverHighlight"]')?.checked ?? (settingsObj.theme?.hoverHighlight ?? true),
+                  hoverDelay: parseInt(form.querySelector('input[name="theme_hoverDelay"]')?.value) || (settingsObj.theme?.hoverDelay ?? 1000),
+                  highlightDuration: parseInt(form.querySelector('input[name="theme_highlightDuration"]')?.value) || (settingsObj.theme?.highlightDuration ?? 2)
                 },
                 defaultColors: {
                   ...(settingsObj.defaultColors || {})
@@ -374,7 +380,7 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
             };
 
             let ownership = null;
-            if (!isPersonal) {
+            if (!isPersonal && journal) {
               ownership = { default: journal.ownership.default || 0, [game.user.id]: 3 };
               game.users.filter(u => u.isGM).forEach(gm => ownership[gm.id] = 3);
   
@@ -391,16 +397,29 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
             // Perform async DB/Socket updates in background without delaying modal close
             (async () => {
               try {
-                if (isPersonal) {
+                if (targetInfo.kind === "playerPersonal") {
+                  if (targetInfo.doc) {
+                    await targetInfo.doc.setFlag("ClueBook", "personalWorkspaceName", newName);
+                  }
+                  await WorkspaceRepository.updatePaths(wsId, { "flags.ClueBook.settings": updatedSettings });
+                } else if (targetInfo.kind === "personal") {
                   await game.user.setFlag("ClueBook", "personalWorkspaceName", newName);
-                  await game.user.setFlag("ClueBook", "settings", updatedSettings);
-                } else {
-                  const updates = { 
-                    "flags.ClueBook.isWorkspace": true,
-                    "flags.ClueBook.settings": updatedSettings
-                  };
-                  await journal.update(updates);
-                  ClueBookSocket.updateBoard(journal.id, newName, ownership);
+                  await WorkspaceRepository.updatePaths(wsId, { "flags.ClueBook.settings": updatedSettings });
+                } else if (targetInfo.kind === "shared" && journal) {
+                  await WorkspaceRepository.updatePaths(wsId, { "flags.ClueBook.settings": updatedSettings });
+                  if (game.user.isGM) {
+                    const journalUpdates = { name: newName };
+                    if (ownership) journalUpdates.ownership = ownership;
+                    await journal.update(journalUpdates);
+                  } else {
+                    game.socket.emit("module.ClueBook", {
+                      action: "updateBoard",
+                      senderId: game.user.id,
+                      journalId: journal.id,
+                      name: newName,
+                      ownership
+                    });
+                  }
                 }
 
                 // Update FAB menu if widget exists
@@ -429,7 +448,33 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
   }
 
   static async _onDeleteWorkspace(event, target) {
-    if (this.state.activeWorkspace === "personal" || this.state.activeWorkspace.startsWith("personal_")) {
+    const wsId = this.state.activeWorkspace || "personal";
+    const targetInfo = WorkspaceRepository.resolveTarget(wsId);
+    if (!targetInfo.canRead) return;
+
+    if (targetInfo.kind === "playerPersonal") {
+      if (!game.user.isGM) {
+        ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.OnlyGMCanDeleteBoards"));
+        return;
+      }
+      const confirmed = await foundry.applications.api.DialogV2.confirm({
+        window: { title: game.i18n.localize("CLUEBOOK.AppActions.DeleteBoardTitle") },
+        content: game.i18n.format("CLUEBOOK.AppActions.DeleteBoardPrompt", { name: targetInfo.doc?.name || wsId }),
+        rejectClose: false
+      });
+      if (!confirmed) return;
+
+      await WorkspaceRepository.clearOrDeleteWorkspace(wsId);
+      if (wsId === this.state.activeWorkspace) {
+        this.state.activeWorkspace = "personal";
+        this.state.camera = null;
+        await game.user.setFlag("ClueBook", "lastWorkspace", "personal");
+      }
+      this.render({ parts: ["content"] });
+      return;
+    }
+
+    if (targetInfo.kind === "personal") {
       const confirmed = await foundry.applications.api.DialogV2.confirm({
         window: { title: game.i18n.localize("CLUEBOOK.AppActions.DeleteBoardTitle") },
         content: game.i18n.localize("CLUEBOOK.AppActions.DeletePersonalPrompt") || game.i18n.format("CLUEBOOK.AppActions.DeleteBoardPrompt", { name: game.i18n.localize("CLUEBOOK.Workspace.Personal") }),
@@ -437,42 +482,47 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
       });
       if (!confirmed) return;
       
-      await game.user.unsetFlag("ClueBook", "data");
-      await game.user.unsetFlag("ClueBook", "settings");
+      await WorkspaceRepository.clearOrDeleteWorkspace(wsId);
       this.state.activeWorkspace = "personal";
+      this.state.camera = null;
+      await game.user.setFlag("ClueBook", "lastWorkspace", "personal");
       this.render({ parts: ["content"] });
       return;
     }
 
-    if (!game.user.isGM) {
-      ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.OnlyGMCanDeleteBoards"));
-      return;
+    if (targetInfo.kind === "shared") {
+      if (!game.user.isGM && !targetInfo.journal?.isOwner) {
+        ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.OnlyGMCanDeleteBoards"));
+        return;
+      }
+
+      const confirmed = await foundry.applications.api.DialogV2.confirm({
+        window: { title: game.i18n.localize("CLUEBOOK.AppActions.DeleteBoardTitle") },
+        content: game.i18n.format("CLUEBOOK.AppActions.DeleteBoardPrompt", { name: targetInfo.journal?.name || "Shared Board" }),
+        rejectClose: false
+      });
+      if (!confirmed) return;
+
+      await WorkspaceRepository.clearOrDeleteWorkspace(wsId);
+      this.state.activeWorkspace = "personal";
+      this.state.camera = null;
+      await game.user.setFlag("ClueBook", "lastWorkspace", "personal");
+      this.render({ parts: ["content"] });
     }
-
-    const journal = this._getWorkspaceJournal();
-    if (!journal) return;
-
-    const confirmed = await foundry.applications.api.DialogV2.confirm({
-      window: { title: game.i18n.localize("CLUEBOOK.AppActions.DeleteBoardTitle") },
-      content: game.i18n.format("CLUEBOOK.AppActions.DeleteBoardPrompt", { name: journal.name }),
-      rejectClose: false
-    });
-    if (!confirmed) return;
-
-    await journal.delete();
-    this.state.activeWorkspace = "personal";
-    await game.user.setFlag("ClueBook", "lastWorkspace", "personal");
-    this.render({ parts: ["content"] });
   }
 
   static async _onImportJSON(event, target) {
+    if (this.state.isReadOnly) return;
+
     const content = `
-      <p>${game.i18n.localize("CLUEBOOK.AppActions.ImportAIPrompt")}</p>
-      <div style="margin-bottom: 15px;">
-        <input type="file" id="cb-import-file" accept=".json" style="width: 100%;">
+      <div class="cb-import-json-dialog" style="display: flex; flex-direction: column; gap: 10px;">
+        <p>${game.i18n.localize("CLUEBOOK.AppActions.ImportAIPrompt")}</p>
+        <div style="margin-bottom: 5px;">
+          <input type="file" id="cb-import-file" accept=".json" style="width: 100%;">
+        </div>
+        <p style="text-align: center; margin: 0; font-weight: bold;">${game.i18n.localize("CLUEBOOK.AppActions.Or")}</p>
+        <textarea id="cb-import-text" style="width: 100%; height: 200px; font-family: monospace;"></textarea>
       </div>
-      <p style="text-align: center; margin-bottom: 5px; font-weight: bold;">${game.i18n.localize("CLUEBOOK.AppActions.Or")}</p>
-      <textarea id="cb-import-text" style="width: 100%; height: 200px; font-family: monospace;"></textarea>
     `;
 
     const jsonStr = await foundry.applications.api.DialogV2.wait({
@@ -485,8 +535,9 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
           label: game.i18n.localize("CLUEBOOK.AppActions.ImportBtn"),
           icon: "fas fa-file-import",
           callback: async (event, button, dialog) => {
-            const fileInput = (dialog.element || document).querySelector("#cb-import-file");
-            const textInput = (dialog.element || document).querySelector("#cb-import-text");
+            const root = dialog.element || document;
+            const fileInput = root.querySelector("#cb-import-file");
+            const textInput = root.querySelector("#cb-import-text");
             
             if (fileInput && fileInput.files.length > 0) {
               const file = fileInput.files[0];
@@ -513,33 +564,41 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
 
     try {
       const parsed = JSON.parse(jsonStr);
-      if (!parsed.entries || !Array.isArray(parsed.entries)) {
+      if (!parsed || (!parsed.entries && !parsed.folders)) {
         ui.notifications.error(game.i18n.localize("CLUEBOOK.AppActions.ImportAIErrorArray"));
         return;
       }
 
-      const updateData = {};
-      const idMap = {};
-      
-      let data = {};
-      let settingsObj = {};
-      let targetJournal = null;
-      if (this.state.activeWorkspace !== "personal") {
-        targetJournal = this._getWorkspaceJournal();
-        if (targetJournal) {
-          data = targetJournal.getFlag("ClueBook", "data") || {};
-          settingsObj = targetJournal.getFlag("ClueBook", "settings") || {};
+      const isGM = Boolean(game.user?.isGM);
+      const wsId = this.state.activeWorkspace || "personal";
+      const existingSettings = WorkspaceRepository.getSettings(wsId) || {};
+      const existingTags = { ...(existingSettings.tags || {}) };
+
+      const updates = {};
+      const idMap = {}; // oldEntryId -> newEntryId
+      const folderIdMap = {}; // oldFolderId -> newFolderId
+      const tagIdMap = {};
+
+      // 1. Process Folders
+      if (parsed.folders) {
+        const incomingFolders = Array.isArray(parsed.folders) ? parsed.folders : Object.values(parsed.folders);
+        for (const rawFolder of incomingFolders) {
+          if (!rawFolder || typeof rawFolder !== "object") continue;
+          const oldFolderId = rawFolder.id || foundry.utils.randomID();
+          const newFolderId = foundry.utils.randomID();
+          folderIdMap[oldFolderId] = newFolderId;
+
+          const fClean = foundry.utils.deepClone(rawFolder);
+          delete fClean.id;
+          if (!isGM) {
+            fClean.isHidden = false;
+            fClean.visibleTo = [];
+          }
+          updates[`flags.ClueBook.data.folders.${newFolderId}`] = fClean;
         }
-      } else {
-        data = game.user.getFlag("ClueBook", "data") || {};
-        settingsObj = game.user.getFlag("ClueBook", "settings") || {};
       }
 
-      // Process and merge tags dictionary from parsed.tags and entry.tags
-      const existingTags = { ...(settingsObj.tags || {}) };
-      const tagIdMap = {};
-      const tagUpdates = {};
-
+      // 2. Process Tags
       if (parsed.tags) {
         const incomingTags = Array.isArray(parsed.tags) ? parsed.tags : Object.values(parsed.tags);
         for (const t of incomingTags) {
@@ -547,7 +606,7 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
           const tagName = typeof t === "string" ? t.trim() : (t.name ? t.name.trim() : "");
           if (!tagName) continue;
 
-          let match = Object.values(existingTags).find(ex => ex && ex.name.toLowerCase() === tagName.toLowerCase());
+          let match = Object.values(existingTags).find(ex => ex && ex.name?.toLowerCase() === tagName.toLowerCase());
           if (match) {
             if (typeof t === "object" && t.id) tagIdMap[t.id] = match.id;
             tagIdMap[tagName] = match.id;
@@ -557,19 +616,28 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
               id: newTagId,
               name: tagName,
               color: (typeof t === "object" && t.color) ? t.color : "#7b61ff",
-              isSecret: (typeof t === "object" && t.isSecret) ? Boolean(t.isSecret) : false
+              isSecret: isGM && typeof t === "object" && t.isSecret ? true : false
             };
             existingTags[newTagId] = tagObj;
             if (typeof t === "object" && t.id) tagIdMap[t.id] = newTagId;
             tagIdMap[tagName] = newTagId;
-            tagUpdates[`flags.ClueBook.settings.tags.${newTagId}`] = tagObj;
+            updates[`flags.ClueBook.settings.tags.${newTagId}`] = tagObj;
           }
         }
       }
 
-      // Process entries
-      for (const entry of parsed.entries) {
-        // Resolve tags on entries (IDs or Names)
+      // 3. Process Entries
+      const entriesList = Array.isArray(parsed.entries) ? parsed.entries : Object.values(parsed.entries || {});
+      for (const entry of entriesList) {
+        if (!entry || typeof entry !== "object") continue;
+        const tab = entry.tab || entry.type || "notes";
+        if (!isEntryTab(tab)) continue;
+
+        const tempId = entry.id;
+        const newEntryId = foundry.utils.randomID();
+        if (tempId) idMap[tempId] = newEntryId;
+
+        // Resolve tags on entries
         if (entry.tags && Array.isArray(entry.tags)) {
           const resolvedTags = [];
           for (const rawTag of entry.tags) {
@@ -582,7 +650,7 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
             } else if (existingTags[tagStr]) {
               resolvedTags.push(tagStr);
             } else {
-              let match = Object.values(existingTags).find(ex => ex && ex.name.toLowerCase() === tagStr.toLowerCase());
+              let match = Object.values(existingTags).find(ex => ex && ex.name?.toLowerCase() === tagStr.toLowerCase());
               if (match) {
                 tagIdMap[tagStr] = match.id;
                 resolvedTags.push(match.id);
@@ -598,7 +666,7 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
                 };
                 existingTags[newTagId] = tagObj;
                 tagIdMap[tagStr] = newTagId;
-                tagUpdates[`flags.ClueBook.settings.tags.${newTagId}`] = tagObj;
+                updates[`flags.ClueBook.settings.tags.${newTagId}`] = tagObj;
                 resolvedTags.push(newTagId);
               }
             }
@@ -606,130 +674,55 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
           entry.tags = resolvedTags;
         }
 
-        const tempId = entry.id;
-        const action = entry.action || "create"; // create / update / delete
-
-        let existingTab = null;
-        let existingEntry = null;
-
-        if (tempId) {
-          for (const tabKey of ["notes", "npc", "locations", "quests", "timeline", "gallery", "labels", "pins"]) {
-            if (data[tabKey]?.[tempId]) {
-              existingTab = tabKey;
-              existingEntry = data[tabKey][tempId];
-              break;
-            }
-          }
+        // Remap folderId if folder was imported
+        if (entry.folderId && folderIdMap[entry.folderId]) {
+          entry.folderId = folderIdMap[entry.folderId];
         }
 
-        const del = getForcedDeletion();
-        if (existingEntry) {
-          if (action === "delete" || action === "remove") {
-            // Delete the card
-            updateData[`flags.ClueBook.data.${existingTab}.${tempId}`] = del;
-            // Also clean up state if selected
-            if (this.state.selectedEntryId === tempId) this.state.selectedEntryId = null;
-            this.state.selectedEntries.delete(tempId);
-          } else {
-            // Overwrite the card completely
-            const targetTab = entry.tab || existingTab;
-            const updatedEntry = { ...entry };
-            delete updatedEntry.id;
-            delete updatedEntry.tab;
-            delete updatedEntry.action;
+        // Strip GM secrets if player
+        if (!isGM) {
+          entry.gmNotes = "";
+          entry.isHidden = false;
+          entry.visibleTo = [];
+        }
 
-            if (entry.onBoard !== undefined) {
-              updatedEntry.onBoard = entry.onBoard;
-            } else if (entry.boardX !== undefined && entry.boardY !== undefined) {
-              updatedEntry.onBoard = true;
-            }
+        const sanitized = sanitizeEntryForStorage(tab, entry);
+        updates[`flags.ClueBook.data.${tab}.${newEntryId}`] = sanitized;
+      }
 
-            if (targetTab !== existingTab) {
-              updateData[`flags.ClueBook.data.${existingTab}.${tempId}`] = del;
-            }
-            updateData[`flags.ClueBook.data.${targetTab}.${tempId}`] = updatedEntry;
-            idMap[tempId] = tempId; // Map to itself
-          }
-        } else {
-          // If the entry doesn't exist in workspace
-          if (action === "delete" || action === "remove") {
-            continue; // Skip deleting non-existing entry
-          }
-
-          // Create new entry using imported ID or generate one
-          const realId = tempId || foundry.utils.randomID();
-          if (tempId) idMap[tempId] = realId;
-
-          const tab = entry.tab || "notes";
-          const newEntry = { ...entry };
-          delete newEntry.id;
-          delete newEntry.tab;
-          delete newEntry.action;
-
-          if (entry.onBoard !== undefined) {
-            newEntry.onBoard = entry.onBoard;
-          } else if (entry.boardX !== undefined && entry.boardY !== undefined) {
-            newEntry.onBoard = true;
-          } else {
-            newEntry.onBoard = false;
-          }
-
-          updateData[`flags.ClueBook.data.${tab}.${realId}`] = newEntry;
+      // 4. Process Links
+      const incomingLinks = Array.isArray(parsed.links) ? parsed.links : Object.values(parsed.links || {});
+      for (const link of incomingLinks) {
+        if (!link?.source || !link?.target) continue;
+        const s = idMap[link.source] || link.source;
+        const t = idMap[link.target] || link.target;
+        if (s && t) {
+          const [a, b] = [s, t].sort();
+          const linkId = `${a}_${b}`;
+          updates[`flags.ClueBook.data.links.${linkId}`] = {
+            source: s,
+            target: t,
+            label: link.label || "",
+            style: link.style || "solid",
+            color: link.color || ""
+          };
         }
       }
 
-      // Process links
-      if (parsed.links && Array.isArray(parsed.links)) {
-        for (const link of parsed.links) {
-          const s = idMap[link.source] || link.source;
-          const t = idMap[link.target] || link.target;
-          if (s && t) {
-            const [a, b] = [s, t].sort();
-            const linkId = `${a}_${b}`;
-            updateData[`flags.ClueBook.data.links.${linkId}`] = { source: s, target: t, label: link.label || "", style: link.style || "solid", color: link.color || "" };
-          }
-        }
-      } else if (parsed.links && typeof parsed.links === "object") {
-        for (const link of Object.values(parsed.links)) {
-          const s = idMap[link.source] || link.source;
-          const t = idMap[link.target] || link.target;
-          if (s && t) {
-            const [a, b] = [s, t].sort();
-            const linkId = `${a}_${b}`;
-            updateData[`flags.ClueBook.data.links.${linkId}`] = { source: s, target: t, label: link.label || "", style: link.style || "solid", color: link.color || "" };
-          }
-        }
-      }
-
-      // Clean up links for deleted entries
-      let links = this._getWorkspaceLinks();
-      const isDeleted = (v) => v === null || (v && typeof v === "object" && (v instanceof (foundry.data?.operators?.ForcedDeletion ?? Object) || v.__$OPERATOR$__ === "ForcedDeletion"));
-      const allTabs = ["notes", "npc", "locations", "quests", "timeline", "gallery", "labels", "pins"];
-      for (const [key, l] of Object.entries(links)) {
-        const sourceDeleted = allTabs.some(t => isDeleted(updateData[`flags.ClueBook.data.${t}.${l.source}`]));
-        const targetDeleted = allTabs.some(t => isDeleted(updateData[`flags.ClueBook.data.${t}.${l.target}`]));
-        if (sourceDeleted || targetDeleted) {
-          updateData[`flags.ClueBook.data.links.${key}`] = getForcedDeletion();
-        }
-      }
-
-      // Second pass: Replace internal links in text fields with new IDs
-      for (const [key, entry] of Object.entries(updateData)) {
-        if (entry && !key.startsWith('flags.ClueBook.data.links.')) {
+      // 5. Remap internal @mention UUIDs / IDs in text fields
+      for (const [key, entryVal] of Object.entries(updates)) {
+        if (entryVal && typeof entryVal === "object" && key.startsWith("flags.ClueBook.data.") && !key.startsWith("flags.ClueBook.data.links.") && !key.startsWith("flags.ClueBook.data.folders.")) {
           ['text', 'note', 'event', 'gmNotes', 'subtitle', 'owner', 'location', 'attitude'].forEach(field => {
-            if (entry[field] && typeof entry[field] === 'string') {
-              entry[field] = TextEnrichmentService.remapMentionIds(entry[field], idMap);
+            if (entryVal[field] && typeof entryVal[field] === 'string') {
+              entryVal[field] = TextEnrichmentService.remapMentionIds(entryVal[field], idMap);
             }
           });
         }
       }
 
-      if (Object.keys(tagUpdates).length > 0) {
-        Object.assign(updateData, tagUpdates);
-      }
-
-      await this._updateWorkspaceData(updateData);
-      ui.notifications.info(game.i18n.format("CLUEBOOK.AppActions.ImportSuccess", { count: parsed.entries.length }));
+      // 6. Single batched update
+      await WorkspaceRepository.updatePaths(this.state.activeWorkspace, updates);
+      ui.notifications.info(game.i18n.format("CLUEBOOK.AppActions.ImportSuccess", { count: entriesList.length }));
       this.render({ parts: ["content"] });
 
     } catch (err) {
@@ -766,5 +759,4 @@ export const ClueBookWorkspaceActionsMixin = (Base) => class extends Base {
       ui.notifications.error(game.i18n.localize("CLUEBOOK.AppActions.FormatCopyError"));
     }
   }
-
-}
+};

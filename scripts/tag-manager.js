@@ -1,4 +1,6 @@
-import { getForcedDeletion } from "./data-models.js";
+import { assignDeletion, ENTRY_TABS } from "./data-models.js";
+import { WorkspaceRepository } from "./services/workspace-repository.js";
+import { WorkspaceAccessService } from "./services/workspace-access-service.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -6,7 +8,7 @@ export class ClueBookTagManager extends HandlebarsApplicationMixin(ApplicationV2
   constructor(options = {}) {
     super(options);
     this.workspace = options.workspace || "personal";
-    this.journal = options.journal; // Might be null if personal
+    this.journal = options.journal || null;
   }
 
   static DEFAULT_OPTIONS = {
@@ -36,18 +38,16 @@ export class ClueBookTagManager extends HandlebarsApplicationMixin(ApplicationV2
   };
 
   async _prepareContext(options) {
-    let tagsObj = {};
-    if (this.workspace === "personal") {
-      tagsObj = game.user.getFlag("ClueBook", "settings")?.tags || {};
-    } else if (this.journal) {
-      tagsObj = this.journal.getFlag("ClueBook", "settings")?.tags || {};
-    }
-
-    const tags = Object.values(tagsObj).sort((a, b) => a.name.localeCompare(b.name));
+    const wsId = this.workspace || "personal";
+    const settings = WorkspaceRepository.getSettings(wsId) || {};
+    const target = WorkspaceRepository.resolveTarget(wsId);
+    const visibleTags = WorkspaceAccessService.getVisibleTags(settings.tags || {}, settings, game.user, target.isShared);
+    const tags = Object.values(visibleTags).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
     return {
       tags: tags,
-      hasTags: tags.length > 0
+      hasTags: tags.length > 0,
+      isGM: Boolean(game.user?.isGM)
     };
   }
 
@@ -62,11 +62,13 @@ export class ClueBookTagManager extends HandlebarsApplicationMixin(ApplicationV2
         deleteBtn.closest('.cb-tm-row').remove();
         if (html.querySelectorAll('.cb-tm-row').length === 0) {
           const list = html.querySelector('.cb-tm-list');
-          list.replaceChildren();
-          const p = document.createElement("p");
-          p.className = "cb-tm-empty";
-          p.textContent = game.i18n.localize("CLUEBOOK.Tags.NoTags");
-          list.appendChild(p);
+          if (list) {
+            list.replaceChildren();
+            const p = document.createElement("p");
+            p.className = "cb-tm-empty";
+            p.textContent = game.i18n.localize("CLUEBOOK.Tags.NoTags");
+            list.appendChild(p);
+          }
         }
       }
     });
@@ -75,17 +77,19 @@ export class ClueBookTagManager extends HandlebarsApplicationMixin(ApplicationV2
       const secretCb = ev.target.closest('.cb-tm-secret-cb');
       if (secretCb) {
         const icon = secretCb.previousElementSibling;
-        if (secretCb.checked) {
-          icon.classList.remove('fa-eye');
-          icon.classList.add('fa-eye-slash');
-        } else {
-          icon.classList.remove('fa-eye-slash');
-          icon.classList.add('fa-eye');
+        if (icon) {
+          if (secretCb.checked) {
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+          } else {
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+          }
         }
       }
     });
     
-    // Wire up Add Tag button (ApplicationV2 actions sometimes have issues with non-button elements, so we also bind manually just in case)
+    // Wire up Add Tag button
     const addBtn = html.querySelector('#cb-tm-add');
     if (addBtn) {
       addBtn.addEventListener('click', (ev) => {
@@ -106,6 +110,7 @@ export class ClueBookTagManager extends HandlebarsApplicationMixin(ApplicationV2
 
   static _onAddTag(event, target) {
     const list = this.element.querySelector('.cb-tm-list');
+    if (!list) return;
     const emptyMsg = list.querySelector('.cb-tm-empty');
     if (emptyMsg) emptyMsg.remove();
 
@@ -134,6 +139,9 @@ export class ClueBookTagManager extends HandlebarsApplicationMixin(ApplicationV2
     const label = document.createElement("label");
     label.className = "cb-tm-secret";
     label.title = game.i18n.localize('CLUEBOOK.Tags.SecretHint');
+    if (!game.user?.isGM) {
+      label.style.display = "none";
+    }
     const eyeIcon = document.createElement("i");
     eyeIcon.className = "fas fa-eye";
     label.appendChild(eyeIcon);
@@ -158,85 +166,88 @@ export class ClueBookTagManager extends HandlebarsApplicationMixin(ApplicationV2
   }
 
   static async _onSaveTags(event, target) {
+    if (event?.preventDefault) event.preventDefault();
+    const wsId = this.workspace || "personal";
+    const targetInfo = WorkspaceRepository.resolveTarget(wsId);
+    if (targetInfo.isReadOnly) {
+      ui.notifications.warn(game.i18n.localize("CLUEBOOK.AppActions.ReadOnlyBoard") || "Board is read-only");
+      this.close();
+      return;
+    }
+
     const rows = this.element.querySelectorAll('.cb-tm-row');
     const newTags = {};
     const validIds = new Set();
-    
+    const isGM = Boolean(game.user?.isGM);
+
     rows.forEach(row => {
       const id = row.dataset.tagId;
-      const name = row.querySelector('.cb-tm-name').value.trim();
-      const color = row.querySelector('.cb-tm-color').value;
-      const isSecret = row.querySelector('.cb-tm-secret-cb').checked;
-      
-      if (name) {
+      const name = row.querySelector('.cb-tm-name')?.value?.trim();
+      const color = row.querySelector('.cb-tm-color')?.value || "#7b61ff";
+      const isSecretCb = row.querySelector('.cb-tm-secret-cb');
+      const isSecret = isGM ? Boolean(isSecretCb?.checked) : false;
+
+      if (name && id) {
         newTags[id] = { id, name, color, isSecret };
         validIds.add(id);
       }
     });
 
-    // We need to fetch existing tags to see if any were deleted
-    let currentSettings = {};
-    let dataObj = {}; // To clean up tags from entries
-    
-    if (this.workspace === "personal") {
-      currentSettings = game.user.getFlag("ClueBook", "settings") || {};
-      dataObj = game.user.getFlag("ClueBook", "data") || {};
-    } else if (this.journal) {
-      currentSettings = this.journal.getFlag("ClueBook", "settings") || {};
-      dataObj = this.journal.getFlag("ClueBook", "data") || {};
-    }
-    
+    const currentSettings = WorkspaceRepository.getSettings(wsId) || {};
     const oldTags = currentSettings.tags || {};
-    const deletedTagIds = Object.keys(oldTags).filter(id => !validIds.has(id));
-    
-    // Prepare flag updates for tags
-    const settingsUpdates = {};
-    for (const [id, tag] of Object.entries(newTags)) {
-      settingsUpdates[`flags.ClueBook.settings.tags.${id}`] = tag;
-    }
-    for (const id of deletedTagIds) {
-      settingsUpdates[`flags.ClueBook.settings.tags.${id}`] = getForcedDeletion();
-    }
-    
-    if (Object.keys(settingsUpdates).length > 0) {
-      if (this.workspace === "personal") {
-        await game.user.update(settingsUpdates);
-      } else if (this.journal) {
-        await this.journal.update(settingsUpdates);
+    const dataObj = WorkspaceRepository.getData(wsId) || {};
+
+    // Determine deleted tags
+    const deletedTagIds = [];
+    for (const [id, oldTag] of Object.entries(oldTags)) {
+      if (!validIds.has(id)) {
+        // If non-GM, they are not allowed to delete secret tags (they couldn't even see them)
+        if (!isGM && oldTag?.isSecret) {
+          continue;
+        }
+        deletedTagIds.push(id);
       }
     }
 
-    // Clean up deleted tags from all entries
+    const combinedUpdates = {};
+
+    // 1. Tag creations / modifications
+    for (const [id, tag] of Object.entries(newTags)) {
+      const oldTag = oldTags[id];
+      if (!isGM && oldTag?.isSecret) {
+        continue;
+      }
+      combinedUpdates[`flags.ClueBook.settings.tags.${id}`] = tag;
+    }
+
+    // 2. Tag deletions
+    for (const id of deletedTagIds) {
+      assignDeletion(combinedUpdates, "flags.ClueBook.settings.tags", id);
+    }
+
+    // 3. Clean up deleted tags from entries across ALL ENTRY_TABS
     if (deletedTagIds.length > 0) {
-      let dataUpdates = {};
-      let needsDataUpdate = false;
-      const tabs = ["notes", "npc", "quests", "timeline", "locations"];
-      
-      for (const tab of tabs) {
-        if (!dataObj[tab]) continue;
-        for (const [entryId, entry] of Object.entries(dataObj[tab])) {
-          if (entry.tags && Array.isArray(entry.tags)) {
+      for (const tab of ENTRY_TABS) {
+        const tabEntries = dataObj[tab];
+        if (!tabEntries || typeof tabEntries !== "object") continue;
+        for (const [entryId, entry] of Object.entries(tabEntries)) {
+          if (entry && Array.isArray(entry.tags) && entry.tags.length > 0) {
             const initialLen = entry.tags.length;
-            const filteredTags = entry.tags.filter(t => !deletedTagIds.includes(t));
+            const filteredTags = entry.tags.filter(tId => !deletedTagIds.includes(tId));
             if (filteredTags.length !== initialLen) {
-              dataUpdates[`flags.ClueBook.data.${tab}.${entryId}.tags`] = filteredTags;
-              needsDataUpdate = true;
+              combinedUpdates[`flags.ClueBook.data.${tab}.${entryId}.tags`] = filteredTags;
             }
           }
         }
       }
-      
-      if (needsDataUpdate) {
-        if (this.workspace === "personal") {
-          await game.user.update(dataUpdates);
-        } else if (this.journal) {
-          await this.journal.update(dataUpdates);
-        }
-      }
+    }
+
+    if (Object.keys(combinedUpdates).length > 0) {
+      await WorkspaceRepository.updatePaths(wsId, combinedUpdates);
     }
 
     ui.notifications.info(game.i18n.localize("CLUEBOOK.AppActions.Save"));
-    
+
     // Re-render main app if it exists
     if (foundry.applications?.instances) {
       for (const app of foundry.applications.instances.values()) {
@@ -245,8 +256,7 @@ export class ClueBookTagManager extends HandlebarsApplicationMixin(ApplicationV2
         }
       }
     }
-    
+
     this.close();
   }
 }
-

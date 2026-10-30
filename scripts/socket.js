@@ -1,109 +1,160 @@
 import { TimeService } from "./services/time-service.js";
 import { MediaService } from "./services/media-service.js";
-import { getForcedDeletion } from "./data-models.js";
+import { WorkspaceRepository } from "./services/workspace-repository.js";
 
 export class ClueBookSocket {
   static #isWorkspace(journal) {
-    return journal && journal.getFlag("ClueBook", "isWorkspace");
+    return Boolean(journal && journal.getFlag("ClueBook", "isWorkspace"));
+  }
+
+  static #isActiveGM() {
+    if (!game.user?.isGM) return false;
+    return game.users?.activeGM ? game.users.activeGM.isSelf : true;
   }
 
   static init() {
     game.socket.on("module.ClueBook", async (data) => {
-      if (!data?.action) return;
+      try {
+        if (!data?.action) return;
 
-      // GM-only handlers
-      if (game.user.isGM) {
-        switch (data.action) {
-          case "updateBoard":
-            return ClueBookSocket.#handleUpdateBoard(data);
-          case "updateBoardData":
-            return ClueBookSocket.#handleUpdateBoardData(data);
-          case "createBoard":
-            return ClueBookSocket.#handleCreateBoard(data);
-          case "addSimpleCalendarNote":
-            return ClueBookSocket.#handleAddScNote(data);
-          case "uploadMedia":
-            return MediaService.handleSocketUpload(data);
-        }
-      }
-
-      // Handlers for targeted user
-      if (data.userId === game.user.id) {
-        if (data.action === "boardCreated") {
-          ui.notifications.info(game.i18n.localize("CLUEBOOK.Socket.BoardCreatedSuccess"));
-          const app = Array.from(foundry.applications.instances.values()).find(w => w.constructor.name === "ClueBookApp");
-          if (app) {
-            app.state.activeWorkspace = data.journalId;
-            app.render();
+        // Proxy mutations execute ONLY on the single active GM to prevent duplicate boards/files/writes
+        if (ClueBookSocket.#isActiveGM()) {
+          switch (data.action) {
+            case "updateBoard":
+              return await ClueBookSocket.#handleUpdateBoard(data);
+            case "updateBoardData":
+              return await ClueBookSocket.#handleUpdateBoardData(data);
+            case "createBoard":
+              return await ClueBookSocket.#handleCreateBoard(data);
+            case "addSimpleCalendarNote":
+              return await ClueBookSocket.#handleAddScNote(data);
+            case "uploadMedia":
+              return await MediaService.handleSocketUpload(data);
           }
-        } else if (data.action === "scNoteCreated") {
-          ui.notifications.info(game.i18n.localize("CLUEBOOK.Socket.SentToSimpleCalendar"));
-          const journal = game.journal.get(data.journalId);
-          if (journal?.sheet) journal.sheet.render(true);
         }
+
+        // Handlers for targeted user
+        if (data.userId === game.user.id) {
+          if (data.action === "boardCreated") {
+            ui.notifications.info(game.i18n.localize("CLUEBOOK.Socket.BoardCreatedSuccess"));
+            const app = Array.from(foundry.applications.instances.values()).find(w => w.constructor.name === "ClueBookApp");
+            if (app) {
+              app.state.activeWorkspace = data.journalId;
+              app.state.camera = null;
+              app.render();
+            }
+          } else if (data.action === "scNoteCreated") {
+            ui.notifications.info(game.i18n.localize("CLUEBOOK.Socket.SentToSimpleCalendar"));
+            const journal = game.journal.get(data.journalId);
+            if (journal?.sheet) journal.sheet.render(true);
+          }
+        }
+      } catch (err) {
+        console.error("ClueBook | Socket dispatch error:", err);
       }
     });
   }
 
-  static async #handleUpdateBoard({ journalId, name, ownership }) {
+  static async #handleUpdateBoard({ senderId, userId, journalId, name, ownership }) {
     try {
       const journal = game.journal.get(journalId);
       if (!ClueBookSocket.#isWorkspace(journal)) return;
 
+      const actorUser = game.users.get(senderId || userId);
+      if (!actorUser || (!actorUser.isGM && !journal.testUserPermission(actorUser, "OWNER"))) {
+        console.warn("ClueBook | Blocked unauthorized updateBoard request from:", senderId || userId);
+        return;
+      }
+
       const updates = {};
       if (typeof name === "string" && name.trim()) updates.name = name.trim();
-      if (ownership && typeof ownership === "object") updates.ownership = ownership;
+      if (ownership && typeof ownership === "object") {
+        const safeOwnership = { ...journal.ownership };
+        for (const [uId, lvl] of Object.entries(ownership)) {
+          if ((uId === "default" || game.users.has(uId)) && [0, 1, 2, 3].includes(lvl)) {
+            safeOwnership[uId] = lvl;
+          }
+        }
+        game.users.filter(u => u.isGM).forEach(gm => { safeOwnership[gm.id] = 3; });
+        updates.ownership = safeOwnership;
+      }
 
-      if (Object.keys(updates).length > 0) await journal.update(updates);
+      if (Object.keys(updates).length > 0) {
+        await journal.update(updates, { cluebookProxy: true });
+      }
     } catch (err) {
       console.error("ClueBook | Error updating board:", err);
     }
   }
 
-  static async #handleUpdateBoardData({ journalId, updateData, unsetPaths }) {
+  static async #handleUpdateBoardData({ senderId, userId, journalId, updateData, unsetPaths }) {
     try {
       const journal = game.journal.get(journalId);
       if (!ClueBookSocket.#isWorkspace(journal)) return;
 
-      const safeUpdates = {};
+      const actorUser = game.users.get(senderId || userId);
+      if (!actorUser || (!actorUser.isGM && !journal.testUserPermission(actorUser, "OBSERVER"))) {
+        console.warn("ClueBook | Blocked unauthorized updateBoardData request from:", senderId || userId);
+        return;
+      }
 
-      // Convert unsetPaths to ForcedDeletion keys for atomic batch update if provided
+      const boardSettings = journal.getFlag("ClueBook", "settings") || {};
+      if (!actorUser.isGM && boardSettings.readOnly) {
+        console.warn("ClueBook | Blocked socket write to read-only board from:", actorUser.name);
+        return;
+      }
+
+      const isOwnerOrGM = Boolean(actorUser.isGM || journal.testUserPermission(actorUser, "OWNER"));
+      const safeUpdates = {};
+      const safeUnsets = [];
+
       if (Array.isArray(unsetPaths)) {
-        const del = getForcedDeletion();
         for (const path of unsetPaths) {
-          if (typeof path === "string" && (path.startsWith("data.") || path.startsWith("settings."))) {
-            safeUpdates[`flags.ClueBook.${path}`] = del;
+          if (typeof path !== "string") continue;
+          if (path.startsWith("data.")) {
+            safeUnsets.push(path);
+          } else if (path.startsWith("settings.") && isOwnerOrGM) {
+            safeUnsets.push(path);
           }
         }
       }
 
-      // Validate and include updateData
       if (updateData && typeof updateData === "object") {
         for (const [key, value] of Object.entries(updateData)) {
-          if (key.startsWith("flags.ClueBook.data.") || key.startsWith("flags.ClueBook.settings.")) {
-            if (value && typeof value === "object" && value.__$OPERATOR$__ === "ForcedDeletion") {
-              safeUpdates[key] = getForcedDeletion();
-            } else {
+          if (key.startsWith("flags.ClueBook.data.")) {
+            safeUpdates[key] = value;
+          } else if (key.startsWith("flags.ClueBook.settings.")) {
+            if (isOwnerOrGM) {
               safeUpdates[key] = value;
+            } else if (key.startsWith("flags.ClueBook.settings.tags.") && boardSettings.showTagsToPlayers !== false) {
+              if (value && typeof value === "object") {
+                safeUpdates[key] = { ...value, isSecret: false };
+              }
             }
           }
         }
       }
 
-      if (Object.keys(safeUpdates).length > 0) {
-        await journal.update(safeUpdates);
+      if (Object.keys(safeUpdates).length > 0 || safeUnsets.length > 0) {
+        await WorkspaceRepository.applySocketMutation(journal, {
+          updateData: safeUpdates,
+          unsetPaths: safeUnsets
+        });
       }
     } catch (err) {
       console.error("ClueBook | Error updating board data via socket:", err);
     }
   }
 
-  static async #handleCreateBoard({ userId, name, ownership }) {
+  static async #handleCreateBoard({ userId, senderId, name, ownership }) {
     try {
-      const requestingUser = game.users.get(userId);
+      const targetUserId = userId || senderId;
+      const requestingUser = game.users.get(targetUserId);
       if (!requestingUser) return;
 
-      const boardName = (typeof name === "string" && name.trim()) ? name.trim() : game.i18n.localize("CLUEBOOK.Workspaces.DefaultBoardName");
+      const boardName = (typeof name === "string" && name.trim())
+        ? name.trim()
+        : game.i18n.localize("CLUEBOOK.Workspaces.DefaultBoardName");
       ui.notifications.info(game.i18n.format("CLUEBOOK.Socket.BoardCreationRequest", { player: requestingUser.name, board: boardName }));
 
       let folder = game.folders.find(f => f.name === "ClueBook Boards" && f.type === "JournalEntry");
@@ -112,8 +163,8 @@ export class ClueBookSocket {
       }
 
       const safeOwnership = { default: 0 };
-      safeOwnership[userId] = 3;
-      game.users.filter(u => u.isGM).forEach(gm => safeOwnership[gm.id] = 3);
+      safeOwnership[targetUserId] = 3;
+      game.users.filter(u => u.isGM).forEach(gm => { safeOwnership[gm.id] = 3; });
       if (ownership && typeof ownership === "object") {
         for (const [uId, lvl] of Object.entries(ownership)) {
           if (game.users.has(uId) && [0, 1, 2, 3].includes(lvl)) safeOwnership[uId] = lvl;
@@ -131,7 +182,7 @@ export class ClueBookSocket {
         game.socket.emit("module.ClueBook", {
           action: "boardCreated",
           journalId: journal.id,
-          userId: userId
+          userId: targetUserId
         });
         ui.notifications.info(game.i18n.format("CLUEBOOK.Socket.BoardCreatedFor", { board: boardName }));
       }
@@ -141,17 +192,18 @@ export class ClueBookSocket {
     }
   }
 
-  static async #handleAddScNote({ userId, title, content, startDate, endDate }) {
+  static async #handleAddScNote({ userId, senderId, title, content, startDate }) {
     try {
+      const targetUserId = userId || senderId;
       if (!TimeService.isActive()) return;
-      
+
       const ts = startDate ? TimeService.dateToTimestamp(startDate) : game.time.worldTime;
       const scNote = await TimeService.addNote(title, content, ts);
 
-      if (scNote) {
+      if (scNote && targetUserId) {
         game.socket.emit("module.ClueBook", {
           action: "scNoteCreated",
-          userId: userId,
+          userId: targetUserId,
           journalId: scNote.id || scNote._id
         });
       }
@@ -162,10 +214,11 @@ export class ClueBookSocket {
 
   static async updateBoard(journalId, name, ownership) {
     if (game.user.isGM) {
-      await ClueBookSocket.#handleUpdateBoard({ journalId, name, ownership });
+      await ClueBookSocket.#handleUpdateBoard({ senderId: game.user.id, journalId, name, ownership });
     } else {
       game.socket.emit("module.ClueBook", {
         action: "updateBoard",
+        senderId: game.user.id,
         journalId,
         name,
         ownership

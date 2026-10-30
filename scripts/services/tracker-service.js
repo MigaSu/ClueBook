@@ -1,5 +1,6 @@
 import { TimeService } from "./time-service.js";
 import { TextEnrichmentService } from "./text-enrichment-service.js";
+import { WorkspaceAccessService } from "./workspace-access-service.js";
 
 export class TrackerService {
 
@@ -18,23 +19,23 @@ export class TrackerService {
 
     // Gather from personal workspace
     const personalData = game.user.getFlag("ClueBook", "data") || {};
-    await this.#extractTrackedEvents(personalData, uniqueTrackedIds, "personal", game.i18n.localize("CLUEBOOK.Workspace.Personal"), allEvents, currentTs);
+    await this.#extractTrackedEvents(personalData, uniqueTrackedIds, "personal", game.i18n.localize("CLUEBOOK.Workspace.Personal"), allEvents, currentTs, false);
 
     // Gather from shared journal workspaces
     for (const j of game.journal) {
-      if (j.getFlag("ClueBook", "isWorkspace") && j.testUserPermission(game.user, "OBSERVER")) {
+      if (j.getFlag("ClueBook", "isWorkspace") && (game.user.isGM || j.testUserPermission(game.user, "OBSERVER"))) {
         const sharedData = j.getFlag("ClueBook", "data") || {};
-        await this.#extractTrackedEvents(sharedData, uniqueTrackedIds, j.id, j.name, allEvents, currentTs);
+        await this.#extractTrackedEvents(sharedData, uniqueTrackedIds, j.id, j.name, allEvents, currentTs, true);
       }
     }
-    
+
     // Gather from other players' personal workspaces (if GM)
     if (game.user.isGM) {
       for (const u of game.users) {
         if (u.id !== game.user.id && !u.isGM) {
           const uName = u.getFlag("ClueBook", "personalWorkspaceName") || game.i18n.format("CLUEBOOK.Workspace.PersonalUser", { user: u.name });
           const uData = u.getFlag("ClueBook", "data") || {};
-          await this.#extractTrackedEvents(uData, uniqueTrackedIds, `personal_${u.id}`, uName, allEvents, currentTs);
+          await this.#extractTrackedEvents(uData, uniqueTrackedIds, `personal_${u.id}`, uName, allEvents, currentTs, false);
         }
       }
     }
@@ -45,69 +46,79 @@ export class TrackerService {
       return true;
     });
 
-    // Sort by time difference
+    // Sort timed items chronologically; preserve manual trackedIds order for untimed / text-only items
     filtered.sort((a, b) => {
       if (TimeService.isActive()) {
-        if (a.diff === b.diff) return 0;
-        if (a.diff === Infinity) return 1;
-        if (b.diff === Infinity) return -1;
+        if (!a.hasTime && !b.hasTime) {
+          return uniqueTrackedIds.indexOf(a.id) - uniqueTrackedIds.indexOf(b.id);
+        }
+        if (!a.hasTime) return 1;
+        if (!b.hasTime) return -1;
+        if (a.diff === b.diff) {
+          return uniqueTrackedIds.indexOf(a.id) - uniqueTrackedIds.indexOf(b.id);
+        }
         return a.diff - b.diff;
-      } else {
-        const idxA = uniqueTrackedIds.indexOf(a.id);
-        const idxB = uniqueTrackedIds.indexOf(b.id);
-        return idxA - idxB;
       }
+      return uniqueTrackedIds.indexOf(a.id) - uniqueTrackedIds.indexOf(b.id);
     });
 
     return filtered;
   }
 
-  static async #extractTrackedEvents(data, trackedIds, workspaceId, workspaceName, outputArray, currentTs) {
+  static async #extractTrackedEvents(data, trackedIds, workspaceId, workspaceName, outputArray, currentTs, isShared) {
     if (!data) return;
-    
+    const folders = data.folders || {};
+
     const TE = foundry.applications?.ux?.TextEditor?.implementation ?? TextEditor;
     const enrich = async (text) => {
       if (!text) return game.i18n.localize("CLUEBOOK.EntryDetails.Untitled");
-      let newText = await TE.enrichHTML(TextEnrichmentService.wrapBareUUIDs(text), { async: true });
+      const newText = await TE.enrichHTML(TextEnrichmentService.wrapBareUUIDs(text), { async: true });
       return TextEnrichmentService.enrichMentionsToHTML(newText);
     };
 
-    // Quests
+    // Tasks / Quests
     if (data.quests) {
       for (const [id, q] of Object.entries(data.quests)) {
-        if (q && (q.status === "active" || !q.status) && trackedIds.includes(id)) {
-          let ts = q.deadlineTimestamp;
-          let enrichedName = await enrich(q.text);
-          this.#pushEvent(outputArray, id, enrichedName, ts, currentTs, workspaceId, workspaceName, "quests", q.color || "purple");
-        }
+        if (!q || !trackedIds.includes(id)) continue;
+        if (q.status && q.status !== "active") continue;
+        if (!WorkspaceAccessService.canUserViewEntry(q, folders, game.user, isShared)) continue;
+
+        const isTextMode = Boolean(q.useTextTime || (!q.deadlineTimestamp && q.deadline));
+        const ts = isTextMode ? null : q.deadlineTimestamp;
+        const textTime = isTextMode ? TextEnrichmentService.stripToPlainText(q.deadline || "") : "";
+        const enrichedName = await enrich(q.text);
+        this.#pushEvent(outputArray, id, enrichedName, ts, textTime, currentTs, workspaceId, workspaceName, "quests", q.color || "purple");
       }
     }
-    
+
     // Timeline
     if (data.timeline) {
       for (const [id, t] of Object.entries(data.timeline)) {
-        if (t && trackedIds.includes(id)) {
-          let ts = t.startTimestamp;
-          let enrichedName = await enrich(t.event);
-          this.#pushEvent(outputArray, id, enrichedName, ts, currentTs, workspaceId, workspaceName, "timeline", t.color || "red");
-        }
+        if (!t || !trackedIds.includes(id)) continue;
+        if (!WorkspaceAccessService.canUserViewEntry(t, folders, game.user, isShared)) continue;
+
+        const isTextMode = Boolean(t.useTextTime || (!t.startTimestamp && (t.time || t.date)));
+        const ts = isTextMode ? null : t.startTimestamp;
+        const textTime = isTextMode ? TextEnrichmentService.stripToPlainText(t.time || t.date || "") : "";
+        const enrichedName = await enrich(t.event);
+        this.#pushEvent(outputArray, id, enrichedName, ts, textTime, currentTs, workspaceId, workspaceName, "timeline", t.color || "red");
       }
     }
   }
 
-  static #pushEvent(arr, id, name, targetTs, currentTs, workspaceId, workspaceName, tab, colorHex) {
-    if (arr.some(e => e.id === id)) return; // Prevent duplicate IDs
+  static #pushEvent(arr, id, name, targetTs, textTime, currentTs, workspaceId, workspaceName, tab, colorHex) {
+    if (arr.some(e => e.id === id)) return;
 
-    // Treat 0, null, undefined, or empty string as "No time"
     const hasTime = targetTs !== undefined && targetTs !== null && targetTs !== "" && targetTs !== 0;
-    
     const diff = hasTime ? targetTs - currentTs : Infinity;
     const isOverdue = hasTime ? diff < 0 : false;
-    
+
     let timeStr = "";
     if (hasTime) {
       const formatted = TimeService.formatTimestamp(targetTs);
       timeStr = formatted.fullStr !== "—" ? formatted.fullStr : "";
+    } else if (textTime) {
+      timeStr = textTime;
     }
 
     let diffStr = "";
@@ -116,25 +127,26 @@ export class TrackerService {
       const d = Math.floor(absDiff / 86400);
       const h = Math.floor((absDiff % 86400) / 3600);
       const m = Math.floor((absDiff % 3600) / 60);
-      
+
       if (d > 0) diffStr += d + game.i18n.localize("CLUEBOOK.Time.DaysShort") + " ";
       if (h > 0) diffStr += h + game.i18n.localize("CLUEBOOK.Time.HoursShort") + " ";
       diffStr += m + game.i18n.localize("CLUEBOOK.Time.MinutesShort");
     } else {
-      diffStr = "—";
+      diffStr = textTime || "—";
     }
 
-    // Map default colors to actual colors if needed
     const colorMap = {
-      "yellow": "#ffeb3b", "green": "#4caf50", "blue": "#2196f3", 
-      "red": "#f44336", "purple": "#9c27b0", "orange": "#ff9800",
-      "teal": "#009688", "pink": "#e91e63", "brown": "#795548"
+      yellow: "#ffeb3b", green: "#4caf50", blue: "#2196f3",
+      red: "#f44336", purple: "#9c27b0", orange: "#ff9800",
+      teal: "#009688", pink: "#e91e63", brown: "#795548"
     };
     const finalColor = colorMap[colorHex] || colorHex;
 
     arr.push({
       id,
-      name: name,
+      name,
+      hasTime,
+      textTime,
       diff,
       isOverdue,
       timeStr,

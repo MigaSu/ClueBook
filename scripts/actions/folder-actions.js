@@ -1,5 +1,6 @@
-import { getForcedDeletion } from "../data-models.js";
+import { assignDeletion, ClueBookFolderModel } from "../data-models.js";
 import { ClueBookEditDialog } from "../edit-dialog.js";
+import { WorkspaceRepository } from "../services/workspace-repository.js";
 
 export const ClueBookFolderActionsMixin = (Base) => class extends Base {
   static async _onCreateFolder(event, target) {
@@ -37,7 +38,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     `;
 
     const content = `
-      <form class="cb-folder-form" style="display:flex; flex-direction:column; gap:12px;">
+      <div class="cb-folder-form" style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
           <label style="font-weight:600; margin-bottom:4px; display:block;">${game.i18n.localize("CLUEBOOK.Folder.NameLabel")}:</label>
           <input type="text" name="folderName" value="${game.i18n.localize("CLUEBOOK.Folder.DefaultName")}" autofocus style="width:100%; padding:6px; border-radius:4px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.2); color:#fff;" />
@@ -59,7 +60,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
           <label style="font-weight:600; margin-bottom:4px; display:block;">${game.i18n.localize("CLUEBOOK.Folder.ColorLabel")}:</label>
           ${colorOptionsHTML}
         </div>
-      </form>
+      </div>
     `;
 
     const result = await foundry.applications.api.DialogV2.wait({
@@ -84,7 +85,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
           icon: "fas fa-folder-plus",
           default: true,
           callback: (event, button, dialog) => {
-            const form = dialog.element.querySelector("form");
+            const form = button.form || dialog.element;
             const name = form.querySelector('input[name="folderName"]')?.value?.trim() || game.i18n.localize("CLUEBOOK.Folder.DefaultName");
             const colorRadio = form.querySelector('input[name="folderColor"]:checked')?.value || "purple";
             const customHex = form.querySelector('input[name="customColorHex"]')?.value || "#7b61ff";
@@ -109,15 +110,17 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     const tabFolders = Object.values(folders).filter(f => f && f.tab === tab && (f.position || "top") === result.position);
     const nextSort = tabFolders.length > 0 ? Math.max(...tabFolders.map(f => f.sort || 0)) + 1 : 0;
 
+    const folderData = new ClueBookFolderModel({
+      name: result.name,
+      tab: tab,
+      color: result.color,
+      position: result.position,
+      sort: nextSort,
+      isCollapsed: false
+    }).toObject();
+
     await this._updateWorkspaceData({
-      [`flags.ClueBook.data.folders.${folderId}`]: {
-        name: result.name,
-        tab: tab,
-        color: result.color,
-        position: result.position,
-        sort: nextSort,
-        isCollapsed: false
-      }
+      [`flags.ClueBook.data.folders.${folderId}`]: folderData
     });
 
     this.render({ parts: ["content"] });
@@ -170,7 +173,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     `;
 
     const content = `
-      <form class="cb-folder-form" style="display:flex; flex-direction:column; gap:12px;">
+      <div class="cb-folder-form" style="display:flex; flex-direction:column; gap:12px;">
         <div class="form-group">
           <label style="font-weight:600; margin-bottom:4px; display:block;">${game.i18n.localize("CLUEBOOK.Folder.NameLabel")}:</label>
           <input type="text" name="folderName" value="${folder.name || ""}" autofocus style="width:100%; padding:6px; border-radius:4px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.2); color:#fff;" />
@@ -192,7 +195,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
           <label style="font-weight:600; margin-bottom:4px; display:block;">${game.i18n.localize("CLUEBOOK.Folder.ColorLabel")}:</label>
           ${colorOptionsHTML}
         </div>
-      </form>
+      </div>
     `;
 
     const result = await foundry.applications.api.DialogV2.wait({
@@ -217,7 +220,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
           icon: "fas fa-save",
           default: true,
           callback: (event, button, dialog) => {
-            const form = dialog.element.querySelector("form");
+            const form = button.form || dialog.element;
             const name = form.querySelector('input[name="folderName"]')?.value?.trim() || folder.name;
             const colorRadio = form.querySelector('input[name="folderColor"]:checked')?.value || "purple";
             const customHex = form.querySelector('input[name="customColorHex"]')?.value || "#7b61ff";
@@ -294,12 +297,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     if (!proceed) return;
 
     const updates = {};
-    const deletion = getForcedDeletion();
-    if (deletion) {
-      updates[`flags.ClueBook.data.folders.${folderId}`] = deletion;
-    } else {
-      updates[`flags.ClueBook.data.folders.-=${folderId}`] = null;
-    }
+    assignDeletion(updates, "flags.ClueBook.data.folders", folderId);
 
     // Release all entries inside this folder back to root
     const tab = folder.tab || this.state.activeTab;
@@ -345,9 +343,11 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     const folderId = target.dataset.folderId;
     if (!folderId) return;
 
-    const sourceTab = this.state.activeTab;
+    const data = this._getWorkspaceData();
+    const folder = data?.folders?.[folderId];
+    const sourceTab = folder?.tab || this.state.activeTab;
     const newEntryId = foundry.utils.randomID();
-    const defaultColor = this.getSettings()?.theme?.defaultColor || "yellow";
+    const defaultColor = this.getSettings()?.defaultColors?.[sourceTab] || "yellow";
 
     const newEntry = {
       type: sourceTab,
@@ -358,15 +358,11 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
       folderId: folderId
     };
 
-    const flagUpdates = {
-      [`flags.ClueBook.data.${sourceTab}.${newEntryId}`]: newEntry
-    };
-
-    await this._updateWorkspaceData(flagUpdates);
+    await WorkspaceRepository.saveEntry(this.state.activeWorkspace, sourceTab, newEntryId, newEntry);
 
     // Open edit dialog immediately for the newly created entry
     new ClueBookEditDialog({
-      entry: newEntry,
+      entry: { id: newEntryId, ...newEntry },
       sourceTab: sourceTab,
       entryId: newEntryId,
       workspace: this.state.activeWorkspace,
@@ -460,7 +456,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
     }).join('');
 
     const content = `
-      <form id="cluebook-visibility-form" style="display: flex; flex-direction: column; gap: 12px; padding: 10px;">
+      <div id="cluebook-visibility-form" style="display: flex; flex-direction: column; gap: 12px; padding: 10px;">
         <div style="display: flex; gap: 8px;">
           <button type="button" id="btn-visible-all" style="flex: 1; padding: 6px 10px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgba(255,255,255,0.08); border: 1px solid var(--color-border-light-2); border-radius: 4px; color: var(--color-text-light-highlight);">
             <i class="fas fa-eye"></i> ${game.i18n.localize("CLUEBOOK.Entry.VisibleToAll")}
@@ -473,7 +469,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
         <div style="display: flex; flex-direction: column; max-height: 200px; overflow-y: auto; padding: 8px; background: rgba(0,0,0,0.15); border-radius: 5px; border: 1px solid var(--color-border-light-1);">
           ${userCheckboxes}
         </div>
-      </form>
+      </div>
     `;
 
     const result = await foundry.applications.api.DialogV2.wait({
@@ -503,7 +499,7 @@ export const ClueBookFolderActionsMixin = (Base) => class extends Base {
         label: game.i18n.localize("CLUEBOOK.Entry.Save"),
         icon: "fas fa-save",
         callback: (event, button, dialog) => {
-          const form = dialog.element.querySelector("form");
+          const form = button.form || dialog.element;
           const selected = Array.from(form.querySelectorAll('input[name="visibleTo"]:checked')).map(cb => cb.value);
 
           if (selected.length === allUsers.length) {

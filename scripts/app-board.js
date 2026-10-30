@@ -1,5 +1,7 @@
 import { ClueBookEditDialog } from "./edit-dialog.js";
-import { getForcedDeletion, getRandomPhotoTilt } from "./data-models.js";
+import { assignDeletion, getRandomPhotoTilt, isEntryTab } from "./data-models.js";
+import { WorkspaceRepository } from "./services/workspace-repository.js";
+import { WorkspaceAccessService } from "./services/workspace-access-service.js";
 
 export const ClueBookBoardMixin = (Base) => class extends Base {
   _setupBoardInteractivity(html) {
@@ -478,7 +480,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       });
     });
 
-    board.querySelectorAll('.entry-controls').forEach(ctrl => {
+    board.querySelectorAll('.entry-controls, .cb-backdrop-menu-handle').forEach(ctrl => {
       ctrl.addEventListener('mousedown', (ev) => ev.stopPropagation());
     });
 
@@ -602,11 +604,11 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       entry.addEventListener('mousedown', (ev) => {
         if (this.state.isReadOnly) return;
         if (ev.button !== 0) return;
-        if (ev.target.closest('.entry-controls') || ev.target.closest('.edit-mode') || ev.target.closest('.cb-pin-popover')) {
+        if (ev.target.closest('.entry-controls') || ev.target.closest('.cb-pin-popover') || ev.target.closest('.cb-backdrop-menu-handle') || ev.target.closest('.cb-backlinks-details') || ev.target.closest('.cb-link-chip') || ev.target.closest('.cb-mention-link')) {
           ev.stopPropagation();
           return;
         }
-        if (entry.classList.contains('is-editing')) return;
+        if (entry.classList.contains('is-inline-editing')) return;
         
         if (this._hoverTimer) clearTimeout(this._hoverTimer);
         this._resetHighlight();
@@ -858,6 +860,8 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       }
 
       this.state.isBoardInteracting = false;
+      this._isAppWindowActive = true;
+      if (this.element) this.element.focus({ preventScroll: true });
       if (this.state.pendingRender) {
         this.state.pendingRender = false;
         this.render({ parts: ["content"] });
@@ -912,6 +916,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     let rawHTML = '';
 
     if (selectedCount > 1) {
+      if (this.state.isReadOnly) return;
       const isGM = game.user.isGM;
       rawHTML = `
         <div class="cb-menu-item" data-action="mass-edit"><i class="fas fa-palette"></i> ${game.i18n.localize("CLUEBOOK.MassEdit.Edit")} (${selectedCount})</div>
@@ -935,13 +940,16 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       const isPinned = entryData.pinned;
       const isHidden = entryData.isHidden;
       const isGM = game.user.isGM;
+      const readOnly = Boolean(this.state.isReadOnly);
 
-      rawHTML += `<div class="cb-menu-item" data-action="edit"><i class="fas fa-pencil-alt"></i> ${game.i18n.localize("CLUEBOOK.Entry.Edit")}</div>`;
-      rawHTML += `<div class="cb-menu-item" data-action="toggle-pin"><i class="fas ${isPinned ? 'fa-unlock' : 'fa-thumbtack'}"></i> ${isPinned ? game.i18n.localize("CLUEBOOK.Entry.Unpin") : game.i18n.localize("CLUEBOOK.Entry.Pin")}</div>`;
+      if (!readOnly) {
+        rawHTML += `<div class="cb-menu-item" data-action="edit"><i class="fas fa-pencil-alt"></i> ${game.i18n.localize("CLUEBOOK.Entry.Edit")}</div>`;
+        rawHTML += `<div class="cb-menu-item" data-action="toggle-pin"><i class="fas ${isPinned ? 'fa-unlock' : 'fa-thumbtack'}"></i> ${isPinned ? game.i18n.localize("CLUEBOOK.Entry.Unpin") : game.i18n.localize("CLUEBOOK.Entry.Pin")}</div>`;
 
-      if (sourceTab === "gallery" || entryData.rotation !== undefined) {
-        const hasTilt = entryData.rotation !== undefined && entryData.rotation !== 0;
-        rawHTML += `<div class="cb-menu-item" data-action="toggle-rotation"><i class="fas ${hasTilt ? 'fa-square' : 'fa-sync-alt'}"></i> ${hasTilt ? game.i18n.localize("CLUEBOOK.Board.ResetRotation") : game.i18n.localize("CLUEBOOK.Board.RandomTilt")}</div>`;
+        if (sourceTab === "gallery" || entryData.rotation !== undefined) {
+          const hasTilt = entryData.rotation !== undefined && entryData.rotation !== 0;
+          rawHTML += `<div class="cb-menu-item" data-action="toggle-rotation"><i class="fas ${hasTilt ? 'fa-square' : 'fa-sync-alt'}"></i> ${hasTilt ? game.i18n.localize("CLUEBOOK.Board.ResetRotation") : game.i18n.localize("CLUEBOOK.Board.RandomTilt")}</div>`;
+        }
       }
 
       if (isGM) {
@@ -959,9 +967,11 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         rawHTML += `<div class="cb-menu-item" data-action="activate-scene"><i class="fas fa-map"></i> ${game.i18n.localize("CLUEBOOK.Entry.ViewScene")}</div>`;
       }
 
-      rawHTML += `<div class="cb-menu-separator"></div>`;
-      rawHTML += `<div class="cb-menu-item" data-action="remove-board"><i class="fas fa-times"></i> ${game.i18n.localize("CLUEBOOK.Entry.RemoveFromBoard")}</div>`;
-      rawHTML += `<div class="cb-menu-item danger" data-action="delete"><i class="fas fa-trash"></i> ${game.i18n.localize("CLUEBOOK.Entry.Delete")}</div>`;
+      if (!readOnly) {
+        rawHTML += `<div class="cb-menu-separator"></div>`;
+        rawHTML += `<div class="cb-menu-item" data-action="remove-board"><i class="fas fa-times"></i> ${game.i18n.localize("CLUEBOOK.Entry.RemoveFromBoard")}</div>`;
+        rawHTML += `<div class="cb-menu-item danger" data-action="delete"><i class="fas fa-trash"></i> ${game.i18n.localize("CLUEBOOK.Entry.Delete")}</div>`;
+      }
     }
 
     if (!rawHTML) return;
@@ -996,6 +1006,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
   }
 
   async _executeBoardContextMenuAction(action, clickedEntry = null, event = null) {
+    if (this.state.isReadOnly && action !== "open-actor" && action !== "activate-scene") return;
     const board = this.element.querySelector('.board-canvas');
     if (!board || !this._boardIndex) return;
 
@@ -1169,12 +1180,16 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
   async _navigateToEntryTab(targetId) {
     if (!targetId) return;
     const data = this._getWorkspaceData();
+    const folders = data.folders || {};
     let targetEntry = null;
     let targetTab = null;
 
     for (const [tabKey, tabData] of Object.entries(data)) {
-      if (tabKey === "links" || tabKey === "search" || tabKey === "board") continue;
+      if (!isEntryTab(tabKey)) continue;
       if (tabData?.[targetId]) {
+        if (!WorkspaceAccessService.canUserViewEntry(tabData[targetId], folders, game.user, Boolean(this.state.isShared))) {
+          return;
+        }
         targetEntry = tabData[targetId];
         targetTab = tabKey;
         break;
@@ -1250,7 +1265,6 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       
       const id = foundry.utils.randomID();
       const newEntry = this._getEmptyEntryForTab(targetTab);
-      newEntry.id = id;
       newEntry.sort = 9999;
       newEntry.onBoard = true;
       newEntry.boardX = boardX;
@@ -1259,10 +1273,8 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         newEntry.rotation = getRandomPhotoTilt();
       }
       
-      const flagPath = `flags.ClueBook.data.${targetTab}.${id}`;
-      const updateData = { [flagPath]: newEntry };
-      await this._updateWorkspaceData(updateData);
-      this.render({ parts: ["content"] });
+      await WorkspaceRepository.saveEntry(this.state.activeWorkspace, targetTab, id, newEntry);
+      await this.render({ parts: ["tabs", "content"] });
       
       const data = this._getWorkspaceData()?.[targetTab]?.[id] || newEntry;
       
@@ -1277,13 +1289,14 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
             flagUpdates[`flags.ClueBook.data.${targetTab}.${id}.${key}`] = value;
           }
           await this._updateWorkspaceData(flagUpdates);
-          this.render({ parts: ["content"] });
+          this.render({ parts: ["tabs", "content"] });
         }
       }).render(true);
     });
   }
 
   async _createLink(sourceId, targetId) {
+    if (this.state.isReadOnly) return;
     let links = this._getWorkspaceLinks();
     const [a, b] = [sourceId, targetId].sort();
     const key = `${a}_${b}`;
@@ -1297,6 +1310,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
   }
 
   async _deleteLink(s, t) {
+    if (this.state.isReadOnly) return;
     const proceed = await foundry.applications.api.DialogV2.confirm({
       window: { title: game.i18n.localize("CLUEBOOK.Board.DeleteLinkTitle") },
       content: `<p>${game.i18n.localize("CLUEBOOK.Board.DeleteLinkConfirm")}</p>`,
@@ -1325,11 +1339,14 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
 
     if (!key) return;
     
-    await this._updateWorkspaceData({ [`flags.ClueBook.data.links.${key}`]: getForcedDeletion() });
+    const updates = {};
+    assignDeletion(updates, "flags.ClueBook.data.links", key);
+    await this._updateWorkspaceData(updates);
     this.render({ parts: ["content"] });
   }
 
   async _editConnectionSettings(s, t) {
+    if (this.state.isReadOnly) return;
     let links = this._getWorkspaceLinks();
     let link = null;
     let key = null;
@@ -1353,50 +1370,54 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     
     if (!link) return;
 
-    const currentLabel = link.label || "";
-    const currentColor = link.color || "";
+    const esc = (str) => foundry.utils?.escapeHTML ? foundry.utils.escapeHTML(String(str ?? "")) : String(str ?? "");
+    const currentLabel = esc(link.label || "");
+    const currentColor = /^#[0-9a-fA-F]{6}$/.test(link.color || "") ? link.color : "";
     const currentStyle = link.style || "solid";
     
     const html = `
-      <style>
-        .cb-link-setting { margin-bottom: 10px; }
-        .cb-link-setting label { display: block; font-weight: bold; margin-bottom: 4px; }
-        .cb-link-setting input[type="text"], .cb-link-setting select { width: 100%; padding: 6px; border: 1px solid rgba(0,0,0,0.2); border-radius: 4px; box-sizing: border-box; }
-        .cb-link-setting input[type="color"] { width: 100%; height: 35px; border: none; cursor: pointer; padding: 0; box-sizing: border-box; }
-        .cb-color-presets { display: flex; gap: 8px; margin-bottom: 6px; justify-content: space-between; }
-        .cb-color-preset { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(0,0,0,0.2); transition: transform 0.1s; flex-shrink: 0; }
-        .cb-color-preset:hover { transform: scale(1.15); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-      </style>
-      <div class="cb-link-setting">
-        <label>${game.i18n.localize("CLUEBOOK.Board.LinkLabel")}</label>
-        <input type="text" name="label" value="${currentLabel}">
-      </div>
-      <div class="cb-link-setting">
-        <label>${game.i18n.localize("CLUEBOOK.Board.LinkStyleLabel")}</label>
-        <select name="style">
-          <option value="solid" ${currentStyle === 'solid' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleSolid")}</option>
-          <option value="dashed" ${currentStyle === 'dashed' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleDashed")}</option>
-          <option value="dotted" ${currentStyle === 'dotted' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleDotted")}</option>
-        </select>
-      </div>
-      <div class="cb-link-setting">
-        <label>${game.i18n.localize("CLUEBOOK.Board.LinkColorLabel")}</label>
-        <div class="cb-color-presets">
-           <div class="cb-color-preset" style="background: #ffffff;" data-c="#ffffff" title="${game.i18n.localize("CLUEBOOK.Board.ColorPresetDefault")}" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
-           <div class="cb-color-preset" style="background: #f44336;" data-c="#f44336" title="${game.i18n.localize("CLUEBOOK.Board.ColorPresetHostile")}" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
-           <div class="cb-color-preset" style="background: #4caf50;" data-c="#4caf50" title="${game.i18n.localize("CLUEBOOK.Board.ColorPresetFriendly")}" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
-           <div class="cb-color-preset" style="background: #2196f3;" data-c="#2196f3" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
-           <div class="cb-color-preset" style="background: #ff9800;" data-c="#ff9800" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
-           <div class="cb-color-preset" style="background: #9c27b0;" data-c="#9c27b0" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
-           <div class="cb-color-preset" style="background: #9e9e9e;" data-c="#9e9e9e" onclick="this.closest('.cb-link-setting').querySelector('input[type=color]').value = this.dataset.c"></div>
+      <div class="cb-board-link-dialog">
+        <div class="cb-link-setting">
+          <label>${game.i18n.localize("CLUEBOOK.Board.LinkLabel")}</label>
+          <input type="text" name="label" value="${currentLabel}">
         </div>
-        <input type="color" name="color" value="${currentColor || '#ffffff'}">
+        <div class="cb-link-setting">
+          <label>${game.i18n.localize("CLUEBOOK.Board.LinkStyleLabel")}</label>
+          <select name="style">
+            <option value="solid" ${currentStyle === 'solid' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleSolid")}</option>
+            <option value="dashed" ${currentStyle === 'dashed' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleDashed")}</option>
+            <option value="dotted" ${currentStyle === 'dotted' ? 'selected' : ''}>${game.i18n.localize("CLUEBOOK.Settings.LinkStyleDotted")}</option>
+          </select>
+        </div>
+        <div class="cb-link-setting">
+          <label>${game.i18n.localize("CLUEBOOK.Board.LinkColorLabel")}</label>
+          <div class="cb-color-presets">
+             <div class="cb-color-preset" style="background: #ffffff;" data-c="#ffffff" title="${game.i18n.localize("CLUEBOOK.Board.ColorPresetDefault")}"></div>
+             <div class="cb-color-preset" style="background: #f44336;" data-c="#f44336" title="${game.i18n.localize("CLUEBOOK.Board.ColorPresetHostile")}"></div>
+             <div class="cb-color-preset" style="background: #4caf50;" data-c="#4caf50" title="${game.i18n.localize("CLUEBOOK.Board.ColorPresetFriendly")}"></div>
+             <div class="cb-color-preset" style="background: #2196f3;" data-c="#2196f3"></div>
+             <div class="cb-color-preset" style="background: #ff9800;" data-c="#ff9800"></div>
+             <div class="cb-color-preset" style="background: #9c27b0;" data-c="#9c27b0"></div>
+             <div class="cb-color-preset" style="background: #9e9e9e;" data-c="#9e9e9e"></div>
+          </div>
+          <input type="color" name="color" value="${currentColor || '#ffffff'}">
+        </div>
       </div>
     `;
 
     const result = await foundry.applications.api.DialogV2.wait({
+      classes: ["cluebook-window"],
       window: { title: game.i18n.localize("CLUEBOOK.Board.LinkSettingsTitle") },
       content: html,
+      render: (event, dialog) => {
+        const root = dialog.element ?? dialog;
+        root.querySelectorAll('.cb-color-preset').forEach(preset => {
+          preset.addEventListener('click', () => {
+            const colorInput = root.querySelector('input[type="color"][name="color"]');
+            if (colorInput && preset.dataset.c) colorInput.value = preset.dataset.c;
+          });
+        });
+      },
       buttons: [
         {
           action: "save",
@@ -1425,10 +1446,12 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     if (!result) return;
 
     if (result.action === "delete") {
-      await this._updateWorkspaceData({ [`flags.ClueBook.data.links.${key}`]: getForcedDeletion() });
+      const updates = {};
+      assignDeletion(updates, "flags.ClueBook.data.links", key);
+      await this._updateWorkspaceData(updates);
     } else {
       const updateData = {};
-      updateData[`flags.ClueBook.data.links.${key}.label`] = result.label.trim() === "" ? null : result.label.trim();
+      updateData[`flags.ClueBook.data.links.${key}.label`] = result.label.trim() === "" ? "" : result.label.trim();
       updateData[`flags.ClueBook.data.links.${key}.style`] = result.style;
       updateData[`flags.ClueBook.data.links.${key}.color`] = (result.color === "#ffffff") ? "" : result.color;
       await this._updateWorkspaceData(updateData);

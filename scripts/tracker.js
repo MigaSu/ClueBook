@@ -1,5 +1,6 @@
 import { TrackerService } from "./services/tracker-service.js";
 import { TimeService } from "./services/time-service.js";
+import { TextEnrichmentService } from "./services/text-enrichment-service.js";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -21,8 +22,7 @@ export class TrackerWidget extends HandlebarsApplicationMixin(ApplicationV2) {
       closeWidget: TrackerWidget.#onCloseWidget,
       jumpToEntry: TrackerWidget.#onJumpToEntry,
       untrackEntry: TrackerWidget.#onUntrackEntry,
-      expandText: TrackerWidget.#onExpandText,
-      jumpToMention: TrackerWidget.#onJumpToMention
+      expandText: TrackerWidget.#onExpandText
     }
   };
 
@@ -50,7 +50,13 @@ export class TrackerWidget extends HandlebarsApplicationMixin(ApplicationV2) {
     context.hasEvents = events.length > 0;
     context.isSimpleCalendarActive = TimeService.isActive();
     
-    const pos = game.user.getFlag("ClueBook", "trackerWidgetPos") || { left: Math.round(window.innerWidth / 2 + 100), top: 200 };
+    const savedPos = game.user.getFlag("ClueBook", "trackerWidgetPos") || { left: Math.round(window.innerWidth / 2 + 100), top: 200 };
+    const maxLeft = Math.max(0, window.innerWidth - 340);
+    const maxTop = Math.max(0, window.innerHeight - 100);
+    const pos = {
+      left: Math.max(10, Math.min(savedPos.left ?? 10, maxLeft)),
+      top: Math.max(10, Math.min(savedPos.top ?? 10, maxTop))
+    };
     this.position.left = pos.left;
     this.position.top = pos.top;
 
@@ -62,11 +68,26 @@ export class TrackerWidget extends HandlebarsApplicationMixin(ApplicationV2) {
     const widget = this.element;
     if (!widget) return;
 
-    const pos = game.user.getFlag("ClueBook", "trackerWidgetPos") || { left: Math.round(window.innerWidth / 2 + 100), top: 200 };
+    const savedPos = game.user.getFlag("ClueBook", "trackerWidgetPos") || { left: Math.round(window.innerWidth / 2 + 100), top: 200 };
+    const maxLeft = Math.max(0, window.innerWidth - (widget.offsetWidth || 320) - 10);
+    const maxTop = Math.max(0, window.innerHeight - (widget.offsetHeight || 60) - 10);
+    const pos = {
+      left: Math.max(10, Math.min(savedPos.left ?? 10, maxLeft)),
+      top: Math.max(10, Math.min(savedPos.top ?? 10, maxTop))
+    };
     widget.style.left = `${pos.left}px`;
     widget.style.top = `${pos.top}px`;
 
-    // Dragging
+    // Bind mention link clicks
+    TextEnrichmentService.bindMentionClicks(widget, (mentionId, ev) => {
+      const linkEl = ev?.nodeType ? ev : (ev?.currentTarget ?? ev?.target);
+      const ws = linkEl?.closest(".cb-tracker-item")?.dataset?.workspace;
+      if (ws) {
+        game.modules.get("ClueBook")?.api?.openApp({ workspace: ws, focusId: mentionId });
+      }
+    });
+
+    // Dragging the widget
     let isDragging = false, hasMoved = false;
     let dragStartX = 0, dragStartY = 0, startLeft = 0, startTop = 0;
 
@@ -93,8 +114,12 @@ export class TrackerWidget extends HandlebarsApplicationMixin(ApplicationV2) {
           widget.classList.add("is-dragging");
         }
         if (hasMoved) {
-          widget.style.left = `${startLeft + dx}px`;
-          widget.style.top = `${startTop + dy}px`;
+          const mLeft = Math.max(0, window.innerWidth - (widget.offsetWidth || 320) - 10);
+          const mTop = Math.max(0, window.innerHeight - (widget.offsetHeight || 60) - 10);
+          const curLeft = Math.max(10, Math.min(startLeft + dx, mLeft));
+          const curTop = Math.max(10, Math.min(startTop + dy, mTop));
+          widget.style.left = `${curLeft}px`;
+          widget.style.top = `${curTop}px`;
         }
       });
 
@@ -104,8 +129,12 @@ export class TrackerWidget extends HandlebarsApplicationMixin(ApplicationV2) {
         header.releasePointerCapture(ev.pointerId);
         if (hasMoved) {
           setTimeout(() => widget.classList.remove("is-dragging"), 100);
-          const newLeft = parseInt(widget.style.left);
-          const newTop = parseInt(widget.style.top);
+          const mLeft = Math.max(0, window.innerWidth - (widget.offsetWidth || 320) - 10);
+          const mTop = Math.max(0, window.innerHeight - (widget.offsetHeight || 60) - 10);
+          const newLeft = Math.max(10, Math.min(parseInt(widget.style.left) || 0, mLeft));
+          const newTop = Math.max(10, Math.min(parseInt(widget.style.top) || 0, mTop));
+          widget.style.left = `${newLeft}px`;
+          widget.style.top = `${newTop}px`;
           this.position.left = newLeft;
           this.position.top = newTop;
           game.user.setFlag("ClueBook", "trackerWidgetPos", { left: newLeft, top: newTop });
@@ -113,54 +142,57 @@ export class TrackerWidget extends HandlebarsApplicationMixin(ApplicationV2) {
       });
     }
 
-    // HTML5 Drag and Drop for Manual Sorting
-    const scApi = window.SimpleCalendar?.api;
-    if (!scApi) {
-      const list = widget.querySelector(".cb-tracker-list");
-      if (list) {
-        let draggedItem = null;
+    // HTML5 Drag and Drop for Manual Sorting (untimed items)
+    const list = widget.querySelector(".cb-tracker-list");
+    if (list) {
+      let draggedItem = null;
 
-        list.addEventListener("dragstart", (ev) => {
-          draggedItem = ev.target.closest(".cb-tracker-item");
-          if (!draggedItem) return;
-          draggedItem.classList.add("is-dragging-item");
-          ev.dataTransfer.effectAllowed = "move";
-          // Firefox requires data to be set
-          ev.dataTransfer.setData("text/plain", draggedItem.dataset.id); 
-        });
-
-        list.addEventListener("dragover", (ev) => {
+      list.addEventListener("dragstart", (ev) => {
+        const item = ev.target.closest('.cb-tracker-item[draggable="true"]');
+        if (!item) {
           ev.preventDefault();
-          ev.dataTransfer.dropEffect = "move";
-          const targetItem = ev.target.closest(".cb-tracker-item");
-          if (targetItem && targetItem !== draggedItem) {
-            const rect = targetItem.getBoundingClientRect();
-            const next = (ev.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
-            list.insertBefore(draggedItem, next ? targetItem.nextSibling : targetItem);
-          }
-        });
+          return;
+        }
+        draggedItem = item;
+        draggedItem.classList.add("is-dragging-item");
+        ev.dataTransfer.effectAllowed = "move";
+        // Firefox requires data to be set
+        ev.dataTransfer.setData("text/plain", draggedItem.dataset.id);
+      });
 
-        list.addEventListener("dragend", (ev) => {
-          if (draggedItem) {
-            draggedItem.classList.remove("is-dragging-item");
-            draggedItem = null;
-          }
-        });
+      list.addEventListener("dragover", (ev) => {
+        ev.preventDefault();
+        ev.dataTransfer.dropEffect = "move";
+        if (!draggedItem) return;
 
-        list.addEventListener("drop", async (ev) => {
-          ev.preventDefault();
-          if (!draggedItem) return;
+        const targetItem = ev.target.closest('.cb-tracker-item[draggable="true"]');
+        if (targetItem && targetItem !== draggedItem) {
+          const rect = targetItem.getBoundingClientRect();
+          const next = (ev.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+          list.insertBefore(draggedItem, next ? targetItem.nextSibling : targetItem);
+        }
+      });
 
-          const items = Array.from(list.querySelectorAll(".cb-tracker-item"));
-          const domIds = items.map(el => el.dataset.id);
-          
-          let trackedIds = Array.from(game.user.getFlag("ClueBook", "trackedEvents") || []);
-          const nonDomIds = trackedIds.filter(id => !domIds.includes(id));
-          
-          const newOrder = [...domIds, ...nonDomIds];
-          await game.user.setFlag("ClueBook", "trackedEvents", newOrder);
-        });
-      }
+      list.addEventListener("dragend", () => {
+        if (draggedItem) {
+          draggedItem.classList.remove("is-dragging-item");
+          draggedItem = null;
+        }
+      });
+
+      list.addEventListener("drop", async (ev) => {
+        ev.preventDefault();
+        if (!draggedItem) return;
+
+        const items = Array.from(list.querySelectorAll(".cb-tracker-item"));
+        const domIds = items.map(el => el.dataset.id);
+        
+        let trackedIds = Array.from(game.user.getFlag("ClueBook", "trackedEvents") || []);
+        const nonDomIds = trackedIds.filter(id => !domIds.includes(id));
+        
+        const newOrder = [...domIds, ...nonDomIds];
+        await game.user.setFlag("ClueBook", "trackedEvents", newOrder);
+      });
     }
   }
 
@@ -183,12 +215,6 @@ export class TrackerWidget extends HandlebarsApplicationMixin(ApplicationV2) {
     const tab = li.dataset.tab;
     if (!entryId || !workspaceId) return;
 
-    if (!globalThis.clueBookApp) {
-      // Need to import ClueBookApp if it wasn't done, but normally it's available.
-      // But we can trigger the global API if we expose it, or just use hooks.
-      // Safe way is to use game.modules.get("ClueBook").api
-    }
-    
     const api = game.modules.get("ClueBook")?.api;
     if (api) {
       await api.openApp({ workspace: workspaceId, tab: tab, focusId: entryId });
@@ -213,17 +239,4 @@ export class TrackerWidget extends HandlebarsApplicationMixin(ApplicationV2) {
     event.stopPropagation();
     target.classList.toggle("is-expanded");
   }  
-
-  static async #onJumpToMention(event, target) {
-    event.preventDefault();
-    event.stopPropagation();
-    const entryId = target.dataset.mentionId;
-    const workspaceId = target.dataset.workspace;
-    if (!entryId || !workspaceId) return;
-
-    const api = game.modules.get("ClueBook")?.api;
-    if (api) {
-       await api.openApp({ workspace: workspaceId, focusId: entryId });
-    }
-  }
 }

@@ -2,6 +2,9 @@ import { TimeService } from "./services/time-service.js";
 import { TextEnrichmentService } from "./services/text-enrichment-service.js";
 import { ClueBookDatePicker } from "./date-picker.js";
 import { getRandomPhotoTilt } from "./data-models.js";
+import { WorkspaceRepository } from "./services/workspace-repository.js";
+import { WorkspaceAccessService } from "./services/workspace-access-service.js";
+import { MentionAutocompleteController } from "./services/mention-autocomplete.js";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -50,14 +53,26 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
     context.isSimpleCalendarActive = TimeService.isActive();
     context.isGM = game.user.isGM;
 
+    let fallbackPortrait = "";
     if (context.entry.sceneUuid) {
       const scene = await fromUuid(context.entry.sceneUuid);
-      if (scene) context.sceneName = scene.name;
+      if (scene) {
+        context.sceneName = scene.name;
+        fallbackPortrait = scene.thumbnail || scene.background?.src || "";
+      }
     }
     if (context.entry.actorUuid) {
       const actor = await fromUuid(context.entry.actorUuid);
-      if (actor) context.actorName = actor.name;
+      if (actor) {
+        context.actorName = actor.name;
+        const actorImg = actor.img || actor.prototypeToken?.texture?.src || "";
+        if (actorImg && actorImg !== CONST.DEFAULT_TOKEN && actorImg !== "icons/svg/mystery-man.svg") {
+          fallbackPortrait = actorImg;
+        }
+      }
     }
+    context.fallbackPortrait = fallbackPortrait;
+    context.previewImg = context.entry.img || fallbackPortrait;
     const PRESET_COLORS = ["yellow", "red", "green", "blue", "purple", "orange", "teal", "pink", "brown"];
     context.isCustomColor = context.entry.color && !PRESET_COLORS.includes(context.entry.color);
 
@@ -69,46 +84,28 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
     // --- Tags System ---
     context.showTags = !(game.user.getFlag("ClueBook", "settings")?.features?.hideTags);
     
-    let globalTags = {};
-    if (this.workspace === "personal") {
-      globalTags = game.user.getFlag("ClueBook", "settings")?.tags || {};
-    } else if (this.workspace?.startsWith("personal_")) {
-      const uId = this.workspace.split("_")[1];
-      const u = game.users.get(uId);
-      if (u) globalTags = u.getFlag("ClueBook", "settings")?.tags || {};
-    } else {
-      const journal = game.journal.get(this.workspace);
-      if (journal) {
-        globalTags = journal.getFlag("ClueBook", "settings")?.tags || {};
-      }
-    }
-    context.globalTags = globalTags;
+    const wsTarget = WorkspaceRepository.resolveTarget(this.workspace);
+    const isShared = wsTarget.isShared;
+    const wsSettings = WorkspaceRepository.getSettings(this.workspace);
+    const userSettings = game.user.getFlag("ClueBook", "settings") || {};
+    context.showCardPortraits = Boolean(wsSettings?.features?.showCardPortraits ?? userSettings?.features?.showCardPortraits);
+    const rawTags = wsSettings?.tags || {};
+    const visibleTags = WorkspaceAccessService.getVisibleTags(rawTags, wsSettings, game.user, isShared);
+    context.globalTags = visibleTags;
     
     if (Array.isArray(context.entry.tags)) {
-      context.entry.resolvedTags = context.entry.tags.map(id => {
-         return globalTags[id] || { id: id, name: id, color: '#333333', isSecret: false };
-      });
+      context.entry.resolvedTags = context.entry.tags
+        .filter(id => Boolean(visibleTags[id]))
+        .map(id => visibleTags[id] || { id: id, name: id, color: '#333333', isSecret: false });
     } else {
       context.entry.resolvedTags = [];
       context.entry.tags = [];
     }
 
     // --- Folders System ---
-    let foldersData = {};
-    if (this.workspace === "personal") {
-      foldersData = game.user.getFlag("ClueBook", "data")?.folders || {};
-    } else if (this.workspace?.startsWith("personal_")) {
-      const uId = this.workspace.split("_")[1];
-      const u = game.users.get(uId);
-      if (u) foldersData = u.getFlag("ClueBook", "data")?.folders || {};
-    } else {
-      const journal = game.journal.get(this.workspace);
-      if (journal) {
-        foldersData = journal.getFlag("ClueBook", "data")?.folders || {};
-      }
-    }
+    const foldersData = WorkspaceRepository.getFolders(this.workspace);
     context.availableFolders = Object.entries(foldersData)
-      .filter(([fId, f]) => f && f.tab === this.sourceTab)
+      .filter(([fId, f]) => f && f.tab === this.sourceTab && WorkspaceAccessService.isFolderVisible(f, game.user, isShared))
       .map(([fId, f]) => ({
         id: fId,
         name: f.name,
@@ -140,15 +137,16 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
         };
       };
 
+      const renderTpl = foundry.applications?.handlebars?.renderTemplate ?? renderTemplate;
       if (this.sourceTab === "quests") {
         const deadlineData = buildDateContext(this.entry.deadlineTimestamp, "deadline");
-        context.deadlineDateHTML = await foundry.applications.handlebars.renderTemplate("modules/ClueBook/templates/date-fields.hbs", deadlineData);
+        context.deadlineDateHTML = await renderTpl("modules/ClueBook/templates/date-fields.hbs", deadlineData);
       } else if (this.sourceTab === "timeline") {
         const startData = buildDateContext(this.entry.startTimestamp, "start");
-        context.startDateHTML = await foundry.applications.handlebars.renderTemplate("modules/ClueBook/templates/date-fields.hbs", startData);
+        context.startDateHTML = await renderTpl("modules/ClueBook/templates/date-fields.hbs", startData);
 
         const endData = buildDateContext(this.entry.endTimestamp, "end");
-        context.endDateHTML = await foundry.applications.handlebars.renderTemplate("modules/ClueBook/templates/date-fields.hbs", endData);
+        context.endDateHTML = await renderTpl("modules/ClueBook/templates/date-fields.hbs", endData);
 
         // Calculate duration and endMode
         let endMode = "none";
@@ -175,6 +173,10 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
 
   _onClose(options) {
     super._onClose(options);
+    if (this._mentionController) {
+      this._mentionController.destroy();
+      this._mentionController = null;
+    }
     if (this._tagAutocompleteClickOutside) {
       document.removeEventListener('click', this._tagAutocompleteClickOutside);
       this._tagAutocompleteClickOutside = null;
@@ -193,6 +195,17 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
         html.querySelector('button[data-action="saveDialog"]')?.click();
       }
     }, { capture: true });
+
+    // Time input mode switch listener
+    html.querySelectorAll('input[name="timeInputType"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        const isText = e.target.value === 'text';
+        const calPane = html.querySelector('.cb-time-calendar-pane');
+        const textPane = html.querySelector('.cb-time-text-pane');
+        if (calPane) calPane.style.display = isText ? 'none' : 'block';
+        if (textPane) textPane.style.display = isText ? 'block' : 'none';
+      });
+    });
 
     // Icon Picker handler for Pins
     html.querySelectorAll('.cb-icon-option').forEach(option => {
@@ -257,41 +270,9 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
         };
         availableTagsObj[tagId] = newTag;
         
-        // Save to workspace
-        let currentSettings = {};
-        if (this.workspace === "personal") {
-          currentSettings = game.user.getFlag("ClueBook", "settings") || {};
-          currentSettings.tags = currentSettings.tags || {};
-          currentSettings.tags[tagId] = newTag;
-          await game.user.setFlag("ClueBook", "settings", currentSettings);
-        } else if (this.workspace?.startsWith("personal_")) {
-          const uId = this.workspace.split("_")[1];
-          const u = game.users.get(uId);
-          if (u && game.user.isGM) {
-            currentSettings = u.getFlag("ClueBook", "settings") || {};
-            currentSettings.tags = currentSettings.tags || {};
-            currentSettings.tags[tagId] = newTag;
-            await u.setFlag("ClueBook", "settings", currentSettings);
-          }
-        } else {
-          const journal = game.journal.get(this.workspace);
-          if (journal) {
-            if (journal.isOwner) {
-              currentSettings = journal.getFlag("ClueBook", "settings") || {};
-              currentSettings.tags = currentSettings.tags || {};
-              currentSettings.tags[tagId] = newTag;
-              await journal.setFlag("ClueBook", "settings", currentSettings);
-            } else {
-              game.socket.emit("module.ClueBook", {
-                action: "updateBoardData",
-                journalId: journal.id,
-                updateData: {
-                  [`flags.ClueBook.settings.tags.${tagId}`]: newTag
-                }
-              });
-            }
-          }
-        }
+        await WorkspaceRepository.updatePaths(this.workspace, {
+          [`flags.ClueBook.settings.tags.${tagId}`]: newTag
+        });
       }
 
       if (!currentTags.includes(tagId)) {
@@ -616,144 +597,15 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
       if (dropzone) dropzone.style.display = 'flex';
     });
 
-    const textareas = html.querySelectorAll('textarea.cluebook-input, input[name="owner"], input[name="subtitle"], input[name="location"]');
-    let autocompleteBox = null;
-    let autocompleteIndex = 0;
-    let currentMatches = [];
+    // Initialize Mention Autocomplete
+    this._mentionController = MentionAutocompleteController.attach(html, {
+      getWorkspaceId: () => this.workspace,
+      excludeEntryId: () => this.entryId,
+      isShared: () => WorkspaceRepository.resolveTarget(this.workspace).isShared
+    });
 
-    const closeAutocomplete = () => {
-      if (autocompleteBox) {
-        autocompleteBox.remove();
-        autocompleteBox = null;
-      }
-    };
-
-    const insertSelected = () => {
-      if (!currentMatches[autocompleteIndex]) return;
-      const target = currentMatches[autocompleteIndex];
-      const ta = document.activeElement;
-      if (!ta || (ta.tagName !== 'TEXTAREA' && ta.tagName !== 'INPUT')) return;
-      
-      const val = ta.value;
-      const cursor = ta.selectionStart;
-      const textBeforeCursor = val.substring(0, cursor);
-      const match = textBeforeCursor.match(/@([a-zA-Zа-яА-ЯёЁ0-9_ -]*)$/);
-      
-      if (match) {
-        const replaceString = TextEnrichmentService.createMention(target.id, target.name) + " ";
-        ta.value = val.substring(0, match.index) + replaceString + val.substring(cursor);
-        ta.selectionStart = ta.selectionEnd = match.index + replaceString.length;
-      }
-      closeAutocomplete();
-    };
-
-    const renderAutocompleteItems = () => {
-      if (!autocompleteBox) return;
-      autocompleteBox.replaceChildren();
-      currentMatches.forEach((match, idx) => {
-        const item = document.createElement('div');
-        item.style.cssText = `padding: 5px 8px; cursor: pointer; border-radius: 4px; font-size: 13px; display: flex; align-items: flex-start; gap: 8px; transition: background 0.1s; background: ${idx === autocompleteIndex ? 'var(--cb-accent)' : 'transparent'};`;
-        const icon = document.createElement('i');
-        icon.className = 'fas fa-file-alt';
-        icon.style.cssText = 'opacity:0.5; margin-top: 2px; flex-shrink: 0;';
-        item.appendChild(icon);
-        const span = document.createElement('span');
-        span.style.cssText = 'white-space: normal; line-height: 1.2; word-wrap: break-word;';
-        span.textContent = match.name;
-        item.appendChild(document.createTextNode(' '));
-        item.appendChild(span);
-        item.onmousedown = (e) => {
-           e.preventDefault(); // prevent blur
-           autocompleteIndex = idx;
-           insertSelected();
-        };
-        autocompleteBox.appendChild(item);
-      });
-      
-      const activeEl = autocompleteBox.children[autocompleteIndex];
-      if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
-    };
-
-    const getCaretCoordinates = (element, position) => {
-      const div = document.createElement('div');
-      const style = window.getComputedStyle(element);
-      for (const prop of style) {
-        div.style[prop] = style[prop];
-      }
-      div.style.position = 'absolute';
-      div.style.visibility = 'hidden';
-      div.style.whiteSpace = 'pre-wrap';
-      div.style.wordWrap = 'break-word';
-      div.style.overflow = 'hidden';
-      
-      div.textContent = element.value.substring(0, position);
-      
-      const span = document.createElement('span');
-      span.textContent = element.value.substring(position) || '.';
-      div.appendChild(span);
-      
-      document.body.appendChild(div);
-      const coordinates = {
-        top: span.offsetTop - element.scrollTop,
-        left: span.offsetLeft - element.scrollLeft,
-        height: parseInt(style.lineHeight) || parseInt(style.fontSize) || 20
-      };
-      document.body.removeChild(div);
-      return coordinates;
-    };
-
-    const showAutocomplete = (ta, query) => {
-      const app = Array.from(foundry.applications.instances.values()).find(w => w.constructor.name === "ClueBookApp");
-      if (!app) return;
-      
-      let dataObj = {};
-      if (app.state.activeWorkspace === "personal") {
-        dataObj = game.user.getFlag("ClueBook", "data") || {};
-      } else {
-        const journal = game.journal.get(app.state.activeWorkspace);
-        if (journal) dataObj = journal.getFlag("ClueBook", "data") || {};
-      }
-      
-      const entries = [];
-      for (const [tab, tabData] of Object.entries(dataObj)) {
-        if (tab === 'links') continue;
-        for (const [id, entry] of Object.entries(tabData)) {
-          let name = entry.name;
-          if (!name && entry.text) {
-             const doc = new DOMParser().parseFromString(entry.text, "text/html");
-             name = doc.body.textContent.substring(0, 30).trim() || game.i18n.localize("CLUEBOOK.EntryDetails.Untitled");
-          }
-          if (!name) name = entry.event || game.i18n.localize("CLUEBOOK.EntryDetails.DefaultEntry");
-          
-          if (id !== this.entryId && name.toLowerCase().includes(query)) {
-            entries.push({ id, name, tab });
-          }
-        }
-      }
-      
-      currentMatches = entries.slice(0, 10);
-      if (currentMatches.length === 0) {
-        closeAutocomplete();
-        return;
-      }
-      
-      if (!autocompleteBox) {
-        autocompleteBox = document.createElement('div');
-        autocompleteBox.style.cssText = "position: fixed; background: rgba(20,20,30,0.95); border: 1px solid var(--cb-accent); border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000000; width: max-content; min-width: 250px; max-width: 400px; max-height: 200px; overflow-y: auto; padding: 5px; color: white; display: flex; flex-direction: column; gap: 2px;";
-        document.body.appendChild(autocompleteBox);
-      }
-      
-      const rect = ta.getBoundingClientRect();
-      const caret = getCaretCoordinates(ta, ta.selectionStart);
-      
-      autocompleteBox.style.top = (rect.top + caret.top + caret.height + 5) + "px";
-      autocompleteBox.style.left = (rect.left + caret.left) + "px";
-      
-      autocompleteIndex = 0;
-      renderAutocompleteItems();
-    };
-
-    textareas.forEach(ta => {
+    // Auto-resize and UUID drag-drop for textareas
+    html.querySelectorAll('textarea.cluebook-input').forEach(ta => {
       ta.addEventListener('drop', async (ev) => {
         let data = null;
         try {
@@ -780,58 +632,12 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
         }
       });
 
-      ta.addEventListener('input', (ev) => {
-        const val = ta.value;
-        const cursor = ta.selectionStart;
-        const textBeforeCursor = val.substring(0, cursor);
-        const match = textBeforeCursor.match(/@([a-zA-Zа-яА-ЯёЁ0-9_ -]*)$/);
-        
-        if (match) {
-          const query = match[1].toLowerCase();
-          showAutocomplete(ta, query);
-        } else {
-          closeAutocomplete();
-        }
-      });
-      
-      ta.addEventListener('keydown', (ev) => {
-        if (autocompleteBox) {
-          if (ev.key === 'ArrowDown') {
-            ev.preventDefault();
-            autocompleteIndex = (autocompleteIndex + 1) % currentMatches.length;
-            renderAutocompleteItems();
-            return;
-          } else if (ev.key === 'ArrowUp') {
-            ev.preventDefault();
-            autocompleteIndex = (autocompleteIndex - 1 + currentMatches.length) % currentMatches.length;
-            renderAutocompleteItems();
-            return;
-          } else if (ev.key === 'Enter') {
-            ev.preventDefault();
-            ev.stopPropagation();
-            insertSelected();
-            return;
-          } else if (ev.key === 'Escape') {
-            ev.preventDefault();
-            closeAutocomplete();
-            return;
-          }
-        }
-      });
-      
-      ta.addEventListener('blur', () => {
-        setTimeout(closeAutocomplete, 150);
-      });
-
-      // Auto-resize logic
-      if (ta.tagName === 'TEXTAREA') {
-        const autoResize = () => {
-          ta.style.height = 'auto';
-          ta.style.height = (ta.scrollHeight) + 'px';
-        };
-        ta.addEventListener('input', autoResize);
-        setTimeout(autoResize, 10); // Initial resize
-      }
+      const autoResize = () => {
+        ta.style.height = 'auto';
+        ta.style.height = (ta.scrollHeight) + 'px';
+      };
+      ta.addEventListener('input', autoResize);
+      setTimeout(autoResize, 10);
     });
 
     // FilePicker click handler
@@ -842,7 +648,8 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
         const input = html.querySelector(`input[name="${targetInputName}"]`);
         const currentPath = input ? input.value : "";
         
-        new FilePicker({
+        const FilePickerClass = foundry.applications?.apps?.FilePicker?.implementation ?? FilePicker;
+        new FilePickerClass({
           type: "image",
           current: currentPath,
           callback: (path) => {
@@ -877,6 +684,50 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
         this._updateImagePreview(html, imgInput.value);
       });
     }
+
+    const cropModeSelect = html.querySelector('select[name="cropMode"]');
+    const cropZoomInput = html.querySelector('input[name="cropZoom"]');
+    const cropOffsetYInput = html.querySelector('input[name="cropOffsetY"]');
+    const cropAdvancedWrap = html.querySelector('.cb-crop-advanced-controls');
+
+    const syncPreviewCrop = () => {
+      const mode = cropModeSelect?.value || "contain";
+      const isCover = mode === "cover";
+      if (cropAdvancedWrap) {
+        cropAdvancedWrap.style.display = isCover ? "flex" : "none";
+      }
+
+      const zoom = Math.min(300, Math.max(10, Number(cropZoomInput?.value) || 100));
+      const offsetY = (cropOffsetYInput?.value !== undefined && cropOffsetYInput?.value !== "")
+        ? Math.min(100, Math.max(0, Number(cropOffsetYInput.value)))
+        : (this.sourceTab === "npc" ? 15 : 50);
+
+      const zoomBadge = html.querySelector('.cb-crop-zoom-val');
+      const offsetYBadge = html.querySelector('.cb-crop-offsety-val');
+      if (zoomBadge) zoomBadge.textContent = `${zoom}%`;
+      if (offsetYBadge) offsetYBadge.textContent = `${offsetY}%`;
+
+      const previewImg = html.querySelector('.cb-img-preview');
+      if (previewImg) {
+        previewImg.style.width = "100%";
+        previewImg.style.height = "100%";
+        previewImg.style.objectFit = mode;
+        if (isCover) {
+          previewImg.style.objectPosition = `50% ${offsetY}%`;
+          previewImg.style.transform = `scale(${(zoom / 100).toFixed(2)})`;
+          previewImg.style.transformOrigin = `50% ${offsetY}%`;
+        } else {
+          previewImg.style.objectPosition = "center center";
+          previewImg.style.transform = "";
+          previewImg.style.transformOrigin = "";
+        }
+      }
+    };
+
+    cropModeSelect?.addEventListener('change', syncPreviewCrop);
+    cropZoomInput?.addEventListener('input', syncPreviewCrop);
+    cropOffsetYInput?.addEventListener('input', syncPreviewCrop);
+    syncPreviewCrop();
   }
 
   _updateImagePreview(html, src) {
@@ -884,8 +735,9 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
     const previewImg = html.querySelector('.cb-img-preview');
     if (!previewContainer || !previewImg) return;
 
-    if (src && src.trim() !== "") {
-      previewImg.src = src.trim();
+    const effectiveSrc = (src && src.trim() !== "") ? src.trim() : (previewImg.dataset.fallbackSrc || "");
+    if (effectiveSrc) {
+      previewImg.src = effectiveSrc;
       previewContainer.style.display = "flex";
     } else {
       previewImg.src = "";
@@ -930,29 +782,60 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
     
     // Process Tags
     if (data.tags !== undefined) {
-      updateData.tags = data.tags.split(',').map(s => s.trim()).filter(s => s);
+      let savedTags = data.tags.split(',').map(s => s.trim()).filter(s => s);
+      if (!game.user.isGM && Array.isArray(instance.entry?.tags)) {
+        const rawSettings = WorkspaceRepository.getSettings(instance.workspace);
+        const allTags = rawSettings?.tags || {};
+        const preservedSecretTags = instance.entry.tags.filter(tId => allTags[tId]?.isSecret);
+        for (const secId of preservedSecretTags) {
+          if (!savedTags.includes(secId)) {
+            savedTags.push(secId);
+          }
+        }
+      }
+      updateData.tags = savedTags;
     }
+
+    const extractCrop = (targetObj) => {
+      if (data.cropMode) targetObj.cropMode = data.cropMode;
+      if (data.cropZoom !== undefined && data.cropZoom !== "") {
+        targetObj.cropZoom = Math.min(300, Math.max(10, Number(data.cropZoom) || 100));
+      }
+      if (data.cropOffsetY !== undefined && data.cropOffsetY !== "") {
+        targetObj.cropOffsetY = Math.min(100, Math.max(0, Math.round(Number(data.cropOffsetY))));
+      }
+      if (data.cropOffsetX !== undefined && data.cropOffsetX !== "") {
+        targetObj.cropOffsetX = Math.min(100, Math.max(0, Math.round(Number(data.cropOffsetX))));
+      }
+    };
 
     if (instance.sourceTab === "notes") {
       updateData.name = data.name;
       updateData.text = data.text;
-      updateData.sceneUuid = data.sceneUuid;
+      updateData.sceneUuid = (!game.user.isGM && !data.sceneUuid) ? (instance.entry?.sceneUuid || "") : (data.sceneUuid || "");
     } else if (instance.sourceTab === "npc") {
       updateData.name = data.name;
       updateData.location = data.location;
       updateData.attitude = data.attitude;
       updateData.note = data.note;
       updateData.lifeStatus = data.lifeStatus;
-      updateData.actorUuid = data.actorUuid;
+      updateData.actorUuid = (!game.user.isGM && !data.actorUuid) ? (instance.entry?.actorUuid || "") : (data.actorUuid || "");
+      if (data.img !== undefined) updateData.img = data.img ? data.img.trim() : "";
+      extractCrop(updateData);
       // Backward compatibility
       updateData.isDead = data.lifeStatus === "dead";
     } else if (instance.sourceTab === "quests") {
       updateData.status = data.status;
       updateData.text = data.text;
-      updateData.timeMode = data.timeMode || "by";
+      const isTextTime = data.timeInputType === "text";
+      updateData.useTextTime = isTextTime;
+      updateData.timeMode = (isTextTime ? data.textTimeMode : data.timeMode) || "by";
       updateData.completedTime = (data.status === "completed" && data.hasCompletedTime) ? (data.completedTime || "") : "";
-      
-      if (TimeService.isActive()) {
+
+      if (isTextTime) {
+        updateData.deadline = data.deadline || "";
+        updateData.deadlineTimestamp = null;
+      } else {
         if (data.hasDeadline) {
           updateData.deadlineTimestamp = TimeService.dateToTimestamp({
             year: Number(data.deadline_year) || 0,
@@ -964,22 +847,21 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
         } else {
           updateData.deadlineTimestamp = null;
         }
-      } else {
-        updateData.deadline = data.deadline;
       }
     } else if (instance.sourceTab === "locations") {
       updateData.name = data.name;
       updateData.subtitle = data.subtitle;
       updateData.owner = data.owner;
-      updateData.sceneUuid = data.sceneUuid;
+      updateData.sceneUuid = (!game.user.isGM && !data.sceneUuid) ? (instance.entry?.sceneUuid || "") : (data.sceneUuid || "");
       updateData.note = data.note;
+      if (data.img !== undefined) updateData.img = data.img ? data.img.trim() : "";
+      extractCrop(updateData);
     } else if (instance.sourceTab === "gallery") {
       updateData.name = data.name;
-      updateData.caption = data.caption;
+      updateData.caption = data.caption || "";
       updateData.img = data.img ? data.img.trim() : "";
       updateData.frameStyle = data.frameStyle || "polaroid";
-      updateData.cropMode = data.cropMode || "contain";
-      updateData.cropPosition = data.cropPosition || "center";
+      extractCrop(updateData);
       updateData.text = data.text;
       if (instance.entry?.rotation !== undefined && instance.entry.rotation !== null) {
         updateData.rotation = instance.entry.rotation;
@@ -993,6 +875,7 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
       updateData.fontSize = Number(data.fontSize) || 28;
       updateData.fontFamily = data.fontFamily || "caveat";
       updateData.bgStyle = data.bgStyle || "glass";
+      updateData.isToc = Boolean(data.isToc);
     } else if (instance.sourceTab === "pins") {
       updateData.name = data.name;
       updateData.icon = data.icon || "fa-thumbtack";
@@ -1002,7 +885,14 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
     } else if (instance.sourceTab === "timeline") {
       updateData.event = data.event;
       
-      if (TimeService.isActive()) {
+      const isTextTime = data.timeInputType === "text";
+      updateData.useTextTime = isTextTime;
+
+      if (isTextTime) {
+        updateData.time = data.time || "";
+        updateData.startTimestamp = null;
+        updateData.endTimestamp = null;
+      } else {
         updateData.startTimestamp = TimeService.dateToTimestamp({
           year: Number(data.start_year) || 0,
           month: Number(data.start_month) || 0,
@@ -1027,8 +917,6 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
         } else {
           updateData.endTimestamp = null;
         }
-      } else {
-        updateData.time = data.time;
       }
     }
 

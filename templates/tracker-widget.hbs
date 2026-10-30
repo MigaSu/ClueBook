@@ -10,7 +10,7 @@
     {{#if hasEvents}}
       <ul class="cb-tracker-list">
         {{#each events}}
-          <li class="cb-tracker-item {{#if this.isOverdue}}is-overdue{{/if}}" data-id="{{this.id}}" data-workspace="{{this.workspaceId}}" data-tab="{{this.tab}}" {{#unless @root.isSimpleCalendarActive}}draggable="true"{{/unless}}>
+          <li class="cb-tracker-item {{#if this.isOverdue}}is-overdue{{/if}} {{#unless this.hasTime}}is-draggable{{/unless}}" data-id="{{this.id}}" data-workspace="{{this.workspaceId}}" data-tab="{{this.tab}}" {{#unless this.hasTime}}draggable="true"{{/unless}}>
             <div class="cb-tracker-item-main">
               <div class="cb-tracker-item-icon" style="color: {{this.color}};" data-action="jumpToEntry" title="{{localize "CLUEBOOK.Tracker.JumpToEntry"}}">
                 {{#if (eq this.tab "quests")}}<i class="fas fa-scroll"></i>{{else}}<i class="fas fa-clock"></i>{{/if}}
@@ -19,7 +19,7 @@
                 <div class="cb-tracker-item-title">{{{this.name}}}</div>
                 <div class="cb-tracker-item-meta">
                   <span class="cb-tracker-item-ws"><i class="fas fa-book"></i> {{this.workspaceName}}</span>
-                  {{#if @root.isSimpleCalendarActive}}
+                  {{#if this.hasTime}}
                     <span class="cb-tracker-item-time">
                       <i class="fas fa-hourglass-half"></i> 
                       {{#if this.isOverdue}}
@@ -27,6 +27,10 @@
                       {{else}}
                         {{this.diffStr}}
                       {{/if}}
+                    </span>
+                  {{else if this.textTime}}
+                    <span class="cb-tracker-item-time">
+                      <i class="fas fa-clock"></i> {{this.textTime}}
                     </span>
                   {{/if}}
                 </div>

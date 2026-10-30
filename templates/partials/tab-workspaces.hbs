@@ -38,9 +38,11 @@
     <div class="settings-section">
       <h3 style="font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;"><i class="fas fa-database"></i> {{localize "CLUEBOOK.Settings.DataJSON"}}</h3>
       <div style="display: flex; gap: 10px;">
+        {{#unless isReadOnly}}
         <button type="button" data-action="importJSON" style="flex: 1; padding: 8px; cursor: pointer; background: rgba(123, 97, 255, 0.2); border: 1px solid rgba(123, 97, 255, 0.4); border-radius: 6px; font-size: 13px;">
           <i class="fas fa-file-import"></i> {{localize "CLUEBOOK.Settings.Import"}}
         </button>
+        {{/unless}}
         <button type="button" data-action="exportJSON" style="flex: 1; padding: 8px; cursor: pointer; background: rgba(0, 150, 136, 0.2); border: 1px solid rgba(0, 150, 136, 0.4); border-radius: 6px; font-size: 13px;">
           <i class="fas fa-file-export"></i> {{localize "CLUEBOOK.Settings.Export"}}
         </button>

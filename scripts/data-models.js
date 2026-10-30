@@ -46,18 +46,22 @@ export class ClueBookEntryModel extends foundry.abstract.DataModel {
       owner: new StringField({ initial: "" }), // Для Локаций (владелец/актер)
       gmNotes: new HTMLField({ initial: "" }), // Секретные заметки мастера (для всех типов)
       
-      // Мультимедиа и изображения (Галерея)
+      // Мультимедиа и изображения (Галерея, Портреты NPC и Локаций)
       img: new StringField({ initial: "" }),
       caption: new StringField({ initial: "" }),
-      frameStyle: new StringField({ initial: "polaroid" }), // "polaroid" | "frameless"
+      frameStyle: new StringField({ initial: "polaroid" }), // "polaroid" | "frameless" | "backdrop"
       cropMode: new StringField({ initial: "contain" }), // "contain" | "cover"
-      cropPosition: new StringField({ initial: "center" }), // "top" | "center" | "bottom"
+      cropPosition: new StringField({ initial: "center" }), // Legacy fallback: "top" | "center" | "bottom"
+      cropZoom: new NumberField({ initial: 100, min: 10, max: 300 }), // Smooth scale in % for "cover" mode (10% to 300%)
+      cropOffsetX: new NumberField({ nullable: true, initial: null, min: 0, max: 100 }), // Horizontal pan 0..100%
+      cropOffsetY: new NumberField({ nullable: true, initial: null, min: 0, max: 100 }), // Vertical pan 0..100%
       rotation: new NumberField({ initial: 0 }), // Realistic tilt angle (-5.0 to +5.0 deg)
 
       // Надписи (Labels) и Пины (Pins) на доске
       fontSize: new NumberField({ initial: 28 }), // Font size in px
       fontFamily: new StringField({ initial: "caveat" }), // "caveat", "inter", "courier", "cinzel"
       bgStyle: new StringField({ initial: "glass" }), // "glass", "transparent", "solid"
+      isToc: new BooleanField({ initial: false }), // Include Label in Board Table of Contents
       icon: new StringField({ initial: "fa-thumbtack" }), // "fa-thumbtack", "fa-map-marker-alt", "fa-skull", etc.
 
       // Специфичные поля для дат (Timeline & Quests)
@@ -66,10 +70,12 @@ export class ClueBookEntryModel extends foundry.abstract.DataModel {
       day: new NumberField({ nullable: true, initial: null }),
       hour: new NumberField({ nullable: true, initial: null }),
       minute: new NumberField({ nullable: true, initial: null }),
-      timeMode: new StringField({ initial: "by" }), // "by" (к сроку) | "duration" (длительность)
-      deadlineTimestamp: new NumberField({ nullable: true, initial: null }), // Для календаря в миллисекундах / секундах
-      endTimestamp: new NumberField({ nullable: true, initial: null }), // Для диапазона времени
-      isTracked: new BooleanField({ initial: false }) // Для трекера активных задач
+      timeMode: new StringField({ initial: "by" }), // "by" (к сроку) | "at" (в момент)
+      useTextTime: new BooleanField({ initial: false }), // true = произвольный текст без таймера (deadline / time)
+      startTimestamp: new NumberField({ nullable: true, initial: null }), // Начало события хронологии (в секундах)
+      deadlineTimestamp: new NumberField({ nullable: true, initial: null }), // Дедлайн задачи (в секундах)
+      endTimestamp: new NumberField({ nullable: true, initial: null }), // Конец диапазона времени (в секундах)
+      isTracked: new BooleanField({ initial: false }) // Legacy-флаг трекера активных задач
     };
   }
 }
@@ -107,14 +113,90 @@ export class ClueBookFolderModel extends foundry.abstract.DataModel {
   }
 }
 
+export const ENTRY_TABS = Object.freeze(["notes", "npc", "locations", "quests", "timeline", "gallery", "labels", "pins"]);
+export const NON_ENTRY_KEYS = new Set(["folders", "links", "board", "search"]);
+
+export function isEntryTab(key) {
+  return ENTRY_TABS.includes(key);
+}
+
+export const DELETE_MARKER = Object.freeze({ __cbDelete: true });
+
+export function isDeletionValue(value) {
+  if (!value || typeof value !== "object") return false;
+  if (value.__cbDelete === true || value.__$OPERATOR$__ === "ForcedDeletion") return true;
+  if (typeof foundry !== "undefined" && foundry.data?.operators?.ForcedDeletion) {
+    return value instanceof foundry.data.operators.ForcedDeletion;
+  }
+  return false;
+}
+
 /**
- * Returns Foundry v14 ForcedDeletion operator instance for database updates.
+ * Returns Foundry v14 ForcedDeletion operator instance, or a serializable DELETE_MARKER on v13.
  */
 export function getForcedDeletion() {
   if (typeof foundry !== "undefined" && foundry.data?.operators?.ForcedDeletion) {
     return new foundry.data.operators.ForcedDeletion();
   }
-  return null;
+  return DELETE_MARKER;
+}
+
+/**
+ * Assigns a v13/v14-safe property deletion into an update dictionary.
+ */
+export function assignDeletion(updates, parentPath, key) {
+  if (typeof foundry !== "undefined" && foundry.data?.operators?.ForcedDeletion) {
+    updates[`${parentPath}.${key}`] = new foundry.data.operators.ForcedDeletion();
+  } else {
+    updates[`${parentPath}.-=${key}`] = null;
+  }
+}
+
+const TRANSIENT_ENTRY_KEYS = [
+  "id", "sourceTab", "tab", "isCustomColor", "action", "_deleted",
+  "enriched", "resolvedTags", "explicitLinks", "backlinks", "cropStyle",
+  "displayTitle", "displayTitleHTML", "snippet", "snippetHTML", "displayOwner",
+  "displaySubtitle", "cardPortraitImg"
+];
+
+/**
+ * Resolves normalized crop parameters (zoom, offsetX, offsetY) with backward-compatible fallback to cropPosition.
+ * @param {Object} entry
+ * @param {string} [sourceTab=""]
+ * @returns {{ zoom: number, offsetX: number, offsetY: number, style: string }}
+ */
+export function resolveCropParams(entry, sourceTab = "") {
+  const zoom = Math.min(300, Math.max(10, Number(entry?.cropZoom) || 100));
+  const rawX = entry?.cropOffsetX;
+  const offsetX = (rawX !== null && rawX !== undefined && rawX !== "" && !Number.isNaN(Number(rawX)))
+    ? Math.min(100, Math.max(0, Math.round(Number(rawX))))
+    : 50;
+
+  const fallbackY = entry?.cropPosition === "top"
+    ? 15
+    : (entry?.cropPosition === "bottom" ? 85 : (sourceTab === "npc" ? 15 : 50));
+  const rawY = entry?.cropOffsetY;
+  const offsetY = (rawY !== null && rawY !== undefined && rawY !== "" && !Number.isNaN(Number(rawY)))
+    ? Math.min(100, Math.max(0, Math.round(Number(rawY))))
+    : fallbackY;
+
+  const style = entry?.cropMode === "cover"
+    ? `--cb-crop-x: ${offsetX}%; --cb-crop-y: ${offsetY}%; --cb-crop-scale: ${(zoom / 100).toFixed(2)};`
+    : "";
+
+  return { zoom, offsetX, offsetY, style };
+}
+
+/**
+ * Sanitizes an entry object through ClueBookEntryModel for clean database storage.
+ */
+export function sanitizeEntryForStorage(tab, rawEntry) {
+  const cleaned = foundry.utils.deepClone(rawEntry || {});
+  for (const k of TRANSIENT_ENTRY_KEYS) {
+    delete cleaned[k];
+  }
+  if (!cleaned.type) cleaned.type = tab;
+  return new ClueBookEntryModel(cleaned).toObject();
 }
 
 // Internal state for balanced alternating photo tilts

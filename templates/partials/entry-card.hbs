@@ -1,11 +1,11 @@
-<div class="cluebook-entry {{#if (eq this.id @root.editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id @root.highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}} {{#if this.onBoard}}is-on-board{{/if}} {{#if this.isTracked}}is-tracked{{/if}} {{#unless @root.isBoardView}}{{#if @root.isCompactView}}view-compact{{else if @root.isListView}}view-list{{else}}view-grid{{/if}}{{/unless}} {{#if (eq this.sourceTab "gallery")}}is-gallery-card frame-{{#if this.frameStyle}}{{this.frameStyle}}{{else}}polaroid{{/if}}{{/if}} {{#if (eq this.sourceTab "labels")}}is-label-card font-{{this.fontFamily}} size-{{this.fontSize}} bg-{{this.bgStyle}}{{/if}} {{#if (eq this.sourceTab "pins")}}is-pin-card{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-text-color="{{this.textColor}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" tabindex="-1" {{#unless @root.isBoardView}}draggable="true"{{/unless}} style="{{#if @root.isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; {{#if (and this.rotation (not @root.settings.features.disablePhotoTilt))}}--cb-rotation: {{this.rotation}}deg; transform: rotate({{this.rotation}}deg);{{/if}} {{#if (and @root.settings.features.galleryAlwaysBelow (eq this.sourceTab "gallery"))}}z-index: 4;{{else if (eq this.sourceTab "labels")}}z-index: 25;{{else if (eq this.sourceTab "pins")}}z-index: 20;{{else}}z-index: 10;{{/if}} {{#if (eq this.id @root.highlightedEntryId)}}animation-duration: {{@root.settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#unless @root.isBoardView}}{{#if (or @root.isCompactView @root.isListView)}}--cb-entry-color: {{#if this.color}}{{this.color}}{{else}}#7b61ff{{/if}};{{else}}{{#if (and this.isCustomColor (ne this.frameStyle "frameless") (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}{{/if}}{{else}}{{#if (and this.isCustomColor (ne this.frameStyle "frameless") (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}{{/unless}}">
+<div class="cluebook-entry {{#if (eq this.id @root.editingEntryId)}}is-editing{{/if}} {{#if this.isHidden}}is-hidden{{/if}} {{#if (eq this.id @root.highlightedEntryId)}}is-highlighted{{/if}} {{#if this.isDead}}is-dead{{/if}} {{#if this.onBoard}}is-on-board{{/if}} {{#if this.isTracked}}is-tracked{{/if}} {{#unless @root.isBoardView}}{{#if @root.isCompactView}}view-compact{{else if @root.isListView}}view-list{{else}}view-grid{{/if}}{{/unless}} {{#if (eq this.sourceTab "gallery")}}is-gallery-card frame-{{#if this.frameStyle}}{{this.frameStyle}}{{else}}polaroid{{/if}}{{/if}} {{#if (eq this.sourceTab "labels")}}is-label-card font-{{this.fontFamily}} size-{{this.fontSize}} bg-{{this.bgStyle}}{{/if}} {{#if (eq this.sourceTab "pins")}}is-pin-card{{/if}}" data-entry-id="{{this.id}}" data-source-tab="{{this.sourceTab}}" data-color="{{this.color}}" data-text-color="{{this.textColor}}" data-on-board="{{this.onBoard}}" data-pinned="{{this.pinned}}" tabindex="-1" {{#unless @root.isBoardView}}draggable="true"{{/unless}} style="{{#if @root.isBoardView}}position: absolute; left: {{this.boardX}}px; top: {{this.boardY}}px; {{#if (and this.rotation (not @root.settings.features.disablePhotoTilt))}}--cb-rotation: {{this.rotation}}deg; transform: rotate({{this.rotation}}deg);{{/if}} {{#if (eq this.frameStyle "backdrop")}}z-index: 1 !important;{{else if (and @root.settings.features.galleryAlwaysBelow (eq this.sourceTab "gallery"))}}z-index: 4;{{else if (eq this.sourceTab "labels")}}z-index: 25;{{else if (eq this.sourceTab "pins")}}z-index: 20;{{else}}z-index: 10;{{/if}} {{#if (eq this.id @root.highlightedEntryId)}}animation-duration: {{@root.settings.theme.highlightDuration}}s; z-index: 100;{{/if}}{{/if}}{{#unless @root.isBoardView}}{{#if (or @root.isCompactView @root.isListView)}}--cb-entry-color: {{#if this.color}}{{this.color}}{{else}}#7b61ff{{/if}};{{else}}{{#if (and this.isCustomColor (ne this.frameStyle "frameless") (ne this.frameStyle "backdrop") (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}{{/if}}{{else}}{{#if (and this.isCustomColor (ne this.frameStyle "frameless") (ne this.frameStyle "backdrop") (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}} background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%), {{this.color}};{{/if}}{{/unless}}">
 
   {{#if (and (not @root.isBoardView) @root.isCompactView (ne this.sourceTab "labels") (ne this.sourceTab "pins"))}}
     <!-- Compact View (Single-line row) -->
     <div class="cb-row-content cb-compact-row">
       <div class="cb-row-avatar-wrap">
-        {{#if this.img}}
-          <img class="cb-row-avatar" src="{{this.img}}" alt="{{this.displayTitle}}">
+        {{#if (or this.cardPortraitImg this.img)}}
+          <img class="cb-row-avatar" data-action="viewImage" data-img-src="{{#if this.cardPortraitImg}}{{this.cardPortraitImg}}{{else}}{{this.img}}{{/if}}" data-img-title="{{this.displayTitle}}" title="{{localize 'CLUEBOOK.Entry.ViewImage'}}" src="{{#if this.cardPortraitImg}}{{this.cardPortraitImg}}{{else}}{{this.img}}{{/if}}" alt="{{this.displayTitle}}">
         {{else}}
           <span class="cb-row-color-dot" style="background: {{#if this.color}}{{this.color}}{{else}}#7b61ff{{/if}};"></span>
         {{/if}}
@@ -49,8 +49,8 @@
         {{else if (eq this.sourceTab "timeline")}}
           {{#if this.timelineIntervalPrecise}}
             <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{this.timelineIntervalPrecise}}</span>
-          {{else if this.date}}
-            <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{this.date}}</span>
+          {{else if (or this.time this.date)}}
+            <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{#if this.time}}{{this.time}}{{else}}{{this.date}}{{/if}}</span>
           {{/if}}
         {{/if}}
 
@@ -100,8 +100,8 @@
     <!-- Detailed List View (2 lines) -->
     <div class="cb-row-content cb-list-row">
       <div class="cb-row-avatar-wrap">
-        {{#if this.img}}
-          <img class="cb-row-avatar" src="{{this.img}}" alt="{{this.displayTitle}}">
+        {{#if (or this.cardPortraitImg this.img)}}
+          <img class="cb-row-avatar" data-action="viewImage" data-img-src="{{#if this.cardPortraitImg}}{{this.cardPortraitImg}}{{else}}{{this.img}}{{/if}}" data-img-title="{{this.displayTitle}}" title="{{localize 'CLUEBOOK.Entry.ViewImage'}}" src="{{#if this.cardPortraitImg}}{{this.cardPortraitImg}}{{else}}{{this.img}}{{/if}}" alt="{{this.displayTitle}}">
         {{else}}
           <span class="cb-row-color-dot is-large" style="background: {{#if this.color}}{{this.color}}{{else}}#7b61ff{{/if}};"></span>
         {{/if}}
@@ -142,8 +142,8 @@
             {{else if (eq this.sourceTab "timeline")}}
               {{#if this.timelineIntervalPrecise}}
                 <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{this.timelineIntervalPrecise}}</span>
-              {{else if this.date}}
-                <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{this.date}}</span>
+              {{else if (or this.time this.date)}}
+                <span class="cb-row-time"><i class="fas fa-calendar-alt"></i> {{#if this.time}}{{this.time}}{{else}}{{this.date}}{{/if}}</span>
               {{/if}}
             {{/if}}
               {{#if (and @root.isGM this.isHidden)}}
@@ -289,6 +289,9 @@
       {{/if}}
 
       {{#if (eq this.sourceTab "npc")}}
+        {{#if this.cardPortraitImg}}
+        <div class="cb-card-portrait fit-{{#if (eq this.cropMode 'cover')}}cover{{else}}contain{{/if}} pos-{{#if this.cropPosition}}{{this.cropPosition}}{{else}}top{{/if}}" data-action="viewImage" data-img-src="{{this.cardPortraitImg}}" data-img-title="{{this.name}}" title="{{localize 'CLUEBOOK.Entry.ViewImage'}}" style="{{this.cropStyle}}"><img src="{{this.cardPortraitImg}}" alt="{{this.name}}" loading="lazy" decoding="async"></div>
+        {{/if}}
         <div class="display-title" style="display: flex; align-items: center; justify-content: center;">
           {{#if this.pinned}}
             <i class="fas fa-lock" style="font-size: 11px; margin-right: 6px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>
@@ -311,6 +314,9 @@
         <div class="display-text" style="position: relative; z-index: 2;">{{{this.enriched.note}}}</div>
       {{/if}}
       {{#if (eq this.sourceTab "locations")}}
+        {{#if this.cardPortraitImg}}
+        <div class="cb-card-portrait fit-{{#if (eq this.cropMode 'cover')}}cover{{else}}contain{{/if}} pos-{{#if this.cropPosition}}{{this.cropPosition}}{{else}}center{{/if}}" data-action="viewImage" data-img-src="{{this.cardPortraitImg}}" data-img-title="{{this.name}}" title="{{localize 'CLUEBOOK.Entry.ViewImage'}}" style="{{this.cropStyle}}"><img src="{{this.cardPortraitImg}}" alt="{{this.name}}" loading="lazy" decoding="async"></div>
+        {{/if}}
         <div class="display-title" style="display: flex; align-items: center; justify-content: center;">
           {{#if this.pinned}}
             <i class="fas fa-lock" style="font-size: 11px; margin-right: 6px; opacity: 0.6;" title="{{localize "CLUEBOOK.Entry.Pinned"}}"></i>
@@ -373,7 +379,7 @@
                   </div>
                 </div>
               </div>
-            {{else if (and this.deadline (not @root.isSimpleCalendarActive))}}
+            {{else if this.deadline}}
               <div class="cb-quest-time-badge {{#if (eq this.timeMode 'at')}}mode-at{{else}}mode-by{{/if}}">
                 <div class="qtb-icon">
                   {{#if (eq this.timeMode 'at')}}<i class="fas fa-calendar-check"></i>{{else}}<i class="fas fa-hourglass-half"></i>{{/if}}
@@ -392,7 +398,7 @@
       {{/if}}
 
       {{#if (eq this.sourceTab "timeline")}}
-        {{#if (or this.formattedStart this.formattedEnd (and this.time (not @root.isSimpleCalendarActive)))}}
+        {{#if (or this.formattedStart this.formattedEnd this.time)}}
           <div class="cb-quest-time-badge" style="margin-bottom: 8px;">
             <div class="qtb-icon" style="background: rgba(255,255,255,0.1); color: #ccc;">
               <i class="fas fa-history"></i>
@@ -412,7 +418,7 @@
                 <div class="qtb-value-text">{{this.formattedEndTime}}</div>
               </div>
               {{/if}}
-              {{#if (and (not this.formattedStart) this.time (not @root.isSimpleCalendarActive))}}
+              {{#if (and (not this.formattedStart) (not this.formattedEnd) this.time)}}
               <div class="qtb-left-block" style="border-right: none;">
                 <div class="qtb-label-small">{{localize "CLUEBOOK.Timeline.Time"}}</div>
                 <div class="qtb-value-text">{{this.time}}</div>
@@ -425,10 +431,25 @@
       {{/if}}
       
       {{#if (eq this.sourceTab "gallery")}}
-        <div class="cb-gallery-card-body {{#if (eq this.frameStyle "frameless")}}is-frameless{{else}}is-polaroid{{/if}}">
+        <div class="cb-gallery-card-body {{#if (eq this.frameStyle "frameless")}}is-frameless{{else if (eq this.frameStyle "backdrop")}}is-backdrop{{else}}is-polaroid{{/if}}">
+          {{#if (eq this.frameStyle "backdrop")}}
+            <div class="cb-backdrop-menu-handle" title="{{localize 'CLUEBOOK.Gallery.BackdropMenu'}}">
+              <i class="fas fa-ellipsis-v"></i>
+              <div class="cb-backdrop-quick-menu">
+                {{#unless (or @root.settings.features.hideEditBtn @root.settings.hideEditBtn)}}
+                <a data-action="toggleEdit" title="{{localize 'CLUEBOOK.Entry.Edit'}}"><i class="fas fa-pencil-alt"></i></a>
+                {{/unless}}
+                {{#if this.img}}
+                <a data-action="viewImage" data-img-src="{{this.img}}" data-img-title="{{this.name}}" title="{{localize 'CLUEBOOK.Entry.ViewImage'}}"><i class="fas fa-search-plus"></i></a>
+                {{/if}}
+                <a data-action="togglePin" class="{{#if this.pinned}}active{{/if}}" title="{{#if this.pinned}}{{localize 'CLUEBOOK.Entry.Unpin'}}{{else}}{{localize 'CLUEBOOK.Entry.Pin'}}{{/if}}"><i class="fas {{#if this.pinned}}fa-lock{{else}}fa-lock-open{{/if}}"></i></a>
+                <a data-action="removeFromBoard" title="{{localize 'CLUEBOOK.Entry.RemoveFromBoard'}}"><i class="fas fa-times"></i></a>
+              </div>
+            </div>
+          {{/if}}
           {{#if this.img}}
-            <div class="cb-photo-frame">
-              <img class="cb-card-photo fit-{{#if this.cropMode}}{{this.cropMode}}{{else}}contain{{/if}} pos-{{#if this.cropPosition}}{{this.cropPosition}}{{else}}center{{/if}}" src="{{this.img}}" alt="{{this.name}}" loading="lazy" decoding="async" style="object-fit: {{#if this.cropMode}}{{this.cropMode}}{{else}}contain{{/if}}; object-position: {{#if (eq this.cropPosition "top")}}top center{{else if (eq this.cropPosition "bottom")}}bottom center{{else}}center center{{/if}};">
+            <div class="cb-photo-frame" style="{{this.cropStyle}}">
+              <img class="cb-card-photo fit-{{#if this.cropMode}}{{this.cropMode}}{{else}}contain{{/if}} pos-{{#if this.cropPosition}}{{this.cropPosition}}{{else}}center{{/if}}" src="{{this.img}}" alt="{{this.name}}" loading="lazy" decoding="async" style="object-fit: {{#if this.cropMode}}{{this.cropMode}}{{else}}contain{{/if}}; {{#if (eq this.cropMode "cover")}}object-position: var(--cb-crop-x, 50%) var(--cb-crop-y, 50%); transform: scale(var(--cb-crop-scale, 1)); transform-origin: var(--cb-crop-x, 50%) var(--cb-crop-y, 50%);{{else}}object-position: {{#if (eq this.cropPosition "top")}}top center{{else if (eq this.cropPosition "bottom")}}bottom center{{else}}center center{{/if}};{{/if}}">
             </div>
           {{else}}
             <div class="cb-photo-placeholder">
@@ -437,7 +458,7 @@
             </div>
           {{/if}}
 
-          {{#if (or this.name this.caption)}}
+          {{#if (and (ne this.frameStyle "backdrop") (or this.name this.caption))}}
             <div class="cb-photo-caption">
               {{#if this.name}}<strong class="cb-photo-title">{{this.name}}</strong>{{/if}}
               {{#if this.caption}}<span class="cb-photo-note">{{{this.enriched.caption}}}</span>{{/if}}
@@ -477,6 +498,22 @@
             </span>
           {{/each}}
         </div>
+      {{/if}}
+
+      {{#if this.backlinks.length}}
+        <details class="cb-backlinks-details">
+          <summary class="cb-backlinks-summary" title="{{localize 'CLUEBOOK.Entry.MentionedIn'}}">
+            <i class="fas fa-reply fa-flip-horizontal cb-backlinks-icon"></i>
+            <span>{{localize "CLUEBOOK.Entry.MentionedIn"}} ({{this.backlinks.length}})</span>
+          </summary>
+          <div class="cb-backlinks-chips">
+            {{#each this.backlinks}}
+              <span class="cb-backlink-chip" data-action="jumpToLinked" data-target-id="{{this.id}}">
+                <i class="{{this.icon}}"></i> {{this.title}}
+              </span>
+            {{/each}}
+          </div>
+        </details>
       {{/if}}
     </div>
   </div>
