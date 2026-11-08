@@ -188,6 +188,16 @@ export class ClueBookEditDialog extends HandlebarsApplicationMixin(ApplicationV2
     
     const html = this.element;
 
+    // Auto-focus first input in the dialog for smooth keyboard entry
+    setTimeout(() => {
+      if (html.isConnected) {
+        const firstInput = html.querySelector('input[type="text"]:not([readonly]):not([type="hidden"]), textarea:not([readonly])');
+        if (firstInput && document.activeElement !== firstInput) {
+          firstInput.focus();
+        }
+      }
+    }, 50);
+
     html.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
         ev.preventDefault();

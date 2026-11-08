@@ -2,6 +2,12 @@
 
 All notable changes, refactoring, and bug fixes are documented in this file.
 
+## [2.1.1] - 2026-11-08
+
+### 🖱️ Input Focus Fix & Whiteboard Event Isolation
+* **Eliminated Input Focus Stealing:** Fixed `_boardUpHandler` unconditionally returning focus to the board window on every mouseup event across the document. The handler now strictly ignores mouseup events unless an active board manipulation was in progress (panning, linking, lasso, or card dragging) and never steals focus from active `input`, `textarea`, or `select` elements.
+* **Edit Dialog Autofocus:** The first editable text field (e.g. NPC name, Location title, Note text) now automatically receives focus when opening `ClueBookEditDialog` for instant typing.
+
 ## [2.1.0] - 2026-10-30
 
 ### 🛡️ Data Integrity & Dual Foundry VTT v13 / v14 Compatibility (Issues #8, #9)

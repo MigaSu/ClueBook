@@ -785,7 +785,10 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
     };
 
     this._boardUpHandler = async (ev) => {
+      let handled = false;
+
       if (isPanning) {
+        handled = true;
         isPanning = false;
         currentPanX = ev.clientX - panStartX;
         currentPanY = ev.clientY - panStartY;
@@ -794,6 +797,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       }
 
       if (linkingSource) {
+        handled = true;
         if (tempLine) {
           tempLine.remove();
           tempLine = null;
@@ -816,6 +820,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       }
 
       if (this.isLasso) {
+        handled = true;
         this.isLasso = false;
         if (this.lassoBox) {
           this.lassoBox.remove();
@@ -825,6 +830,7 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
       }
 
       if (draggedEntry && activeDragItems && activeDragItems.length > 0) {
+        handled = true;
         const updates = {};
         const snap = ev.shiftKey || this.getSettings().theme.snapToGrid;
 
@@ -859,9 +865,14 @@ export const ClueBookBoardMixin = (Base) => class extends Base {
         }
       }
 
+      if (!handled) return;
+
       this.state.isBoardInteracting = false;
       this._isAppWindowActive = true;
-      if (this.element) this.element.focus({ preventScroll: true });
+      const isInputActive = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) || document.activeElement?.isContentEditable;
+      if (this.element && !isInputActive) {
+        this.element.focus({ preventScroll: true });
+      }
       if (this.state.pendingRender) {
         this.state.pendingRender = false;
         this.render({ parts: ["content"] });

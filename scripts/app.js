@@ -1357,7 +1357,8 @@ export class ClueBookApp extends BaseApp {
         }
       }, true);
 
-      html.addEventListener('click', () => {
+      html.addEventListener('click', (ev) => {
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(ev.target?.tagName) || ev.target?.isContentEditable) return;
         if (document.activeElement === document.body || !html.contains(document.activeElement)) {
           html.focus({ preventScroll: true });
         }
